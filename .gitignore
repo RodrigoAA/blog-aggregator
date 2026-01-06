@@ -1,0 +1,18 @@
+# Local version with API key - DO NOT COMMIT
+index-local.html
+
+# Deploy folder - no longer needed
+deploy/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+*.swp
+*.swo
+*~
+
+# Claude plans (optional - keep local)
+.claude/

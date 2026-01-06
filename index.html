@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Blog Aggregator</title>
+
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Main container */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 20px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        /* Loading indicator */
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2em;
+            padding: 40px;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        /* Error message */
+        .error {
+            background: #ff6b6b;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        /* Posts container */
+        #posts {
+            display: grid;
+            gap: 20px;
+        }
+
+        /* Individual post card */
+        .post-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .post-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 12px rgba(0,0,0,0.15);
+        }
+
+        /* Blog source badge */
+        .blog-source {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: white;
+        }
+
+        /* Different colors for each blog */
+        .blog-source.rodobo { background: #e74c3c; }
+        .blog-source.shreyas { background: #3498db; }
+        .blog-source.simon { background: #2ecc71; }
+        .blog-source.henrik { background: #f39c12; }
+        .blog-source.bonilla { background: #9b59b6; }
+
+        /* Post title */
+        .post-title {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .post-title a {
+            color: #2c3e50;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .post-title a:hover {
+            color: #667eea;
+        }
+
+        /* Post metadata */
+        .post-meta {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-bottom: 12px;
+        }
+
+        /* Post description */
+        .post-description {
+            color: #555;
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+
+        /* Read post styling */
+        .post-card.read {
+            opacity: 0.6;
+        }
+
+        .post-card.read .post-title a {
+            color: #95a5a6;
+        }
+
+        .post-card.read .post-description {
+            color: #bdc3c7;
+        }
+
+        .read-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #95a5a6;
+            color: white;
+            border-radius: 4px;
+            font-size: 0.75em;
+            margin-left: 8px;
+        }
+
+        .read-button {
+            margin-top: 15px;
+            padding: 8px 16px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .read-button:hover {
+            background: #2980b9;
+        }
+
+        .read-button.marked-read {
+            background: #95a5a6;
+        }
+
+        .read-button.marked-read:hover {
+            background: #7f8c8d;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            padding: 20px;
+            opacity: 0.8;
+        }
+
+        /* Responsive design for mobile */
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 2em;
+            }
+
+            .post-card {
+                padding: 18px;
+            }
+
+            .post-title {
+                font-size: 1.3em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>My Blog Aggregator</h1>
+            <p>Latest posts from my favorite blogs</p>
+        </header>
+
+        <div id="loading" class="loading">Loading posts</div>
+        <div id="posts"></div>
+
+        <footer>
+            <p>Built with HTML, CSS, and JavaScript</p>
+        </footer>
+    </div>
+
+    <script>
+        // Configuration: List of blogs to aggregate
+        const blogs = [
+            {
+                name: 'Rodobo',
+                slug: 'rodobo',
+                url: 'https://www.rodobo.es/feed'
+            },
+            {
+                name: 'Shreyas Doshi',
+                slug: 'shreyas',
+                url: 'https://shreyasdoshi.substack.com/feed'
+            },
+            {
+                name: 'Simon Sarris',
+                slug: 'simon',
+                url: 'https://simonsarris.substack.com/feed'
+            },
+            {
+                name: 'Henrik Karlsson',
+                slug: 'henrik',
+                url: 'https://www.henrikkarlsson.xyz/feed'
+            },
+            {
+                name: 'Bonillaware',
+                slug: 'bonilla',
+                url: 'https://bonillaware.com/feed'
+            }
+        ];
+
+        // CORS proxy to bypass browser restrictions
+        const CORS_PROXY = 'https://corsproxy.io/?';
+
+        // Function to fetch a single RSS feed
+        async function fetchFeed(blog) {
+            console.log(`Fetching ${blog.name} from ${blog.url}`);
+
+            try {
+                const proxyUrl = CORS_PROXY + encodeURIComponent(blog.url);
+                console.log(`Using proxy: ${proxyUrl}`);
+
+                const response = await fetch(proxyUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/rss+xml, application/xml, text/xml'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const text = await response.text();
+                console.log(`Successfully fetched ${blog.name}, length: ${text.length}`);
+                return { blog, xml: text, success: true };
+            } catch (error) {
+                console.error(`Error fetching ${blog.name}:`, error);
+                updateStatus(`Failed to load ${blog.name}: ${error.message}`);
+                return { blog, error, success: false };
+            }
+        }
+
+        // Function to update status message
+        function updateStatus(message) {
+            const loading = document.getElementById('loading');
+            if (loading && loading.style.display !== 'none') {
+                loading.innerHTML = message;
+            }
+        }
+
+        // Function to parse RSS/Atom XML and extract posts
+        function parseFeed(feedData) {
+            if (!feedData.success) return [];
+
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(feedData.xml, 'text/xml');
+            const posts = [];
+
+            // Check if it's RSS or Atom format
+            const isAtom = doc.querySelector('feed');
+
+            if (isAtom) {
+                // Parse Atom feed
+                const entries = doc.querySelectorAll('entry');
+                entries.forEach(entry => {
+                    const content = entry.querySelector('summary, content')?.textContent || '';
+                    posts.push({
+                        title: entry.querySelector('title')?.textContent || 'No title',
+                        link: entry.querySelector('link')?.getAttribute('href') || '#',
+                        date: new Date(entry.querySelector('published, updated')?.textContent || Date.now()),
+                        description: cleanDescription(content),
+                        blogName: feedData.blog.name,
+                        blogSlug: feedData.blog.slug
+                    });
+                });
+            } else {
+                // Parse RSS feed
+                const items = doc.querySelectorAll('item');
+                items.forEach(item => {
+                    const content = item.querySelector('description, content\\:encoded')?.textContent || '';
+                    posts.push({
+                        title: item.querySelector('title')?.textContent || 'No title',
+                        link: item.querySelector('link')?.textContent || '#',
+                        date: new Date(item.querySelector('pubDate')?.textContent || Date.now()),
+                        description: cleanDescription(content),
+                        blogName: feedData.blog.name,
+                        blogSlug: feedData.blog.slug
+                    });
+                });
+            }
+
+            return posts;
+        }
+
+        // Function to clean and truncate description text
+        function cleanDescription(text) {
+            // Remove HTML tags
+            const temp = document.createElement('div');
+            temp.innerHTML = text;
+            let cleaned = temp.textContent || temp.innerText || '';
+
+            // Truncate to 200 characters
+            if (cleaned.length > 200) {
+                cleaned = cleaned.substring(0, 200) + '...';
+            }
+
+            return cleaned;
+        }
+
+        // Function to format date nicely
+        function formatDate(date) {
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 0) return 'Today';
+            if (diffDays === 1) return 'Yesterday';
+            if (diffDays < 7) return `${diffDays} days ago`;
+            if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        // ============================================================
+        // READ STATUS FUNCTIONS
+        // ============================================================
+
+        // Function to get read posts from localStorage
+        function getReadPosts() {
+            const stored = localStorage.getItem('blogAggregator_readPosts');
+            return stored ? JSON.parse(stored) : [];
+        }
+
+        // Function to save read posts to localStorage
+        function saveReadPosts(readPosts) {
+            localStorage.setItem('blogAggregator_readPosts', JSON.stringify(readPosts));
+        }
+
+        // Function to check if a post is read
+        function isPostRead(postLink) {
+            const readPosts = getReadPosts();
+            return readPosts.includes(postLink);
+        }
+
+        // Function to toggle read/unread status
+        function toggleReadStatus(postLink, button, postCard) {
+            const readPosts = getReadPosts();
+            const isRead = readPosts.includes(postLink);
+
+            if (isRead) {
+                // Mark as unread
+                const index = readPosts.indexOf(postLink);
+                readPosts.splice(index, 1);
+                postCard.classList.remove('read');
+                button.textContent = '✓ Mark as Read';
+                button.classList.remove('marked-read');
+            } else {
+                // Mark as read
+                readPosts.push(postLink);
+                postCard.classList.add('read');
+                button.textContent = '↩ Mark as Unread';
+                button.classList.add('marked-read');
+            }
+
+            saveReadPosts(readPosts);
+        }
+
+        // Function to display posts in the DOM
+        function displayPosts(posts) {
+            const postsContainer = document.getElementById('posts');
+            const loadingIndicator = document.getElementById('loading');
+
+            // Hide loading indicator
+            loadingIndicator.style.display = 'none';
+
+            if (posts.length === 0) {
+                postsContainer.innerHTML = `
+                    <div class="error">
+                        <h3>Unable to load posts</h3>
+                        <p>This could be due to:</p>
+                        <ul style="text-align: left; margin: 10px auto; max-width: 400px;">
+                            <li>CORS proxy being blocked or rate-limited</li>
+                            <li>Network connectivity issues</li>
+                            <li>RSS feeds temporarily unavailable</li>
+                        </ul>
+                        <p style="margin-top: 15px;">Open browser console (F12) to see detailed errors.</p>
+                        <button onclick="location.reload()" style="margin-top: 15px; padding: 10px 20px; background: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1em;">
+                            Try Again
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort posts by date (newest first)
+            posts.sort((a, b) => b.date - a.date);
+
+            // Create HTML for each post with read status
+            postsContainer.innerHTML = posts.map((post, index) => {
+                const isRead = isPostRead(post.link);
+                const readClass = isRead ? 'read' : '';
+                const readBadge = isRead ? '<span class="read-badge">Read</span>' : '';
+                const buttonText = isRead ? '↩ Mark as Unread' : '✓ Mark as Read';
+                const buttonClass = isRead ? 'read-button marked-read' : 'read-button';
+
+                return `
+                    <article class="post-card ${readClass}" data-post-index="${index}">
+                        <span class="blog-source ${post.blogSlug}">${post.blogName}</span>${readBadge}
+                        <h2 class="post-title">
+                            <a href="${post.link}" target="_blank" rel="noopener noreferrer">
+                                ${post.title}
+                            </a>
+                        </h2>
+                        <div class="post-meta">
+                            ${formatDate(post.date)}
+                        </div>
+                        <p class="post-description">${post.description}</p>
+                        <button class="${buttonClass}" data-post-link="${post.link}">
+                            ${buttonText}
+                        </button>
+                    </article>
+                `;
+            }).join('');
+
+            // Attach event listeners to read buttons
+            const readButtons = postsContainer.querySelectorAll('.read-button');
+            readButtons.forEach((button) => {
+                button.addEventListener('click', function() {
+                    const postLink = this.getAttribute('data-post-link');
+                    const postCard = this.closest('.post-card');
+                    toggleReadStatus(postLink, this, postCard);
+                });
+            });
+        }
+
+        // Main function to initialize the app
+        async function init() {
+            try {
+                updateStatus('Fetching feeds...');
+
+                // Fetch all feeds in parallel
+                const feedPromises = blogs.map(blog => fetchFeed(blog));
+                const feedResults = await Promise.all(feedPromises);
+
+                updateStatus('Parsing posts...');
+
+                // Parse all feeds and combine posts
+                const allPosts = feedResults.flatMap(result => parseFeed(result));
+
+                console.log(`Total posts found: ${allPosts.length}`);
+
+                // Count successful feeds
+                const successCount = feedResults.filter(r => r.success).length;
+                console.log(`Successfully loaded ${successCount} out of ${blogs.length} blogs`);
+
+                // Display the posts
+                displayPosts(allPosts);
+
+            } catch (error) {
+                console.error('Error initializing app:', error);
+                document.getElementById('loading').innerHTML =
+                    '<div class="error">Failed to load posts. Error: ' + error.message + '</div>';
+            }
+        }
+
+        // Start the app when page loads
+        init();
+    </script>
+</body>
+</html>
