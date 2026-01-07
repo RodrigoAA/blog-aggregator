@@ -14,45 +14,50 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
             line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #e8e8e8;
+            background: #1a1a1a;
             min-height: 100vh;
-            padding: 20px;
+            padding: 0;
         }
 
         /* Main container */
         .container {
             max-width: 900px;
             margin: 0 auto;
+            padding: 0 20px;
         }
 
         /* Header */
         header {
             text-align: center;
+            background: linear-gradient(135deg, #cc9b7a 0%, #b88a6f 100%);
             color: white;
-            margin-bottom: 40px;
-            padding: 20px;
+            padding: 48px 20px;
+            margin-bottom: 32px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
 
         header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            font-size: 2.25em;
+            margin-bottom: 8px;
+            font-weight: 500;
+            letter-spacing: -0.02em;
         }
 
         header p {
-            font-size: 1.1em;
-            opacity: 0.9;
+            font-size: 1em;
+            opacity: 0.95;
+            font-weight: 400;
         }
 
         /* Loading indicator */
         .loading {
             text-align: center;
-            color: white;
-            font-size: 1.2em;
-            padding: 40px;
+            color: #888;
+            font-size: 1em;
+            padding: 60px 40px;
         }
 
         .loading::after {
@@ -68,42 +73,45 @@
 
         /* Error message */
         .error {
-            background: #ff6b6b;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
+            background: #2a2a2a;
+            color: #ff6b6b;
+            padding: 24px;
+            border-radius: 8px;
             margin: 20px 0;
             text-align: center;
+            border: 1px solid #3a3a3a;
         }
 
         /* Posts container */
         #posts {
             display: grid;
-            gap: 20px;
+            gap: 16px;
+            padding-bottom: 40px;
         }
 
         /* Individual post card */
         .post-card {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
+            background: #242424;
+            border-radius: 8px;
+            padding: 20px 24px;
+            border: 1px solid #333;
+            transition: all 0.15s ease;
         }
 
         .post-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 12px rgba(0,0,0,0.15);
+            border-color: #cc9b7a;
+            box-shadow: 0 2px 12px rgba(204, 155, 122, 0.2);
+            background: #282828;
         }
 
         /* Blog source badge */
         .blog-source {
             display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: 600;
-            margin-bottom: 12px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: 500;
+            margin-bottom: 10px;
             color: white;
         }
 
@@ -114,91 +122,262 @@
         .blog-source.henrik { background: #f39c12; }
         .blog-source.bonilla { background: #9b59b6; }
 
+        /* Default color for dynamically added blogs */
+        .blog-source.dynamic-blog { background: #34495e; }
+
         /* Post title */
         .post-title {
-            font-size: 1.5em;
-            margin-bottom: 10px;
-            color: #2c3e50;
+            font-size: 1.25em;
+            margin-bottom: 8px;
+            color: #e8e8e8;
+            font-weight: 500;
+            line-height: 1.4;
         }
 
         .post-title a {
-            color: #2c3e50;
+            color: #e8e8e8;
             text-decoration: none;
-            transition: color 0.2s;
+            transition: color 0.15s;
         }
 
         .post-title a:hover {
-            color: #667eea;
+            color: #cc9b7a;
         }
 
         /* Post metadata */
         .post-meta {
-            color: #7f8c8d;
-            font-size: 0.9em;
-            margin-bottom: 12px;
+            color: #888;
+            font-size: 0.875em;
+            margin-bottom: 10px;
         }
 
         /* Post description */
         .post-description {
-            color: #555;
-            line-height: 1.7;
-            margin-top: 12px;
+            color: #b0b0b0;
+            line-height: 1.6;
+            margin-top: 10px;
+            font-size: 0.95em;
         }
 
         /* Read post styling */
         .post-card.read {
-            opacity: 0.6;
+            opacity: 0.45;
+            background: #202020;
         }
 
         .post-card.read .post-title a {
-            color: #95a5a6;
+            color: #666;
         }
 
         .post-card.read .post-description {
-            color: #bdc3c7;
+            color: #555;
         }
 
         .read-badge {
             display: inline-block;
-            padding: 2px 8px;
-            background: #95a5a6;
-            color: white;
+            padding: 3px 8px;
+            background: #333;
+            color: #888;
             border-radius: 4px;
             font-size: 0.75em;
             margin-left: 8px;
+            font-weight: 500;
         }
 
         .read-button {
-            margin-top: 15px;
+            margin-top: 16px;
             padding: 8px 16px;
-            background: #3498db;
-            color: white;
+            background: #cc9b7a;
+            color: #1a1a1a;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.9em;
-            transition: background 0.2s;
+            font-size: 0.875em;
+            font-weight: 500;
+            transition: background 0.15s;
         }
 
         .read-button:hover {
-            background: #2980b9;
+            background: #d4a686;
         }
 
         .read-button.marked-read {
-            background: #95a5a6;
+            background: #333;
+            color: #888;
         }
 
         .read-button.marked-read:hover {
-            background: #7f8c8d;
+            background: #3a3a3a;
+        }
+
+        /* Blog Management Section */
+        .blog-management {
+            background: #242424;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #333;
+        }
+
+        .blog-management h2 {
+            color: #e8e8e8;
+            margin-bottom: 20px;
+            font-size: 1.25em;
+            font-weight: 500;
+        }
+
+        .blog-list {
+            margin-bottom: 24px;
+        }
+
+        .blog-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid #2a2a2a;
+            transition: opacity 0.15s;
+        }
+
+        .blog-item:hover {
+            opacity: 0.7;
+        }
+
+        .blog-item:last-child {
+            border-bottom: none;
+        }
+
+        .blog-info {
+            flex: 1;
+        }
+
+        .blog-info-name {
+            font-weight: 500;
+            color: #e8e8e8;
+            margin-bottom: 4px;
+            font-size: 0.95em;
+        }
+
+        .blog-info-url {
+            font-size: 0.825em;
+            color: #888;
+            word-break: break-all;
+        }
+
+        .delete-blog-btn {
+            padding: 6px 14px;
+            background: #2a2a2a;
+            color: #ff6b6b;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 500;
+            transition: all 0.15s;
+            margin-left: 12px;
+        }
+
+        .delete-blog-btn:hover {
+            background: #333;
+            border-color: #ff6b6b;
+        }
+
+        .add-blog-form {
+            display: grid;
+            gap: 16px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #2a2a2a;
+        }
+
+        .add-blog-form h3 {
+            color: #e8e8e8;
+            font-size: 1em;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            color: #b0b0b0;
+            font-size: 0.875em;
+        }
+
+        .form-group input {
+            padding: 10px 12px;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            font-size: 0.95em;
+            transition: all 0.15s;
+            font-family: inherit;
+            background: #2a2a2a;
+            color: #e8e8e8;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #cc9b7a;
+            box-shadow: 0 0 0 3px rgba(204, 155, 122, 0.15);
+        }
+
+        .add-blog-btn {
+            padding: 10px 20px;
+            background: #cc9b7a;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 500;
+            transition: background 0.15s;
+            margin-top: 4px;
+        }
+
+        .add-blog-btn:hover {
+            background: #d4a686;
+        }
+
+        .add-blog-btn:disabled {
+            background: #3a3a3a;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .toggle-management-btn {
+            background: #242424;
+            color: #b0b0b0;
+            border: 1px solid #333;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.15s;
+            margin-bottom: 24px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .toggle-management-btn:hover {
+            background: #2a2a2a;
+            border-color: #cc9b7a;
+            color: #cc9b7a;
         }
 
         /* Footer */
         footer {
             text-align: center;
-            color: white;
-            margin-top: 40px;
-            padding: 20px;
-            opacity: 0.8;
+            color: #666;
+            margin-top: 48px;
+            padding: 32px 20px;
+            font-size: 0.875em;
         }
 
         /* Responsive design for mobile */
@@ -214,6 +393,17 @@
             .post-title {
                 font-size: 1.3em;
             }
+
+            .blog-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .delete-blog-btn {
+                margin-left: 0;
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -224,6 +414,33 @@
             <p>Ideas fundamentales del universo digital</p>
         </header>
 
+        <button class="toggle-management-btn" onclick="toggleBlogManagement()">
+            ⚙️ Manage Blogs
+        </button>
+
+        <div id="blog-management" class="blog-management" style="display: none;">
+            <h2>Manage Your Blogs</h2>
+
+            <div class="blog-list" id="blog-list">
+                <!-- Blog items will be dynamically inserted here -->
+            </div>
+
+            <div class="add-blog-form">
+                <h3>Add New Blog</h3>
+                <div class="form-group">
+                    <label for="blog-name">Blog Name</label>
+                    <input type="text" id="blog-name" placeholder="e.g., My Favorite Blog" />
+                </div>
+                <div class="form-group">
+                    <label for="blog-url">RSS Feed URL</label>
+                    <input type="url" id="blog-url" placeholder="e.g., https://example.com/feed" />
+                </div>
+                <button class="add-blog-btn" onclick="addNewBlog()">
+                    ✓ Add Blog
+                </button>
+            </div>
+        </div>
+
         <div id="loading" class="loading">Loading posts</div>
         <div id="posts"></div>
 
@@ -233,8 +450,12 @@
     </div>
 
     <script>
-        // Configuration: List of blogs to aggregate
-        const blogs = [
+        // ============================================================
+        // BLOG MANAGEMENT FUNCTIONS
+        // ============================================================
+
+        // Default blogs to start with
+        const DEFAULT_BLOGS = [
             {
                 name: 'Rodobo',
                 slug: 'rodobo',
@@ -261,6 +482,160 @@
                 url: 'https://bonillaware.com/feed'
             }
         ];
+
+        // Get blogs from localStorage or use defaults
+        function getBlogs() {
+            const stored = localStorage.getItem('blogAggregator_blogs');
+            if (stored) {
+                return JSON.parse(stored);
+            }
+            // Initialize with defaults if nothing in localStorage
+            saveBlogs(DEFAULT_BLOGS);
+            return DEFAULT_BLOGS;
+        }
+
+        // Save blogs to localStorage
+        function saveBlogs(blogs) {
+            localStorage.setItem('blogAggregator_blogs', JSON.stringify(blogs));
+        }
+
+        // Generate slug from name
+        function generateSlug(name) {
+            return name.toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-|-$/g, '');
+        }
+
+        // Color palette for blog badges
+        const BLOG_COLORS = [
+            '#e74c3c', // red
+            '#3498db', // blue
+            '#2ecc71', // green
+            '#f39c12', // orange
+            '#9b59b6', // purple
+            '#1abc9c', // turquoise
+            '#e67e22', // carrot
+            '#34495e', // dark blue
+            '#16a085', // green sea
+            '#c0392b', // dark red
+            '#27ae60', // nephritis
+            '#2980b9', // belize hole
+            '#8e44ad', // wisteria
+            '#f1c40f', // yellow
+            '#d35400'  // pumpkin
+        ];
+
+        // Get color for a blog based on its index in the list
+        function getBlogColor(blogSlug) {
+            const blogs = getBlogs();
+            const index = blogs.findIndex(b => b.slug === blogSlug);
+            return BLOG_COLORS[index % BLOG_COLORS.length];
+        }
+
+        // Toggle blog management UI
+        function toggleBlogManagement() {
+            const managementDiv = document.getElementById('blog-management');
+            if (managementDiv.style.display === 'none') {
+                managementDiv.style.display = 'block';
+                renderBlogList();
+            } else {
+                managementDiv.style.display = 'none';
+            }
+        }
+
+        // Render the list of blogs in the management UI
+        function renderBlogList() {
+            const blogs = getBlogs();
+            const blogListDiv = document.getElementById('blog-list');
+
+            if (blogs.length === 0) {
+                blogListDiv.innerHTML = '<p style="color: #7f8c8d; text-align: center; padding: 20px;">No blogs added yet. Add your first blog below!</p>';
+                return;
+            }
+
+            blogListDiv.innerHTML = blogs.map((blog, index) => `
+                <div class="blog-item">
+                    <div class="blog-info">
+                        <div class="blog-info-name">${blog.name}</div>
+                        <div class="blog-info-url">${blog.url}</div>
+                    </div>
+                    <button class="delete-blog-btn" onclick="deleteBlog(${index})">
+                        🗑️ Delete
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Add new blog
+        function addNewBlog() {
+            const nameInput = document.getElementById('blog-name');
+            const urlInput = document.getElementById('blog-url');
+
+            const name = nameInput.value.trim();
+            const url = urlInput.value.trim();
+
+            // Validation
+            if (!name) {
+                alert('Please enter a blog name');
+                return;
+            }
+
+            if (!url) {
+                alert('Please enter an RSS feed URL');
+                return;
+            }
+
+            // Basic URL validation
+            try {
+                new URL(url);
+            } catch (e) {
+                alert('Please enter a valid URL');
+                return;
+            }
+
+            // Check for duplicates
+            const blogs = getBlogs();
+            if (blogs.some(blog => blog.url === url)) {
+                alert('This blog is already in your list');
+                return;
+            }
+
+            // Add the blog
+            const newBlog = {
+                name: name,
+                slug: generateSlug(name),
+                url: url
+            };
+
+            blogs.push(newBlog);
+            saveBlogs(blogs);
+
+            // Clear inputs
+            nameInput.value = '';
+            urlInput.value = '';
+
+            // Refresh the list
+            renderBlogList();
+
+            // Reload posts
+            alert('Blog added! Refreshing posts...');
+            init();
+        }
+
+        // Delete blog
+        function deleteBlog(index) {
+            const blogs = getBlogs();
+            const blogName = blogs[index].name;
+
+            if (confirm(`Are you sure you want to remove "${blogName}"?`)) {
+                blogs.splice(index, 1);
+                saveBlogs(blogs);
+                renderBlogList();
+
+                // Reload posts
+                init();
+            }
+        }
 
         // CORS proxy to bypass browser restrictions
         const CORS_PROXY = 'https://corsproxy.io/?';
@@ -364,7 +739,13 @@
         // Function to format date nicely
         function formatDate(date) {
             const now = new Date();
-            const diffTime = Math.abs(now - date);
+
+            // Reset time to midnight for accurate day comparison
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const postDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+            // Calculate difference in calendar days
+            const diffTime = today - postDate;
             const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
             if (diffDays === 0) return 'Today';
@@ -372,7 +753,7 @@
             if (diffDays < 7) return `${diffDays} days ago`;
             if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
 
-            return date.toLocaleDateString('en-US', {
+            return date.toLocaleDateString('es-ES', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric'
@@ -460,10 +841,11 @@
                 const readBadge = isRead ? '<span class="read-badge">Read</span>' : '';
                 const buttonText = isRead ? '↩ Mark as Unread' : '✓ Mark as Read';
                 const buttonClass = isRead ? 'read-button marked-read' : 'read-button';
+                const blogColor = getBlogColor(post.blogSlug);
 
                 return `
                     <article class="post-card ${readClass}" data-post-index="${index}">
-                        <span class="blog-source ${post.blogSlug}">${post.blogName}</span>${readBadge}
+                        <span class="blog-source" style="background: ${blogColor};">${post.blogName}</span>${readBadge}
                         <h2 class="post-title">
                             <a href="${post.link}" target="_blank" rel="noopener noreferrer">
                                 ${post.title}
@@ -495,6 +877,15 @@
         async function init() {
             try {
                 updateStatus('Fetching feeds...');
+
+                // Get blogs from localStorage
+                const blogs = getBlogs();
+
+                if (blogs.length === 0) {
+                    document.getElementById('loading').innerHTML =
+                        '<div class="error">No blogs configured. Click "Manage Blogs" to add some!</div>';
+                    return;
+                }
 
                 // Fetch all feeds in parallel
                 const feedPromises = blogs.map(blog => fetchFeed(blog));
