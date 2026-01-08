@@ -185,8 +185,13 @@
             font-weight: 500;
         }
 
-        .read-button {
+        .post-actions {
+            display: flex;
+            gap: 8px;
             margin-top: 16px;
+        }
+
+        .read-button {
             padding: 8px 16px;
             background: #cc9b7a;
             color: #1a1a1a;
@@ -209,6 +214,24 @@
 
         .read-button.marked-read:hover {
             background: #3a3a3a;
+        }
+
+        .not-interesting-button {
+            padding: 8px 16px;
+            background: #2a2a2a;
+            color: #888;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875em;
+            font-weight: 500;
+            transition: all 0.15s;
+        }
+
+        .not-interesting-button:hover {
+            background: #333;
+            border-color: #ff6b6b;
+            color: #ff6b6b;
         }
 
         /* Blog Management Section */
@@ -805,6 +828,46 @@
             saveReadPosts(readPosts);
         }
 
+        // ============================================================
+        // NOT INTERESTING STATUS FUNCTIONS
+        // ============================================================
+
+        // Function to get not interesting posts from localStorage
+        function getNotInterestingPosts() {
+            const stored = localStorage.getItem('blogAggregator_notInterestingPosts');
+            return stored ? JSON.parse(stored) : [];
+        }
+
+        // Function to save not interesting posts to localStorage
+        function saveNotInterestingPosts(notInterestingPosts) {
+            localStorage.setItem('blogAggregator_notInterestingPosts', JSON.stringify(notInterestingPosts));
+        }
+
+        // Function to check if a post is marked as not interesting
+        function isPostNotInteresting(postLink) {
+            const notInterestingPosts = getNotInterestingPosts();
+            return notInterestingPosts.includes(postLink);
+        }
+
+        // Function to toggle not interesting status
+        function toggleNotInterestingStatus(postLink, button, postCard) {
+            const notInterestingPosts = getNotInterestingPosts();
+            const isNotInteresting = notInterestingPosts.includes(postLink);
+
+            if (isNotInteresting) {
+                // Remove from not interesting list
+                const index = notInterestingPosts.indexOf(postLink);
+                notInterestingPosts.splice(index, 1);
+                postCard.style.display = 'block';
+            } else {
+                // Mark as not interesting
+                notInterestingPosts.push(postLink);
+                postCard.style.display = 'none';
+            }
+
+            saveNotInterestingPosts(notInterestingPosts);
+        }
+
         // Function to display posts in the DOM
         function displayPosts(posts) {
             const postsContainer = document.getElementById('posts');
@@ -838,14 +901,16 @@
             // Create HTML for each post with read status
             postsContainer.innerHTML = posts.map((post, index) => {
                 const isRead = isPostRead(post.link);
+                const isNotInteresting = isPostNotInteresting(post.link);
                 const readClass = isRead ? 'read' : '';
                 const readBadge = isRead ? '<span class="read-badge">Read</span>' : '';
                 const buttonText = isRead ? '↩ Mark as Unread' : '✓ Mark as Read';
                 const buttonClass = isRead ? 'read-button marked-read' : 'read-button';
                 const blogColor = getBlogColor(post.blogSlug);
+                const displayStyle = isNotInteresting ? 'display: none;' : '';
 
                 return `
-                    <article class="post-card ${readClass}" data-post-index="${index}">
+                    <article class="post-card ${readClass}" data-post-index="${index}" style="${displayStyle}">
                         <span class="blog-source" style="background: ${blogColor};">${post.blogName}</span>${readBadge}
                         <h2 class="post-title">
                             <a href="${post.link}" target="_blank" rel="noopener noreferrer">
@@ -856,9 +921,14 @@
                             ${formatDate(post.date)}
                         </div>
                         <p class="post-description">${post.description}</p>
-                        <button class="${buttonClass}" data-post-link="${post.link}">
-                            ${buttonText}
-                        </button>
+                        <div class="post-actions">
+                            <button class="${buttonClass}" data-post-link="${post.link}">
+                                ${buttonText}
+                            </button>
+                            <button class="not-interesting-button" data-post-link="${post.link}">
+                                ✕ Not Interesting
+                            </button>
+                        </div>
                     </article>
                 `;
             }).join('');
@@ -870,6 +940,16 @@
                     const postLink = this.getAttribute('data-post-link');
                     const postCard = this.closest('.post-card');
                     toggleReadStatus(postLink, this, postCard);
+                });
+            });
+
+            // Attach event listeners to not interesting buttons
+            const notInterestingButtons = postsContainer.querySelectorAll('.not-interesting-button');
+            notInterestingButtons.forEach((button) => {
+                button.addEventListener('click', function() {
+                    const postLink = this.getAttribute('data-post-link');
+                    const postCard = this.closest('.post-card');
+                    toggleNotInterestingStatus(postLink, this, postCard);
                 });
             });
         }
