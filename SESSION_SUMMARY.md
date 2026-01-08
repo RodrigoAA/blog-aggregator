@@ -727,30 +727,32 @@ As a PM, you got hands-on experience with:
 - **Architecture** - Frontend/backend separation, API design
 - **Documentation** - README, deployment guides, code comments
 
-### Deployment Readiness
+### ✅ Production Deployment - COMPLETED
 
-#### Completed:
-✅ Frontend code ready (www/)
-✅ Backend code ready (backend/)
-✅ Documentation complete
-✅ .gitignore configured
-✅ Deployment guide written
+**Live URLs:**
+- **Frontend**: https://particulaselementales.netlify.app/
+- **Backend**: https://particulas-backend.onrender.com
+- **GitHub**: https://github.com/RodrigoAA/blog-aggregator
 
-#### Next Steps for Production:
-1. Deploy backend to Render.com/Railway
-2. Update `API_BASE_URL` in app.js
-3. Push to GitHub
-4. Netlify auto-deploys frontend
-5. Test end-to-end in production
+**Deployment Stack:**
+✅ Frontend deployed to Netlify (auto-deploy from GitHub)
+✅ Backend deployed to Render.com (Node.js free tier)
+✅ Environment variables configured
+✅ CORS properly set up
+✅ All features tested and working in production
+
+**Date Deployed**: January 8, 2026
 
 ---
 
 ## 📌 Quick Reference
 
 **Your URLs:**
-- Live Site: https://particulaselementales.netlify.app/
-- GitHub: https://github.com/RodrigoAA/blog-aggregator (or particulas-elementales)
+- Frontend: https://particulaselementales.netlify.app/
+- Backend API: https://particulas-backend.onrender.com
+- GitHub: https://github.com/RodrigoAA/blog-aggregator
 - Netlify Dashboard: https://app.netlify.com/sites/particulaselementales
+- Render Dashboard: https://dashboard.render.com/
 
 **Your Files:**
 - Frontend: `www/` directory

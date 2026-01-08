@@ -41,6 +41,8 @@ A minimalist RSS feed aggregator with a Kindle-inspired reading experience. Read
 ## 🚀 Live Demo
 
 **Frontend**: https://particulaselementales.netlify.app/
+**Backend API**: https://particulas-backend.onrender.com
+**GitHub**: https://github.com/RodrigoAA/blog-aggregator
 
 ## 🏗️ Architecture
 
@@ -153,7 +155,7 @@ Navigate to `http://localhost:8080`
    ```
    PORT=3000
    NODE_ENV=production
-   ALLOWED_ORIGINS=https://your-netlify-url.netlify.app
+   ALLOWED_ORIGINS=https://particulaselementales.netlify.app
    ```
 
 #### Option 2: Railway.app
@@ -171,7 +173,7 @@ git subtree push --prefix backend heroku main
 ### Update Frontend API URL
 After deploying backend, update `www/js/app.js`:
 ```javascript
-window.API_BASE_URL = 'https://your-backend-url.com';
+window.API_BASE_URL = 'https://particulas-backend.onrender.com';
 ```
 
 ## 📚 Usage Guide
