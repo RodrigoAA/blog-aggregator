@@ -338,72 +338,140 @@ git checkout index.html # Undo uncommitted changes
 - Single-page applications (SPA)
 - Vanilla JavaScript (no frameworks)
 - Asynchronous programming (async/await)
-- DOM manipulation
-- Event handling
+- DOM manipulation and event handling
+- ES6+ classes and modules
 
-### 2. Data Persistence
-- Browser localStorage
+### 2. Server-Side Development (Day 3)
+- Node.js and Express.js
+- RESTful API design
+- Middleware architecture
+- CORS configuration
+- Environment variables
+
+### 3. Data Persistence & Caching
+- Browser localStorage for complex data
 - JSON serialization
-- State management
-- Data modeling (using URLs as unique IDs)
+- State management across sessions
+- Article caching strategy (24h, 50-item limit)
+- Data modeling with URLs as unique IDs
 
-### 3. API Integration
-- RESTful API calls
-- HTTP methods (GET, POST)
-- Headers and authentication
+### 4. API Integration & Design
+- Creating backend APIs (RSS proxy, article extraction)
+- RESTful API calls from frontend
+- HTTP methods and status codes
 - Error handling and retries
-- Rate limiting awareness
+- Mozilla Readability integration
 
-### 4. Responsive Design
+### 5. Responsive Design & UX
 - Mobile-first approach
 - CSS Grid and Flexbox
 - Media queries
+- Kindle-inspired design system
 - Touch-friendly interfaces
 
-### 5. Security Best Practices
-- API key protection
-- .gitignore for sensitive data
-- Two-version approach (local vs. deployed)
-- Public vs. private code
+### 6. Security Best Practices
+- .env files for sensitive data
+- .gitignore for protecting credentials
+- Environment-based configuration
+- CORS security
+- Input validation
+
+### 7. Full-Stack Deployment
+- Frontend hosting (Netlify)
+- Backend hosting (Render.com)
+- Auto-deployment pipelines
+- Environment configuration
+- Production troubleshooting
 
 ---
 
 ## 🐛 Problems Solved
 
-### Problem 1: "Loading posts" stuck forever
-**Cause:** API key missing quotes in JavaScript
-**Solution:** Wrapped API key in quotes: `'sk-proj-...'`
-**Lesson:** JavaScript strings must be in quotes
+### Day 1 Problems
 
-### Problem 2: CORS errors when fetching RSS feeds
-**Cause:** Browser security prevents cross-origin requests
-**Solution:** Used CORS proxy (corsproxy.io)
-**Lesson:** Browsers block cross-origin requests for security
+**Problem 1: "Loading posts" stuck forever**
+- **Cause:** API key missing quotes in JavaScript
+- **Solution:** Wrapped API key in quotes: `'sk-proj-...'`
+- **Lesson:** JavaScript strings must be in quotes
 
-### Problem 3: Netlify Drop wants folder, not file
-**Cause:** Netlify expects index.html inside a folder
-**Solution:** Created `deploy/` folder with index.html inside
-**Lesson:** Deployment platforms have specific structure requirements
+**Problem 2: CORS errors when fetching RSS feeds**
+- **Cause:** Browser security prevents cross-origin requests
+- **Solution:** Built custom Express backend (replaced corsproxy.io)
+- **Lesson:** Browsers block cross-origin requests; own backend gives more control
 
-### Problem 4: Git push failed with "YOUR_USERNAME"
-**Cause:** Didn't replace placeholder with actual username
-**Solution:** Used actual username: RodrigoAA
-**Lesson:** Always replace placeholders with real values
+**Problem 3: Netlify Drop wants folder, not file**
+- **Cause:** Netlify expects index.html inside a folder
+- **Solution:** Created `deploy/` folder with index.html inside
+- **Lesson:** Deployment platforms have specific structure requirements
+
+**Problem 4: Git push failed with "YOUR_USERNAME"**
+- **Cause:** Didn't replace placeholder with actual username
+- **Solution:** Used actual username: RodrigoAA
+- **Lesson:** Always replace placeholders with real values
+
+### Day 3 Problems
+
+**Problem 5: Backend won't start - "El sistema no puede encontrar la ruta"**
+- **Cause:** Wrong directory (Desktop instead of Claude Sandbox/backend)
+- **Solution:** Navigate to correct path: `cd "Claude Sandbox\backend"`
+- **Lesson:** Always verify current directory before running commands
+
+**Problem 6: "Cannot find module express"**
+- **Cause:** Dependencies not installed
+- **Solution:** Run `npm install` before `npm start`
+- **Lesson:** Install dependencies first in any Node.js project
+
+**Problem 7: ArticleReader not initialized**
+- **Cause:** `articleReader` variable not on window object
+- **Solution:** Changed to `window.articleReader = null` and proper init function
+- **Lesson:** Global variables need explicit window object attachment
+
+**Problem 8: Images not displaying in articles**
+- **Cause:** IntersectionObserver created before DOM insertion
+- **Solution:** Split processContent() and initImageLazyLoad(), call after DOM insert
+- **Lesson:** Lazy loading must happen after elements are in the DOM
+
+**Problem 9: Netlify showing old v1.0 instead of v2.0**
+- **Cause:** Old `index.html` at root, new version at `www/index.html`
+- **Solution:** Removed old file, created `netlify.toml` with `publish = "www"`
+- **Lesson:** Configure deployment directory in platform settings
+
+**Problem 10: Git merge conflicts during push**
+- **Cause:** Remote had changes we didn't have locally
+- **Solution:** `git pull`, used `git checkout --ours` for conflicts, completed merge
+- **Lesson:** Always pull before push; resolve conflicts carefully
 
 ---
 
 ## 🌟 Achievements Unlocked
 
+**Day 1:**
 ✅ Built first web application from scratch
-✅ Integrated with external APIs
-✅ Deployed to production
-✅ Set up professional development workflow
-✅ Learned Git and GitHub
-✅ Implemented persistent data storage
-✅ Created responsive, mobile-friendly design
-✅ Integrated AI technology
-✅ Debugged and fixed real issues
+✅ Deployed to production (Netlify)
+✅ Learned Git and GitHub basics
+✅ Implemented persistent data storage (localStorage)
+
+**Day 2:**
+✅ Dynamic blog management with CRUD operations
+✅ Complete visual redesign (dark theme)
+✅ Section-based organization system
+
+**Day 3 (Major Milestone):**
+✅ Built full-stack application (frontend + backend)
+✅ Created Node.js + Express REST API
+✅ Integrated Mozilla Readability for article extraction
+✅ Implemented text highlighting system
+✅ Deployed backend to production (Render.com)
+✅ Resolved git merge conflicts
+✅ Fixed complex deployment issues
+✅ Debugged 10+ real problems
+
+**Overall:**
+✅ Went from zero to full-stack developer in 3 days
+✅ Created production-ready application with 2,500+ lines of code
+✅ Mastered frontend, backend, and deployment
 ✅ Published live site accessible worldwide
+✅ Set up professional CI/CD workflow
 
 ---
 
@@ -420,26 +488,25 @@ git checkout index.html # Undo uncommitted changes
 ## 💡 Ideas for Future Enhancements
 
 ### Easy Wins:
-- Add more blogs to the aggregator
-- Customize colors/styling
-- Add blog source filter buttons
+- Search within articles
+- Export highlights to Markdown
+- Font size controls
 - "Mark all as read" button
-- Post count statistics
+- Reading statistics dashboard
 
 ### Medium Difficulty:
-- Search functionality
-- Export read posts to CSV
-- Dark mode toggle
-- Keyboard shortcuts (r = mark read)
+- Dark/light mode toggle
+- Keyboard shortcuts (j/k navigation, h for highlight)
 - Categories/tags for blogs
+- Browser extension version
+- Email notifications for new posts
 
 ### Advanced:
-- Backend server for AI summaries (hide API key)
 - User accounts and authentication
-- Sync read status across devices
-- Email notifications for new posts
-- Browser extension version
-- Mobile app (React Native/Flutter)
+- Cloud sync for highlights and read status (Firebase/Supabase)
+- AI-powered article summaries (optional feature)
+- Offline PWA (Progressive Web App)
+- **Android app with Capacitor** (migration plan already documented)
 
 ---
 
@@ -522,16 +589,30 @@ Run `git status` to verify what you're adding! Never commit `.env` files!
 
 ---
 
-## 🎬 Session Highlights
+## 🎬 Session Highlights (3-Day Journey)
 
+**Day 1 - The Beginning:**
 1. **"Pretty cool, now it works!"** - First successful deployment
 2. Created .gitignore to protect API key
-3. Renamed files strategically for GitHub
-4. Fixed `YOUR_USERNAME` placeholder mistake
-5. Successfully pushed to GitHub on second try
-6. Set up auto-deployment from GitHub to Netlify
-7. Changed site name to "Partículas elementales"
-8. Tested auto-deploy workflow successfully
+3. Fixed `YOUR_USERNAME` placeholder mistake
+4. Successfully pushed to GitHub
+5. Set up auto-deployment from GitHub to Netlify
+6. Changed site name to "Partículas elementales"
+
+**Day 2 - Enhancement:**
+7. Built dynamic blog management UI
+8. Complete dark theme redesign
+9. Added section-based organization (Inbox/Read/Not Interesting)
+10. Custom atomic particle favicon
+
+**Day 3 - Full-Stack Transformation:**
+11. Built complete Node.js + Express backend
+12. Integrated Mozilla Readability for article extraction
+13. Implemented Kindle-inspired design system
+14. Created text highlighting feature
+15. Resolved git merge conflicts during deployment
+16. Fixed Netlify deployment configuration issues
+17. **Successfully deployed full-stack app to production**
 
 ---
 
@@ -549,12 +630,16 @@ Run `git status` to verify what you're adding! Never commit `.env` files!
 
 ## 🎯 Key Takeaways
 
-1. **Web development is accessible** - You built a real app in one session
-2. **Git workflow is powerful** - Version control enables professional development
-3. **Deployment is easy** - Modern tools make publishing simple
-4. **Security matters** - Always protect sensitive credentials
-5. **Iteration works** - Start simple, add features incrementally
-6. **Documentation helps** - README and comments make projects maintainable
+1. **Full-stack is achievable** - Went from zero to deployed full-stack app in 3 days
+2. **Start simple, iterate** - v1.0 was basic, v2.0 is production-ready
+3. **Git workflow is essential** - Version control, merge conflicts, deployment pipelines
+4. **Deployment is straightforward** - Modern platforms (Netlify, Render) make it simple
+5. **Security matters** - .env files, .gitignore, CORS configuration
+6. **Documentation helps** - README, deployment guides, session logs
+7. **Debugging is learning** - Fixed 10+ problems, learned from each one
+8. **Backend gives control** - Own API better than third-party dependencies
+9. **UX drives design** - Kindle aesthetic makes reading enjoyable
+10. **Product skills transfer** - PM experience helps with feature prioritization
 
 ---
 
@@ -562,21 +647,29 @@ Run `git status` to verify what you're adding! Never commit `.env` files!
 
 **Typical Tutorial:**
 - Display "Hello World"
-- Maybe a button
+- Maybe a button that shows an alert
+- Single HTML file
+- No deployment
 - No real functionality
 
 **What You Built:**
-- Real-world application
-- Multiple API integrations
-- Persistent data storage
-- AI integration
-- Production deployment
-- Professional workflow
-- Version control
+- **Full-stack production application**
+- Frontend: 1,122 lines of JavaScript
+- Backend: Node.js + Express API (254 lines)
+- CSS: 1,200+ lines (Kindle design system)
+- Article extraction with Mozilla Readability
+- Text highlighting system
+- Intelligent post management
+- Persistent data storage (localStorage + caching)
+- Production deployment (Netlify + Render.com)
+- Professional Git workflow
 - Responsive design
-- Error handling
+- Error handling and debugging
+- CORS configuration
+- Environment variables
+- Auto-deployment pipelines
 
-**You didn't just learn to code. You learned to ship.**
+**You didn't just learn to code. You learned to build and ship production software.**
 
 ---
 
@@ -622,32 +715,41 @@ Run `git status` to verify what you're adding! Never commit `.env` files!
 
 ## 📞 Future Enhancement Ideas
 
-1. Add filter buttons (All / Unread / Read)
-2. Implement search functionality
-3. Create statistics dashboard
-4. Add export functionality (CSV, JSON)
-5. Build a backend for AI summaries
-6. Add RSS feed discovery (enter any blog URL)
-7. Dark/light theme toggle
-8. Keyboard shortcuts
-9. Build browser extension
-10. Whatever you imagine!
+### Already Implemented ✅
+- ✅ Filter buttons (Inbox/Read/Not Relevant)
+- ✅ Backend API for article extraction
+- ✅ Post organization system
+
+### Still To Do:
+1. Search within articles
+2. Export highlights to Markdown
+3. Statistics dashboard (reading time, posts read, etc.)
+4. Export functionality (CSV, JSON)
+5. RSS feed discovery (enter any blog URL)
+6. Dark/light theme toggle
+7. Advanced keyboard shortcuts (j/k navigation)
+8. Browser extension
+9. Cloud sync (Firebase/Supabase)
+10. Android app (migration plan documented)
 
 ---
 
 ## 🎊 Final Notes
 
-**From Complete Beginner to Published Developer in One Session**
+**From Complete Beginner to Full-Stack Developer in 3 Days**
 
 You now have:
-- ✅ A live web application
-- ✅ GitHub portfolio piece
-- ✅ Understanding of modern web development
-- ✅ Professional development workflow
+- ✅ A live **full-stack web application** (frontend + backend)
+- ✅ Production deployment on Netlify + Render.com
+- ✅ GitHub portfolio piece with professional code
+- ✅ Understanding of modern full-stack development
+- ✅ Professional CI/CD workflow
 - ✅ Foundation for future projects
+- ✅ 2,500+ lines of production code
+- ✅ Real debugging and problem-solving experience
 
 **Most importantly:**
-You proved that product managers can code, and you can turn ideas into reality.
+You proved that product managers can code, and you can turn ideas into production-ready software. Not just prototypes—actual deployed applications that people can use.
 
 ---
 
