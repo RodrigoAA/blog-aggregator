@@ -5,7 +5,9 @@ A sleek, dark-themed RSS feed aggregator for reading your favorite blogs in one 
 ## Features
 - 🎨 **Dark Theme** - Claude-inspired design with refined typography
 - ➕ **Dynamic Blog Management** - Add/remove any RSS feed via the UI
+- 📬 **Section-Based Organization** - Posts organized into Inbox, Read, and Not Interesting sections
 - 📖 **Read/Unread Tracking** - Mark posts as read with localStorage persistence
+- ✕ **Not Interesting Filter** - Hide posts you don't want to see, with easy restoration
 - 🎨 **Smart Color System** - Automatic color assignment for blog badges (15-color palette)
 - 📅 **Localized Dates** - Spanish locale with GMT+1 timezone support
 - 📱 **Responsive Design** - Mobile and desktop friendly
@@ -27,10 +29,18 @@ https://particulaselementales.netlify.app/
 5. Changes persist across sessions
 
 ### Reading Posts
-1. Browse posts from all your blogs in one unified feed
-2. Click post titles to read the full article
-3. Mark posts as read/unread with the button
-4. Read status is saved automatically
+1. Browse posts organized into three sections:
+   - **📬 Inbox** - New, unread posts
+   - **✓ Read** - Posts you've marked as read
+   - **✕ Not Interesting** - Posts you've hidden
+2. Click section headers to collapse/expand
+3. Click post titles to read the full article
+4. Use action buttons to move posts between sections:
+   - Mark posts as Read from Inbox
+   - Mark posts as Unread to return to Inbox
+   - Mark posts as Not Interesting to hide them
+   - Restore posts from Not Interesting back to Inbox
+5. All status changes are saved automatically
 
 ## Default Blogs
 The app comes pre-configured with these blogs:
@@ -72,6 +82,7 @@ This site automatically deploys to Netlify when changes are pushed to the `main`
 ## Project Evolution
 - **Day 1 (Jan 6, 2026)**: Initial build with 5 hardcoded blogs, read/unread tracking, deployment
 - **Day 2 (Jan 7, 2026)**: Added dynamic blog management, dark theme redesign, favicon, timezone fixes
+- **Day 3 (Jan 8, 2026)**: Section-based organization (Inbox/Read/Not Interesting), collapsible sections, enhanced post management
 
 ## License
 MIT
