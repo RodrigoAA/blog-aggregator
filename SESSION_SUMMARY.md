@@ -7,59 +7,113 @@
 
 ## 🎉 What We Built
 
-**Project:** Partículas elementales - RSS Blog Aggregator
+**Project:** Partículas elementales - Kindle-Inspired eReader & RSS Aggregator
 **Live Site:** https://particulaselementales.netlify.app/
+**Backend API:** https://particulas-backend.onrender.com
 **GitHub Repo:** https://github.com/RodrigoAA/blog-aggregator
 
-A sleek, dark-themed web application that aggregates blog posts from any RSS feeds you choose, with dynamic blog management, read/unread tracking, and persistent storage.
+A full-stack web application with Kindle-inspired reading experience. Aggregates blog posts from any RSS feeds, extracts full articles with Mozilla Readability, features text highlighting, intelligent post management, and offline caching. Built with vanilla JavaScript frontend and Node.js backend.
 
 ---
 
-## 📚 What You Learned Today
+## 📚 What You Learned (3-Day Journey)
 
-### 1. Web Development Fundamentals
-- **HTML** - Structure and content of web pages
-- **CSS** - Styling, layouts, animations, responsive design
-- **JavaScript** - Programming logic, DOM manipulation, async operations
-- **localStorage** - Browser storage for persistent data
+### 1. Frontend Development
+- **HTML5** - Semantic structure, modals, forms
+- **CSS3** - Design systems with custom properties, Kindle-inspired aesthetics
+- **Vanilla JavaScript** - Classes, async/await, DOM manipulation, event handling
+- **localStorage** - Complex data structures, caching strategies
+- **Selection API** - Text selection and range manipulation for highlighting
+- **Responsive Design** - Mobile-first approach, media queries
 
-### 2. Working with APIs
-- **RSS/Atom Feeds** - Understanding feed formats
-- **CORS Proxy** - Bypassing browser security restrictions
-- **OpenAI API** - Integrating AI for content summarization
-- **API Keys** - Managing sensitive credentials
+### 2. Backend Development (Day 3)
+- **Node.js** - Server-side JavaScript runtime
+- **Express.js** - RESTful API creation, middleware, routing
+- **Article Extraction** - Mozilla Readability integration with JSDOM
+- **CORS** - Cross-Origin Resource Sharing configuration
+- **Error Handling** - Try-catch, HTTP status codes, graceful degradation
+- **Environment Variables** - dotenv configuration, sensitive data protection
+- **API Design** - Creating endpoints (/api/feed, /api/article, /health)
 
-### 3. Version Control with Git
-- **Git basics** - init, add, commit, push
-- **GitHub** - Remote repositories, collaboration platform
-- **.gitignore** - Protecting sensitive files
-- **Branches** - main branch concept
+### 3. Full-Stack Architecture
+- **Frontend/Backend Separation** - API-based architecture
+- **Client-Server Communication** - Fetch API, async requests
+- **Caching Strategies** - 24-hour article cache with 50-item limit
+- **State Management** - Post status, highlights, blog lists in localStorage
+- **Performance** - Lazy loading, skeleton states, progressive enhancement
 
-### 4. Deployment & DevOps
-- **Netlify** - Static site hosting
-- **Netlify Drop** - Manual deployment method
-- **Auto-deployment** - GitHub → Netlify integration
-- **Custom domains** - URL management
+### 4. Version Control & Git
+- **Git basics** - init, add, commit, push, pull
+- **Merge Conflicts** - Resolving conflicts with git checkout --ours
+- **GitHub** - Remote repositories, collaboration
+- **.gitignore** - Protecting sensitive files (.env, node_modules)
+- **Commit Messages** - Professional commit message format
+- **Repository Organization** - Clean file structure
 
-### 5. Development Workflow
-- **Local development** - Testing before deploying
-- **Version control** - Tracking changes over time
-- **Continuous deployment** - Automatic updates from code pushes
+### 5. Deployment & DevOps
+- **Netlify** - Static site hosting with auto-deploy
+- **Render.com** - Backend hosting (Node.js)
+- **Environment Configuration** - Production vs development
+- **netlify.toml** - Deployment configuration
+- **Auto-deployment** - GitHub → Netlify/Render pipelines
+- **Troubleshooting** - Debug deployment issues, check logs
+
+### 6. Advanced JavaScript Concepts
+- **ES6+ Classes** - ArticleReader class with methods
+- **Async/Await** - Promise handling for API calls
+- **Event Delegation** - Efficient event handling
+- **Closures** - Maintaining state in functions
+- **Array Methods** - map, filter, find, sort
+- **Template Literals** - String interpolation
+- **Destructuring** - Object and array destructuring
+
+### 7. UX/UI Design
+- **Kindle Aesthetic** - Paper-white design, serif typography
+- **Modal Design** - Full-screen overlays, z-index management
+- **Loading States** - Skeleton screens, spinners
+- **User Feedback** - Counters, status indicators, animations
+- **Accessibility** - Keyboard shortcuts (ESC), semantic HTML
 
 ---
 
 ## 🛠️ Technologies Used
 
-| Technology | Purpose |
-|------------|---------|
-| HTML5 | Page structure |
-| CSS3 | Styling and animations |
-| JavaScript (ES6+) | Application logic |
-| Git | Version control |
-| GitHub | Code hosting |
-| Netlify | Web hosting |
-| OpenAI API | AI summaries (local version) |
-| CORS Proxy | RSS feed access |
+### Frontend Stack
+| Technology | Purpose | Version/Details |
+|------------|---------|-----------------|
+| HTML5 | Semantic structure | Modern standards |
+| CSS3 | Kindle-inspired design system | Custom properties, media queries |
+| JavaScript (ES6+) | Application logic | Classes, async/await, modules |
+| Google Fonts | Typography | Crimson Pro, IBM Plex Serif |
+| localStorage | Client-side persistence | Posts, highlights, blogs, cache |
+
+### Backend Stack
+| Technology | Purpose | Version/Details |
+|------------|---------|-----------------|
+| Node.js | JavaScript runtime | v18+ |
+| Express.js | Web framework | ^4.18.2 |
+| Axios | HTTP client | ^1.6.7 |
+| @mozilla/readability | Article extraction | ^0.5.0 |
+| JSDOM | Server-side DOM | ^23.0.1 |
+| Cheerio | HTML parsing | ^1.0.0-rc.12 |
+| CORS | Cross-origin support | ^2.8.5 |
+| dotenv | Environment config | ^16.4.1 |
+
+### Development & Deployment
+| Technology | Purpose | Details |
+|------------|---------|---------|
+| Git | Version control | Merge conflicts, branching |
+| GitHub | Code hosting | Repository, collaboration |
+| Netlify | Frontend hosting | Auto-deploy from GitHub |
+| Render.com | Backend hosting | Node.js free tier |
+| netlify.toml | Deployment config | Publish directory setup |
+
+### Replaced/Removed
+| Old Technology | Replaced With | Reason |
+|----------------|---------------|--------|
+| corsproxy.io | Custom Express backend | More control, no third-party dependency |
+| OpenAI API | Mozilla Readability | Free, privacy-friendly, works offline |
+| Dark theme (v1.0) | Kindle theme (v2.0) | Better reading experience |
 
 ---
 
