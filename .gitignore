@@ -1,18 +1,40 @@
-# Local version with API key - DO NOT COMMIT
+# Local versions - DO NOT COMMIT
 index-local.html
+index-deploy.html
 
 # Deploy folder - no longer needed
 deploy/
 
+# Backend node_modules (should be in backend/.gitignore but safety net)
+backend/node_modules/
+backend/package-lock.json
+
+# Environment files
+backend/.env
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
 # System files
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Editor files
 .vscode/
+.idea/
 *.swp
 *.swo
 *~
+*.sublime-*
 
 # Claude plans (optional - keep local)
 .claude/
+
+# Local development server script (not needed in production)
+www/server-simple.js
