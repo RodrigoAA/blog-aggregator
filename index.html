@@ -85,9 +85,70 @@
 
         /* Posts container */
         #posts {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            padding-bottom: 40px;
+        }
+
+        /* Section styling */
+        .posts-section {
+            background: #242424;
+            border-radius: 8px;
+            border: 1px solid #333;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 16px 20px;
+            background: #2a2a2a;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.15s;
+        }
+
+        .section-header:hover {
+            background: #2f2f2f;
+        }
+
+        .section-title {
+            font-size: 1.1em;
+            font-weight: 500;
+            color: #e8e8e8;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-count {
+            background: #3a3a3a;
+            color: #b0b0b0;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .section-toggle {
+            color: #888;
+            font-size: 0.9em;
+            transition: transform 0.2s;
+        }
+
+        .section-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .section-content {
             display: grid;
             gap: 16px;
-            padding-bottom: 40px;
+            padding: 16px;
+        }
+
+        .section-content.collapsed {
+            display: none;
         }
 
         /* Individual post card */
@@ -805,29 +866,6 @@
             return readPosts.includes(postLink);
         }
 
-        // Function to toggle read/unread status
-        function toggleReadStatus(postLink, button, postCard) {
-            const readPosts = getReadPosts();
-            const isRead = readPosts.includes(postLink);
-
-            if (isRead) {
-                // Mark as unread
-                const index = readPosts.indexOf(postLink);
-                readPosts.splice(index, 1);
-                postCard.classList.remove('read');
-                button.textContent = '✓ Mark as Read';
-                button.classList.remove('marked-read');
-            } else {
-                // Mark as read
-                readPosts.push(postLink);
-                postCard.classList.add('read');
-                button.textContent = '↩ Mark as Unread';
-                button.classList.add('marked-read');
-            }
-
-            saveReadPosts(readPosts);
-        }
-
         // ============================================================
         // NOT INTERESTING STATUS FUNCTIONS
         // ============================================================
@@ -849,26 +887,72 @@
             return notInterestingPosts.includes(postLink);
         }
 
-        // Function to toggle not interesting status
-        function toggleNotInterestingStatus(postLink, button, postCard) {
-            const notInterestingPosts = getNotInterestingPosts();
-            const isNotInteresting = notInterestingPosts.includes(postLink);
+        // Store posts globally for refresh
+        let allPosts = [];
 
-            if (isNotInteresting) {
-                // Remove from not interesting list
-                const index = notInterestingPosts.indexOf(postLink);
-                notInterestingPosts.splice(index, 1);
-                postCard.style.display = 'block';
-            } else {
-                // Mark as not interesting
-                notInterestingPosts.push(postLink);
-                postCard.style.display = 'none';
-            }
+        // Function to toggle section collapse/expand
+        function toggleSection(sectionId) {
+            const content = document.getElementById(`${sectionId}-content`);
+            const toggle = document.getElementById(`${sectionId}-toggle`);
 
-            saveNotInterestingPosts(notInterestingPosts);
+            content.classList.toggle('collapsed');
+            toggle.classList.toggle('collapsed');
         }
 
-        // Function to display posts in the DOM
+        // Function to render a single post card
+        function renderPostCard(post) {
+            const isRead = isPostRead(post.link);
+            const isNotInteresting = isPostNotInteresting(post.link);
+            const blogColor = getBlogColor(post.blogSlug);
+
+            // Determine which buttons to show based on current state
+            let buttons = '';
+            if (isNotInteresting) {
+                buttons = `
+                    <button class="read-button" data-post-link="${post.link}" data-action="restore">
+                        ↩ Restore to Inbox
+                    </button>
+                `;
+            } else if (isRead) {
+                buttons = `
+                    <button class="read-button marked-read" data-post-link="${post.link}" data-action="unread">
+                        ↩ Mark as Unread
+                    </button>
+                    <button class="not-interesting-button" data-post-link="${post.link}" data-action="not-interesting">
+                        ✕ Not Interesting
+                    </button>
+                `;
+            } else {
+                buttons = `
+                    <button class="read-button" data-post-link="${post.link}" data-action="read">
+                        ✓ Mark as Read
+                    </button>
+                    <button class="not-interesting-button" data-post-link="${post.link}" data-action="not-interesting">
+                        ✕ Not Interesting
+                    </button>
+                `;
+            }
+
+            return `
+                <article class="post-card">
+                    <span class="blog-source" style="background: ${blogColor};">${post.blogName}</span>
+                    <h2 class="post-title">
+                        <a href="${post.link}" target="_blank" rel="noopener noreferrer">
+                            ${post.title}
+                        </a>
+                    </h2>
+                    <div class="post-meta">
+                        ${formatDate(post.date)}
+                    </div>
+                    <p class="post-description">${post.description}</p>
+                    <div class="post-actions">
+                        ${buttons}
+                    </div>
+                </article>
+            `;
+        }
+
+        // Function to display posts in sections
         function displayPosts(posts) {
             const postsContainer = document.getElementById('posts');
             const loadingIndicator = document.getElementById('loading');
@@ -895,63 +979,109 @@
                 return;
             }
 
+            // Store posts globally
+            allPosts = posts;
+
             // Sort posts by date (newest first)
             posts.sort((a, b) => b.date - a.date);
 
-            // Create HTML for each post with read status
-            postsContainer.innerHTML = posts.map((post, index) => {
-                const isRead = isPostRead(post.link);
-                const isNotInteresting = isPostNotInteresting(post.link);
-                const readClass = isRead ? 'read' : '';
-                const readBadge = isRead ? '<span class="read-badge">Read</span>' : '';
-                const buttonText = isRead ? '↩ Mark as Unread' : '✓ Mark as Read';
-                const buttonClass = isRead ? 'read-button marked-read' : 'read-button';
-                const blogColor = getBlogColor(post.blogSlug);
-                const displayStyle = isNotInteresting ? 'display: none;' : '';
+            // Categorize posts
+            const inboxPosts = posts.filter(post => !isPostRead(post.link) && !isPostNotInteresting(post.link));
+            const readPosts = posts.filter(post => isPostRead(post.link) && !isPostNotInteresting(post.link));
+            const notInterestingPosts = posts.filter(post => isPostNotInteresting(post.link));
 
-                return `
-                    <article class="post-card ${readClass}" data-post-index="${index}" style="${displayStyle}">
-                        <span class="blog-source" style="background: ${blogColor};">${post.blogName}</span>${readBadge}
-                        <h2 class="post-title">
-                            <a href="${post.link}" target="_blank" rel="noopener noreferrer">
-                                ${post.title}
-                            </a>
-                        </h2>
-                        <div class="post-meta">
-                            ${formatDate(post.date)}
+            // Create sections HTML
+            postsContainer.innerHTML = `
+                <div class="posts-section">
+                    <div class="section-header" onclick="toggleSection('inbox')">
+                        <div class="section-title">
+                            📬 Inbox
+                            <span class="section-count">${inboxPosts.length}</span>
                         </div>
-                        <p class="post-description">${post.description}</p>
-                        <div class="post-actions">
-                            <button class="${buttonClass}" data-post-link="${post.link}">
-                                ${buttonText}
-                            </button>
-                            <button class="not-interesting-button" data-post-link="${post.link}">
-                                ✕ Not Interesting
-                            </button>
-                        </div>
-                    </article>
-                `;
-            }).join('');
+                        <span class="section-toggle" id="inbox-toggle">▼</span>
+                    </div>
+                    <div class="section-content" id="inbox-content">
+                        ${inboxPosts.length > 0 ? inboxPosts.map(post => renderPostCard(post)).join('') : '<p style="color: #888; text-align: center; padding: 20px;">No unread posts</p>'}
+                    </div>
+                </div>
 
-            // Attach event listeners to read buttons
-            const readButtons = postsContainer.querySelectorAll('.read-button');
-            readButtons.forEach((button) => {
+                <div class="posts-section">
+                    <div class="section-header" onclick="toggleSection('read')">
+                        <div class="section-title">
+                            ✓ Read
+                            <span class="section-count">${readPosts.length}</span>
+                        </div>
+                        <span class="section-toggle" id="read-toggle">▼</span>
+                    </div>
+                    <div class="section-content" id="read-content">
+                        ${readPosts.length > 0 ? readPosts.map(post => renderPostCard(post)).join('') : '<p style="color: #888; text-align: center; padding: 20px;">No read posts</p>'}
+                    </div>
+                </div>
+
+                <div class="posts-section">
+                    <div class="section-header" onclick="toggleSection('not-interesting')">
+                        <div class="section-title">
+                            ✕ Not Interesting
+                            <span class="section-count">${notInterestingPosts.length}</span>
+                        </div>
+                        <span class="section-toggle" id="not-interesting-toggle">▼</span>
+                    </div>
+                    <div class="section-content" id="not-interesting-content">
+                        ${notInterestingPosts.length > 0 ? notInterestingPosts.map(post => renderPostCard(post)).join('') : '<p style="color: #888; text-align: center; padding: 20px;">No posts marked as not interesting</p>'}
+                    </div>
+                </div>
+            `;
+
+            // Attach event listeners to all action buttons
+            const actionButtons = postsContainer.querySelectorAll('.read-button, .not-interesting-button');
+            actionButtons.forEach((button) => {
                 button.addEventListener('click', function() {
                     const postLink = this.getAttribute('data-post-link');
-                    const postCard = this.closest('.post-card');
-                    toggleReadStatus(postLink, this, postCard);
-                });
-            });
+                    const action = this.getAttribute('data-action');
 
-            // Attach event listeners to not interesting buttons
-            const notInterestingButtons = postsContainer.querySelectorAll('.not-interesting-button');
-            notInterestingButtons.forEach((button) => {
-                button.addEventListener('click', function() {
-                    const postLink = this.getAttribute('data-post-link');
-                    const postCard = this.closest('.post-card');
-                    toggleNotInterestingStatus(postLink, this, postCard);
+                    handlePostAction(postLink, action);
                 });
             });
+        }
+
+        // Function to handle post actions
+        function handlePostAction(postLink, action) {
+            const readPosts = getReadPosts();
+            const notInterestingPosts = getNotInterestingPosts();
+
+            switch(action) {
+                case 'read':
+                    readPosts.push(postLink);
+                    saveReadPosts(readPosts);
+                    break;
+                case 'unread':
+                    const readIndex = readPosts.indexOf(postLink);
+                    if (readIndex > -1) {
+                        readPosts.splice(readIndex, 1);
+                        saveReadPosts(readPosts);
+                    }
+                    break;
+                case 'not-interesting':
+                    notInterestingPosts.push(postLink);
+                    saveNotInterestingPosts(notInterestingPosts);
+                    // Also remove from read list if it's there
+                    const readIdx = readPosts.indexOf(postLink);
+                    if (readIdx > -1) {
+                        readPosts.splice(readIdx, 1);
+                        saveReadPosts(readPosts);
+                    }
+                    break;
+                case 'restore':
+                    const notIntIndex = notInterestingPosts.indexOf(postLink);
+                    if (notIntIndex > -1) {
+                        notInterestingPosts.splice(notIntIndex, 1);
+                        saveNotInterestingPosts(notInterestingPosts);
+                    }
+                    break;
+            }
+
+            // Refresh the display
+            displayPosts(allPosts);
         }
 
         // Main function to initialize the app
