@@ -122,45 +122,151 @@ A sleek, dark-themed web application that aggregates blog posts from any RSS fee
 ✅ Accurate "Today", "Yesterday", "X days ago"
 ✅ Fixed midnight boundary issues
 
-### Phase 8: Branding & Polish (Day 2 - NEW!)
+### Phase 8: Branding & Polish (Day 2)
 ✅ Custom SVG favicon with atomic design
 ✅ Brand color consistency throughout
 ✅ Professional finishing touches
+
+### Phase 9: Section-Based Organization & Not Interesting Filter (Day 2-3)
+✅ Three collapsible sections (Inbox, Read, Not Interesting)
+✅ "Not Interesting" feature to hide unwanted posts
+✅ Section headers with post counts
+✅ Collapse/expand functionality for each section
+✅ Contextual action buttons per section
+✅ Posts move between sections based on state
+
+### Phase 10: Complete Kindle Redesign & Backend (Day 3 - MAJOR UPDATE!)
+✅ **Backend API (Node.js + Express)**
+  - RSS proxy endpoint (eliminates corsproxy.io dependency)
+  - Article extraction endpoint with Mozilla Readability
+  - CORS configuration and error handling
+  - Deployed to Render.com
+
+✅ **Full-Screen Article Reader**
+  - Mozilla Readability integration for clean article extraction
+  - Paper-white Kindle-inspired design
+  - Reading progress bar
+  - Lazy image loading
+  - 24-hour article caching (50 article limit)
+  - ESC to close, smooth animations
+
+✅ **Text Highlighting System**
+  - Yellow Kindle-style highlighting
+  - Floating "✨ Highlight" button on text selection
+  - Click highlighted text to remove
+  - localStorage persistence per article
+
+✅ **Intelligent Post Management**
+  - Inbox/Read/Not Relevant categories
+  - Filter bar with live counters
+  - Auto-mark as read when opening articles
+  - Quick action buttons on post cards
+
+✅ **Blog Management Modal**
+  - Add/delete blogs via clean modal UI
+  - URL validation and duplicate checking
+  - Floating "⚙ Manage Blogs" button
+  - Auto-refresh posts after changes
+
+✅ **Complete Visual Redesign**
+  - Kindle aesthetic: Paper-white (#f4f1ea) background
+  - Serif typography: Crimson Pro & IBM Plex Serif
+  - No rounded corners (classic book aesthetic)
+  - 680px reading column for optimal line length
+  - High contrast black-on-white design
+
+✅ **Production Deployment**
+  - Frontend deployed to Netlify
+  - Backend deployed to Render.com
+  - Environment variables configured
+  - All features tested and working
 
 ---
 
 ## 📂 Project Structure
 
 ```
-Claude Sandbox/
-├── index.html              # Deployment version (on GitHub, no API key)
-├── index-local.html        # Local version (with AI summaries, has API key)
-├── index-deploy.html       # Backup deployment version
-├── .gitignore              # Protects sensitive files
-├── README.md               # Project documentation
-├── deploy/                 # Old deployment folder (no longer needed)
-│   └── index.html
-├── .git/                   # Git repository data
-└── .claude/                # Claude Code plans and settings
-    └── plans/
+blog-aggregator/
+├── .gitignore                    # Git ignore rules
+├── netlify.toml                  # Netlify deployment config
+├── README.md                     # Main documentation
+├── SESSION_SUMMARY.md            # Development log (this file)
+├── DEPLOYMENT.md                 # Detailed deployment guide
+├── CAPACITOR_MIGRATION_PLAN.md   # Future Android migration plan
+│
+├── backend/                      # Node.js + Express API
+│   ├── .gitignore
+│   ├── package.json              # Dependencies
+│   ├── .env                      # Environment config (not in git)
+│   └── server.js                 # Express server (254 lines)
+│
+└── www/                          # Frontend (Vanilla JS)
+    ├── index.html                # Main HTML structure
+    ├── css/
+    │   └── styles.css            # Kindle-inspired design system
+    └── js/
+        ├── app.js                # Main app logic (648 lines)
+        └── reader.js             # Article reader class (474 lines)
 ```
+
+**Total:** 13 files in repository (all necessary, no redundant files)
 
 ---
 
 ## 🔄 Your Development Workflow
 
 ### Making Updates:
-1. **Edit** `index.html` in Claude Sandbox folder
-2. **Test** locally by opening in browser
-3. **Commit** changes:
+
+#### For Frontend Changes:
+1. **Edit** files in `www/` directory:
+   - `www/index.html` - HTML structure
+   - `www/css/styles.css` - Styling
+   - `www/js/app.js` - Main logic
+   - `www/js/reader.js` - Article reader
+
+2. **Test Locally**:
+   ```bash
+   # Start backend (terminal 1)
+   cd "C:\Users\RodrigoAviles\Desktop\Claude Sandbox\backend"
+   npm start
+
+   # Start frontend (terminal 2)
+   cd "C:\Users\RodrigoAviles\Desktop\Claude Sandbox\www"
+   node server-simple.js
+
+   # Open: http://localhost:8080
+   ```
+
+3. **Commit & Deploy**:
    ```bash
    cd "C:\Users\RodrigoAviles\Desktop\Claude Sandbox"
-   git add index.html
+   git add www/
    git commit -m "Description of changes"
-   git push
+   git push origin main
    ```
-4. **Wait** 30-60 seconds
-5. **Verify** at https://particulaselementales.netlify.app/
+
+4. **Verify**: Netlify auto-deploys in ~1 minute
+   - https://particulaselementales.netlify.app/
+
+#### For Backend Changes:
+1. **Edit** files in `backend/` directory:
+   - `backend/server.js` - API logic
+   - `backend/package.json` - Dependencies
+
+2. **Test Locally**:
+   ```bash
+   cd backend
+   npm start
+   # Test: http://localhost:3000/health
+   ```
+
+3. **Deploy**:
+   ```bash
+   git add backend/
+   git commit -m "Backend update"
+   git push origin main
+   # Render auto-deploys in ~3 minutes
+   ```
 
 ### Useful Git Commands:
 ```bash
@@ -328,25 +434,37 @@ git checkout index.html # Undo uncommitted changes
 - Personal data
 
 **Your Setup:**
-- ✅ `index-local.html` (with API key) - Protected by .gitignore
-- ✅ `index.html` (no API key) - Safe for GitHub
-- ✅ .gitignore properly configured
+- ✅ `www/` directory - Frontend code (safe for GitHub)
+- ✅ `backend/` directory - Backend code (safe for GitHub)
+- ✅ `backend/.env` - Environment variables (protected by .gitignore)
+- ✅ `.gitignore` properly configured for both frontend and backend
 
 **Before any `git add`:**
-Run `git status` to verify what you're adding!
+Run `git status` to verify what you're adding! Never commit `.env` files!
 
 ---
 
 ## 📈 Project Stats
 
-- **Lines of Code:** ~500
-- **Files Created:** 6
-- **Git Commits:** 2
-- **Deployment Time:** <1 minute
-- **Cost:** $0 (Netlify free tier)
-- **API Cost:** ~$0.01 for testing summaries
-- **Learning Time:** 1 session
-- **Fun Level:** 💯
+**Day 1-2 (v1.0):**
+- Lines of Code: ~500
+- Files: 1 (index.html)
+- Features: Blog aggregator with dark theme
+
+**Day 3 (v2.0 - Complete Rewrite):**
+- **Lines of Code:** ~2,500+ (backend + frontend)
+- **Files in Repository:** 13 (organized structure)
+- **Backend:** 254 lines (server.js)
+- **Frontend:** 1,122 lines (app.js + reader.js)
+- **CSS:** 1,200+ lines (Kindle design system)
+- **Git Commits:** 15+ commits
+- **Sessions:** 3 days
+- **Deployment:**
+  - Frontend: Netlify (free tier)
+  - Backend: Render.com (free tier)
+- **Monthly Cost:** $0
+- **Learning Curve:** From zero to full-stack in 3 days
+- **Fun Level:** 💯💯💯
 
 ---
 
@@ -365,11 +483,13 @@ Run `git status` to verify what you're adding!
 
 ## 🚀 What's Running Where
 
-| Version | Location | Has AI Summaries | URL/Path |
-|---------|----------|-----------------|----------|
-| **Local** | Your computer | ✅ Yes | `C:\Users\RodrigoAviles\Desktop\Claude Sandbox\index-local.html` |
-| **Deployment** | Netlify | ❌ No | https://particulaselementales.netlify.app/ |
-| **Source** | GitHub | ❌ No | https://github.com/RodrigoAA/blog-aggregator |
+| Component | Location | Type | URL/Path |
+|-----------|----------|------|----------|
+| **Frontend (Production)** | Netlify | Static Site | https://particulaselementales.netlify.app/ |
+| **Backend (Production)** | Render.com | Node.js API | https://particulas-backend.onrender.com |
+| **Source Code** | GitHub | Git Repository | https://github.com/RodrigoAA/blog-aggregator |
+| **Local Frontend** | Your Computer | Dev Server | `http://localhost:8080` (via node server-simple.js) |
+| **Local Backend** | Your Computer | Express API | `http://localhost:3000` (via npm start) |
 
 ---
 
