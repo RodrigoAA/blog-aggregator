@@ -729,7 +729,68 @@ As a PM, you got hands-on experience with:
 
 ### ✅ Production Deployment - COMPLETED
 
-**Live URLs:**
+**Deployment Process (Step-by-Step):**
+
+#### Step 1: Prepare Git Commits
+- Created 4 organized commits:
+  - Backend API server implementation
+  - Kindle-inspired frontend with all features
+  - Documentation updates (README, DEPLOYMENT, SESSION_SUMMARY)
+  - Migration plan update
+
+#### Step 2: Push to GitHub - Merge Conflicts
+- **Problem**: Remote had changes we didn't have locally (PRs merged on GitHub)
+- **Solution**:
+  - `git pull origin main` - encountered merge conflicts in README.md and SESSION_SUMMARY.md
+  - Used `git checkout --ours` to keep our v2.0 documentation (more comprehensive)
+  - Completed merge with `git commit`
+  - Successfully pushed 5 commits total
+
+#### Step 3: Deploy Backend to Render.com
+- Created new Web Service on Render.com
+- Connected GitHub repository
+- Configured:
+  ```
+  Root Directory: backend
+  Build Command: npm install
+  Start Command: npm start
+  Environment Variables:
+    - PORT=3000
+    - NODE_ENV=production
+    - ALLOWED_ORIGINS=https://particulaselementales.netlify.app
+  ```
+- Build successful → Backend live at https://particulas-backend.onrender.com
+
+#### Step 4: Update Frontend API URL
+- Modified `www/js/app.js`:
+  ```javascript
+  window.API_BASE_URL = 'https://particulas-backend.onrender.com';
+  ```
+- Committed and pushed to GitHub
+
+#### Step 5: Fix Netlify Deployment Issue
+- **Problem**: Netlify showed old version 1.0 (dark theme) instead of new v2.0 (Kindle theme)
+- **Root Cause**: Old `index.html` at repository root, new version at `www/index.html`
+- **Solution**:
+  - Removed old `index.html` with `git rm index.html`
+  - Created `netlify.toml` configuration:
+    ```toml
+    [build]
+      publish = "www"
+      command = ""
+    ```
+  - Pushed changes → Netlify redeployed correctly
+
+#### Step 6: Verification & Testing
+- ✅ Frontend loads with Kindle design
+- ✅ Articles open and display correctly
+- ✅ Images load (lazy loading works)
+- ✅ Text highlighting functional
+- ✅ Post management (Inbox/Read/Not Relevant) works
+- ✅ Blog management modal functional
+- ✅ All features working in production
+
+**Final Live URLs:**
 - **Frontend**: https://particulaselementales.netlify.app/
 - **Backend**: https://particulas-backend.onrender.com
 - **GitHub**: https://github.com/RodrigoAA/blog-aggregator
@@ -742,6 +803,12 @@ As a PM, you got hands-on experience with:
 ✅ All features tested and working in production
 
 **Date Deployed**: January 8, 2026
+
+#### Deployment Challenges Solved
+1. **Merge Conflicts**: Handled remote changes gracefully
+2. **Netlify Configuration**: Fixed publish directory issue
+3. **Backend URL**: Updated frontend to use production API
+4. **Version Control**: Cleaned up old files and organized repository
 
 ---
 
