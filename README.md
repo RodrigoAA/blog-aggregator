@@ -84,6 +84,34 @@ This site automatically deploys to Netlify when changes are pushed to the `main`
 - **Day 2 (Jan 7, 2026)**: Added dynamic blog management, dark theme redesign, favicon, timezone fixes
 - **Day 3 (Jan 8, 2026)**: Section-based organization (Inbox/Read/Not Interesting), collapsible sections, enhanced post management
 
+## Future Enhancements
+
+### Planned Features
+- **Search functionality** - Search posts by title, content, or blog source
+- **Filter buttons** - Quick filters for All/Inbox/Read/Not Interesting views
+- **Statistics dashboard** - Track reading habits and post counts
+- **Export functionality** - Export reading lists to CSV or JSON
+
+### Cloud Sync (Future Consideration)
+Currently, all data (read posts, not interesting posts, blog lists) is stored locally in your browser using localStorage. This means:
+- ✅ Fast and private (no external service needed)
+- ✅ Works offline
+- ❌ Data is device-specific (mobile and laptop have separate storage)
+- ❌ No backup if browser data is cleared
+
+**Potential Cloud Sync Solution:**
+- Use Firebase or Supabase for cloud storage
+- Add user authentication (Google sign-in)
+- Sync read status, not interesting posts, and blog lists across all devices
+- Real-time updates when marking posts on any device
+- Automatic cloud backup of all preferences
+
+**Trade-offs:**
+- Pros: Cross-device sync, never lose data, access from anywhere
+- Cons: Requires login, depends on external service, data stored in cloud
+
+This remains a future consideration based on user needs.
+
 ## License
 MIT
 

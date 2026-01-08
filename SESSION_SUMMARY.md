@@ -507,16 +507,36 @@ Run `git status` to verify what you're adding!
 
 ## 📞 Future Enhancement Ideas
 
+### Quick Wins
 1. Add filter buttons (All / Unread / Read)
 2. Implement search functionality
 3. Create statistics dashboard
 4. Add export functionality (CSV, JSON)
-5. Build a backend for AI summaries
-6. Add RSS feed discovery (enter any blog URL)
-7. Dark/light theme toggle
-8. Keyboard shortcuts
-9. Build browser extension
-10. Whatever you imagine!
+5. Keyboard shortcuts for common actions
+6. RSS feed discovery (enter any blog URL)
+
+### Medium Complexity
+7. Build a backend for AI summaries (hide API key server-side)
+8. Dark/light theme toggle
+9. Email notifications for new posts
+10. Browser extension version
+
+### Advanced Features
+11. **Cloud Sync with Firebase/Supabase** (2-3 hours)
+    - **Problem**: Currently localStorage is device-specific (mobile and laptop don't sync)
+    - **Solution**: Add cloud database with user authentication
+    - **Benefits**: Cross-device sync, never lose data, access from anywhere
+    - **Trade-offs**: Requires login, external dependency, privacy considerations
+    - **Implementation**: Firebase (easiest), Supabase (open source), or custom backend
+    - **Cost**: Free tier sufficient for personal use
+    - **Details**:
+      - Add Google/email authentication
+      - Replace localStorage calls with Firebase/Supabase API calls
+      - Real-time sync across all devices
+      - Cloud backup of read posts, not interesting posts, and blog lists
+
+12. Mobile app with React Native/Flutter
+13. Whatever you imagine!
 
 ---
 
