@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partículas elementales</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231a1a1a'/><circle cx='50' cy='50' r='8' fill='%23fff'/><ellipse cx='50' cy='50' rx='35' ry='15' fill='none' stroke='%23fff' stroke-width='3' opacity='0.8'/><ellipse cx='50' cy='50' rx='15' ry='35' fill='none' stroke='%23fff' stroke-width='3' opacity='0.8'/><circle cx='25' cy='35' r='4' fill='%23fff'/><circle cx='75' cy='65' r='4' fill='%23fff'/><circle cx='75' cy='35' r='4' fill='%23fff'/><circle cx='25' cy='65' r='4' fill='%23fff'/></svg>">
+
+    <!-- Kindle-inspired Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+
+    <!-- Meta tags for better sharing -->
+    <meta name="description" content="A minimalist blog aggregator with Kindle-inspired eReader experience">
+    <meta name="author" content="Rodrigo Aviles">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Partículas elementales">
+    <meta property="og:description" content="Ideas fundamentales del universo digital">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Partículas elementales">
+    <meta name="twitter:description" content="Ideas fundamentales del universo digital">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <h1>Partículas elementales</h1>
+        <p>Ideas fundamentales del universo digital</p>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Filters -->
+        <div class="filters">
+            <div class="filter-group">
+                <button class="filter-btn active" data-filter="inbox" onclick="setFilter('inbox')">
+                    Inbox
+                    <span class="count-badge">0</span>
+                </button>
+                <button class="filter-btn" data-filter="read" onclick="setFilter('read')">
+                    Read
+                    <span class="count-badge">0</span>
+                </button>
+                <button class="filter-btn" data-filter="not_relevant" onclick="setFilter('not_relevant')">
+                    Not Relevant
+                    <span class="count-badge">0</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading indicator -->
+        <div id="loading" class="loading">Loading posts</div>
+
+        <!-- Posts container -->
+        <div id="posts" class="posts-grid">
+            <!-- Posts will be dynamically inserted here -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>Built with HTML, CSS, and JavaScript • Powered by RSS feeds</p>
+    </footer>
+
+    <!-- Manage Blogs Button -->
+    <button class="manage-blogs-btn" onclick="openBlogManagement()">
+        ⚙ Manage Blogs
+    </button>
+
+    <!-- Blog Management Modal -->
+    <div id="blog-management-modal" class="blog-management-modal">
+        <div class="blog-management-overlay" onclick="closeBlogManagement()"></div>
+        <div class="blog-management-content">
+            <div class="blog-management-header">
+                <h2>Manage Blogs</h2>
+                <button class="blog-management-close" onclick="closeBlogManagement()">×</button>
+            </div>
+
+            <div class="blog-list" id="blog-list">
+                <!-- Blog items will be dynamically inserted here -->
+            </div>
+
+            <div class="add-blog-section">
+                <h3>Add New Blog</h3>
+                <div class="form-group">
+                    <label for="blog-name">Blog Name</label>
+                    <input type="text" id="blog-name" placeholder="e.g., My Favorite Blog" />
+                </div>
+                <div class="form-group">
+                    <label for="blog-url">RSS Feed URL</label>
+                    <input type="url" id="blog-url" placeholder="e.g., https://example.com/feed" />
+                </div>
+                <button class="add-blog-btn" onclick="addNewBlog()">
+                    Add Blog
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Article Reader Modal (created dynamically by reader.js) -->
+
+    <!-- Scripts -->
+    <script src="js/reader.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
