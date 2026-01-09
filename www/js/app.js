@@ -759,12 +759,13 @@ function renderBlogList() {
     `).join('');
 }
 
-function addNewBlog() {
+async function addNewBlog() {
     const nameInput = document.getElementById('blog-name');
     const urlInput = document.getElementById('blog-url');
+    const addBtn = document.querySelector('.add-blog-btn');
 
     const name = nameInput.value.trim();
-    const url = urlInput.value.trim();
+    let url = urlInput.value.trim();
 
     // Validation
     if (!name) {
@@ -773,7 +774,7 @@ function addNewBlog() {
     }
 
     if (!url) {
-        alert('Please enter an RSS feed URL');
+        alert('Please enter a blog or RSS feed URL');
         return;
     }
 
@@ -783,6 +784,47 @@ function addNewBlog() {
     } catch (e) {
         alert('Please enter a valid URL');
         return;
+    }
+
+    // Check if URL looks like a feed URL
+    const isFeedUrl = /\/(feed|rss|atom)(\.xml)?\/?\s*$/i.test(url) ||
+                      /\.(xml|rss|atom)\s*$/i.test(url) ||
+                      url.includes('/feed/') ||
+                      url.includes('substack.com/feed');
+
+    // If not a feed URL, try to discover it
+    if (!isFeedUrl) {
+        addBtn.textContent = 'Discovering feed...';
+        addBtn.disabled = true;
+
+        try {
+            const response = await fetch(
+                `${window.API_BASE_URL}/api/discover-feed?url=${encodeURIComponent(url)}`
+            );
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.feeds && data.feeds.length > 0) {
+                    url = data.feeds[0].url;
+                    console.log('Discovered feed URL:', url);
+                }
+            } else {
+                const error = await response.json();
+                alert(`Could not find RSS feed: ${error.message}\n\nTry entering the direct RSS feed URL instead.`);
+                addBtn.textContent = 'Add Blog';
+                addBtn.disabled = false;
+                return;
+            }
+        } catch (e) {
+            console.error('Feed discovery error:', e);
+            alert('Could not discover RSS feed. Try entering the direct RSS feed URL instead.');
+            addBtn.textContent = 'Add Blog';
+            addBtn.disabled = false;
+            return;
+        }
+
+        addBtn.textContent = 'Add Blog';
+        addBtn.disabled = false;
     }
 
     // Check for duplicates

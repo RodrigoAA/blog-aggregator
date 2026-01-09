@@ -227,6 +227,113 @@ app.get('/api/article', async (req, res) => {
   }
 });
 
+// RSS feed discovery endpoint
+app.get('/api/discover-feed', async (req, res) => {
+  const { url } = req.query;
+
+  if (!url) {
+    return res.status(400).json({
+      error: 'Missing parameter',
+      message: 'URL parameter required'
+    });
+  }
+
+  // Validate URL
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(url);
+  } catch (e) {
+    return res.status(400).json({
+      error: 'Invalid URL',
+      message: 'The provided URL is not valid'
+    });
+  }
+
+  try {
+    console.log(`Discovering RSS feed for: ${url}`);
+
+    // Fetch the webpage
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'text/html,application/xhtml+xml'
+      },
+      timeout: 10000,
+      maxRedirects: 5
+    });
+
+    const html = response.data;
+    const feeds = [];
+
+    // Parse HTML to find feed links
+    const dom = new JSDOM(html, { url });
+    const document = dom.window.document;
+
+    // Look for <link rel="alternate" type="application/rss+xml">
+    const linkElements = document.querySelectorAll('link[rel="alternate"]');
+    linkElements.forEach(link => {
+      const type = link.getAttribute('type') || '';
+      const href = link.getAttribute('href');
+
+      if (href && (type.includes('rss') || type.includes('atom') || type.includes('xml'))) {
+        // Convert relative URLs to absolute
+        const feedUrl = new URL(href, url).href;
+        const title = link.getAttribute('title') || 'RSS Feed';
+        feeds.push({ url: feedUrl, title, type });
+      }
+    });
+
+    // If no feeds found, try common feed paths
+    if (feeds.length === 0) {
+      const commonPaths = ['/feed', '/rss', '/feed.xml', '/rss.xml', '/atom.xml', '/feed/'];
+      const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
+
+      for (const path of commonPaths) {
+        try {
+          const testUrl = baseUrl + path;
+          const testResponse = await axios.head(testUrl, {
+            timeout: 5000,
+            validateStatus: status => status < 400
+          });
+
+          const contentType = testResponse.headers['content-type'] || '';
+          if (contentType.includes('xml') || contentType.includes('rss') || contentType.includes('atom')) {
+            feeds.push({ url: testUrl, title: 'RSS Feed', type: contentType });
+            break; // Found one, stop looking
+          }
+        } catch (e) {
+          // This path doesn't exist, try next
+        }
+      }
+    }
+
+    if (feeds.length === 0) {
+      return res.status(404).json({
+        error: 'No feed found',
+        message: 'Could not discover an RSS feed for this website'
+      });
+    }
+
+    console.log(`Found ${feeds.length} feed(s) for ${url}`);
+    res.json({ feeds });
+
+  } catch (error) {
+    console.error('Feed discovery error:', error.message);
+
+    if (error.code === 'ECONNABORTED') {
+      return res.status(504).json({
+        error: 'Timeout',
+        message: 'The website took too long to respond'
+      });
+    }
+
+    res.status(500).json({
+      error: 'Discovery failed',
+      message: error.message
+    });
+  }
+});
+
 // Catch-all for 404
 app.use((req, res) => {
   res.status(404).json({
@@ -249,5 +356,6 @@ app.listen(PORT, () => {
   console.log(`  GET /health - Health check`);
   console.log(`  GET /api/feed?url=<feed-url> - Fetch RSS feed`);
   console.log(`  GET /api/article?url=<article-url> - Extract article content`);
+  console.log(`  GET /api/discover-feed?url=<website-url> - Discover RSS feed`);
   console.log(`===========================================`);
 });
