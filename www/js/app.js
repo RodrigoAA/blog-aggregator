@@ -43,17 +43,105 @@ const DEFAULT_BLOGS = [
 // BLOG MANAGEMENT
 // ============================================================
 
+// In-memory cache for blogs (loaded from Supabase or localStorage)
+let blogsCache = null;
+
+// Get blogs - returns cached data (call loadBlogsFromCloud first)
 function getBlogs() {
+    if (blogsCache !== null) {
+        return blogsCache;
+    }
+    // Fallback to localStorage if cache not loaded
     const stored = localStorage.getItem('blogAggregator_blogs');
     if (stored) {
         return JSON.parse(stored);
     }
-    saveBlogs(DEFAULT_BLOGS);
-    return DEFAULT_BLOGS;
+    // Only return defaults for logged-out users
+    if (!isAuthenticated()) {
+        saveBlogs(DEFAULT_BLOGS);
+        return DEFAULT_BLOGS;
+    }
+    return [];
 }
 
+// Save blogs - saves to localStorage AND Supabase (if logged in)
 function saveBlogs(blogs) {
+    blogsCache = blogs;
     localStorage.setItem('blogAggregator_blogs', JSON.stringify(blogs));
+
+    // Sync to Supabase if logged in
+    if (isAuthenticated()) {
+        saveBlogsToCloud(blogs);
+    }
+}
+
+// Load blogs from Supabase (called on init if logged in)
+async function loadBlogsFromCloud() {
+    if (!isAuthenticated()) {
+        blogsCache = getBlogs();
+        return;
+    }
+
+    try {
+        const supabase = getSupabaseClient();
+        const user = getUser();
+
+        const { data, error } = await supabase
+            .from('user_blogs')
+            .select('name, slug, url')
+            .eq('user_id', user.id);
+
+        if (error) {
+            console.error('Error loading blogs from cloud:', error);
+            blogsCache = [];
+            return;
+        }
+
+        console.log('Loaded blogs from cloud:', data?.length || 0);
+        blogsCache = data || [];
+
+        // Also update localStorage as cache
+        localStorage.setItem('blogAggregator_blogs', JSON.stringify(blogsCache));
+    } catch (error) {
+        console.error('Failed to load blogs from cloud:', error);
+        blogsCache = [];
+    }
+}
+
+// Save blogs to Supabase
+async function saveBlogsToCloud(blogs) {
+    if (!isAuthenticated()) return;
+
+    try {
+        const supabase = getSupabaseClient();
+        const user = getUser();
+
+        // Delete all existing blogs for user
+        await supabase
+            .from('user_blogs')
+            .delete()
+            .eq('user_id', user.id);
+
+        // Insert new blogs
+        if (blogs.length > 0) {
+            const { error } = await supabase
+                .from('user_blogs')
+                .insert(blogs.map(blog => ({
+                    user_id: user.id,
+                    name: blog.name,
+                    slug: blog.slug,
+                    url: blog.url
+                })));
+
+            if (error) {
+                console.error('Error saving blogs to cloud:', error);
+            } else {
+                console.log('Blogs saved to cloud:', blogs.length);
+            }
+        }
+    } catch (error) {
+        console.error('Failed to save blogs to cloud:', error);
+    }
 }
 
 function generateSlug(name) {
@@ -191,12 +279,19 @@ const POST_STATUS = {
 // Current filter
 let currentFilter = POST_STATUS.INBOX;
 
+// In-memory cache for post statuses
+let postStatusesCache = null;
+
 function getPostStatuses() {
+    if (postStatusesCache !== null) {
+        return postStatusesCache;
+    }
     const stored = localStorage.getItem('blogAggregator_postStatuses');
     return stored ? JSON.parse(stored) : {};
 }
 
 function savePostStatuses(statuses) {
+    postStatusesCache = statuses;
     localStorage.setItem('blogAggregator_postStatuses', JSON.stringify(statuses));
 }
 
@@ -209,6 +304,11 @@ function setPostStatus(postLink, status) {
     const statuses = getPostStatuses();
     statuses[postLink] = status;
     savePostStatuses(statuses);
+
+    // Sync to Supabase if logged in
+    if (isAuthenticated()) {
+        savePostStatusToCloud(postLink, status);
+    }
 }
 
 function markAsRead(postLink) {
@@ -221,6 +321,70 @@ function markAsNotRelevant(postLink) {
 
 function markAsInbox(postLink) {
     setPostStatus(postLink, POST_STATUS.INBOX);
+}
+
+// Load post statuses from Supabase
+async function loadPostStatusesFromCloud() {
+    if (!isAuthenticated()) {
+        postStatusesCache = getPostStatuses();
+        return;
+    }
+
+    try {
+        const supabase = getSupabaseClient();
+        const user = getUser();
+
+        const { data, error } = await supabase
+            .from('post_statuses')
+            .select('post_url, status')
+            .eq('user_id', user.id);
+
+        if (error) {
+            console.error('Error loading post statuses from cloud:', error);
+            postStatusesCache = {};
+            return;
+        }
+
+        // Convert array to object
+        const statuses = {};
+        (data || []).forEach(item => {
+            statuses[item.post_url] = item.status;
+        });
+
+        console.log('Loaded post statuses from cloud:', Object.keys(statuses).length);
+        postStatusesCache = statuses;
+        localStorage.setItem('blogAggregator_postStatuses', JSON.stringify(statuses));
+    } catch (error) {
+        console.error('Failed to load post statuses from cloud:', error);
+        postStatusesCache = {};
+    }
+}
+
+// Save single post status to Supabase
+async function savePostStatusToCloud(postUrl, status) {
+    if (!isAuthenticated()) return;
+
+    try {
+        const supabase = getSupabaseClient();
+        const user = getUser();
+
+        const { error } = await supabase
+            .from('post_statuses')
+            .upsert({
+                user_id: user.id,
+                post_url: postUrl,
+                status: status,
+                updated_at: new Date().toISOString()
+            }, {
+                onConflict: 'user_id,post_url'
+            });
+
+        if (error) {
+            console.error('Error saving post status to cloud:', error);
+        }
+    } catch (error) {
+        console.error('Failed to save post status to cloud:', error);
+    }
 }
 
 // Filter posts by status
@@ -488,7 +652,18 @@ async function init() {
         loading.textContent = 'Loading posts';
         loading.style.display = 'block';
 
-        // Get blogs from localStorage
+        // Load data from cloud if logged in
+        if (isAuthenticated()) {
+            updateStatus('Syncing data...');
+            await loadBlogsFromCloud();
+            await loadPostStatusesFromCloud();
+            // Load highlights if article reader is ready
+            if (window.articleReader && window.articleReader.loadHighlightsFromCloud) {
+                await window.articleReader.loadHighlightsFromCloud();
+            }
+        }
+
+        // Get blogs (from cache/localStorage)
         const blogs = getBlogs();
 
         if (blogs.length === 0) {

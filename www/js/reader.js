@@ -443,6 +443,46 @@ class ArticleReader {
     }
   }
 
+  // Load highlights from Supabase for current article
+  async loadHighlightsFromCloud() {
+    if (typeof isAuthenticated !== 'function' || !isAuthenticated()) return;
+
+    try {
+      const supabase = getSupabaseClient();
+      const user = getUser();
+
+      const { data, error } = await supabase
+        .from('highlights')
+        .select('article_url, text, position, created_at')
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error loading highlights from cloud:', error);
+        return;
+      }
+
+      // Group by article URL
+      const cloudHighlights = {};
+      (data || []).forEach(item => {
+        if (!cloudHighlights[item.article_url]) {
+          cloudHighlights[item.article_url] = [];
+        }
+        cloudHighlights[item.article_url].push({
+          text: item.text,
+          position: item.position,
+          timestamp: new Date(item.created_at).getTime()
+        });
+      });
+
+      // Merge with local highlights (cloud wins on conflicts)
+      this.highlights = { ...this.highlights, ...cloudHighlights };
+      localStorage.setItem('articleHighlights', JSON.stringify(this.highlights));
+      console.log('Loaded highlights from cloud:', Object.keys(cloudHighlights).length, 'articles');
+    } catch (e) {
+      console.error('Failed to load highlights from cloud:', e);
+    }
+  }
+
   saveHighlight(text, position) {
     if (!this.highlights[this.currentUrl]) {
       this.highlights[this.currentUrl] = [];
@@ -455,14 +495,23 @@ class ArticleReader {
     });
 
     this.saveHighlightsToStorage();
+
+    // Sync to cloud
+    this.saveHighlightToCloud(text, position);
   }
 
   deleteHighlight(position) {
     if (this.highlights[this.currentUrl]) {
+      const highlight = this.highlights[this.currentUrl].find(h => h.position === position);
       this.highlights[this.currentUrl] = this.highlights[this.currentUrl].filter(
         h => h.position !== position
       );
       this.saveHighlightsToStorage();
+
+      // Delete from cloud
+      if (highlight) {
+        this.deleteHighlightFromCloud(highlight.text, position);
+      }
     }
   }
 
@@ -471,6 +520,54 @@ class ArticleReader {
       localStorage.setItem('articleHighlights', JSON.stringify(this.highlights));
     } catch (e) {
       console.error('Error saving highlights:', e);
+    }
+  }
+
+  // Save single highlight to Supabase
+  async saveHighlightToCloud(text, position) {
+    if (typeof isAuthenticated !== 'function' || !isAuthenticated()) return;
+
+    try {
+      const supabase = getSupabaseClient();
+      const user = getUser();
+
+      const { error } = await supabase
+        .from('highlights')
+        .insert({
+          user_id: user.id,
+          article_url: this.currentUrl,
+          text: text,
+          position: position
+        });
+
+      if (error) {
+        console.error('Error saving highlight to cloud:', error);
+      }
+    } catch (e) {
+      console.error('Failed to save highlight to cloud:', e);
+    }
+  }
+
+  // Delete highlight from Supabase
+  async deleteHighlightFromCloud(text, position) {
+    if (typeof isAuthenticated !== 'function' || !isAuthenticated()) return;
+
+    try {
+      const supabase = getSupabaseClient();
+      const user = getUser();
+
+      const { error } = await supabase
+        .from('highlights')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('article_url', this.currentUrl)
+        .eq('text', text);
+
+      if (error) {
+        console.error('Error deleting highlight from cloud:', error);
+      }
+    } catch (e) {
+      console.error('Failed to delete highlight from cloud:', e);
     }
   }
 }
