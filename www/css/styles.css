@@ -114,6 +114,68 @@ header p {
 }
 
 /* ============================================================
+   AUTH SECTION - User Sign In
+   ============================================================ */
+.auth-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+#user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border-gray);
+}
+
+.user-name {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--ink-gray);
+  font-style: normal;
+}
+
+.auth-btn {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid var(--border-gray);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+  color: var(--ink-gray);
+}
+
+.auth-btn:hover {
+  background: var(--paper-cream);
+  border-color: var(--ink-black);
+  color: var(--ink-black);
+}
+
+@media (max-width: 600px) {
+  .auth-section {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .auth-btn {
+    width: 100%;
+    max-width: 200px;
+  }
+}
+
+/* ============================================================
    MAIN CONTENT CONTAINER
    ============================================================ */
 main {

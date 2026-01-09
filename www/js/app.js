@@ -644,4 +644,11 @@ function deleteBlog(index) {
 }
 
 // Start the app when page loads
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize authentication first
+    if (typeof initAuth === 'function') {
+        await initAuth();
+    }
+    // Then load posts
+    init();
+});
