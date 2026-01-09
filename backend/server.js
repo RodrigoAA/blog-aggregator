@@ -397,17 +397,20 @@ app.get('/api/summary', async (req, res) => {
     const systemPrompt = hasInterests
       ? `You are a helpful assistant that summarizes articles and provides personalized reading recommendations.
 Respond in the SAME LANGUAGE as the article.
-Return JSON with this exact structure:
+Return JSON with this EXACT structure (all fields required):
 {
   "tldr": "2-3 sentence summary of the main point",
   "keyPoints": ["key point 1", "key point 2", "key point 3"],
   "recommendation": {
-    "score": "high" | "medium" | "low",
-    "reason": "Brief explanation of why this article is or isn't relevant to the reader's interests"
+    "score": "high",
+    "reason": "Brief explanation of relevance to reader interests"
   }
 }
-Provide 3-5 key points. Be concise and informative.
-For the recommendation, consider how well the article matches the reader's stated interests.`
+IMPORTANT:
+- Provide 3-5 key points
+- The recommendation.score MUST be exactly one of: "high", "medium", or "low"
+- The recommendation.reason should explain why this article matches or doesn't match the reader's interests
+- You MUST include the recommendation field`
       : `You are a helpful assistant that summarizes articles.
 Respond in the SAME LANGUAGE as the article.
 Return JSON with this exact structure:
