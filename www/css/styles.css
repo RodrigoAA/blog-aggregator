@@ -648,6 +648,31 @@ main {
   line-height: 1.4;
 }
 
+/* Summary Loading Animation */
+.summary-loading-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #888;
+  font-family: var(--font-sans);
+  font-size: 14px;
+}
+
+.summary-loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e0e0e0;
+  border-top-color: #8b7355;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Kindle-style highlighting */
 .article-content mark,
 .article-content .highlight {
