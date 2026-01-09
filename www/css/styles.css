@@ -85,45 +85,62 @@ a:hover {
 }
 
 /* ============================================================
-   HEADER - Minimalist
+   HEADER - Compact
    ============================================================ */
 header {
   background: white;
   border-bottom: 2px solid var(--ink-black);
-  padding: 40px 20px;
-  text-align: center;
+  padding: 12px 20px;
   position: sticky;
   top: 0;
   z-index: 100;
 }
 
-header h1 {
-  font-family: var(--font-sans);
-  font-size: 48px;
-  font-weight: 600;
-  color: var(--ink-black);
-  letter-spacing: -1px;
-  margin-bottom: 8px;
+.header-content {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-header p {
-  font-family: var(--font-serif);
-  font-size: 16px;
+.header-left h1 {
+  font-family: var(--font-sans);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--ink-black);
+  letter-spacing: -0.5px;
+  margin: 0;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-icon-btn {
+  background: none;
+  border: 1px solid var(--border-gray);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
   color: var(--ink-gray);
-  font-style: italic;
+  transition: all 0.2s ease;
+}
+
+.header-icon-btn:hover {
+  background: var(--paper-cream);
+  border-color: var(--ink-black);
+  color: var(--ink-black);
 }
 
 /* ============================================================
    AUTH SECTION - User Sign In
    ============================================================ */
-.auth-section {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 16px;
-}
-
 #user-info {
   display: flex;
   align-items: center;
@@ -142,37 +159,6 @@ header p {
   font-size: 13px;
   color: var(--ink-gray);
   font-style: normal;
-}
-
-.auth-btn {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  padding: 8px 16px;
-  background: white;
-  border: 1px solid var(--border-gray);
-  cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  transition: all 0.2s ease;
-  color: var(--ink-gray);
-}
-
-.auth-btn:hover {
-  background: var(--paper-cream);
-  border-color: var(--ink-black);
-  color: var(--ink-black);
-}
-
-@media (max-width: 600px) {
-  .auth-section {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .auth-btn {
-    width: 100%;
-    max-width: 200px;
-  }
 }
 
 /* ============================================================
@@ -290,9 +276,7 @@ body > footer {
 .post-actions {
   display: flex;
   gap: 8px;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-gray);
+  margin-top: 12px;
 }
 
 .action-btn {
@@ -330,6 +314,38 @@ body > footer {
   background: var(--highlight-yellow);
   border-color: #d4a500;
   color: var(--ink-black);
+}
+
+/* Icon-only action buttons */
+.action-icon-btn {
+  background: white;
+  border: 1px solid var(--border-gray);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--ink-gray);
+  transition: all 0.2s ease;
+}
+
+.action-icon-btn:hover {
+  background: var(--paper-cream);
+  border-color: var(--ink-black);
+  color: var(--ink-black);
+}
+
+.action-icon-btn.save-btn:hover {
+  background: var(--highlight-yellow);
+  border-color: #d4a500;
+  color: var(--ink-black);
+}
+
+.action-icon-btn.not-relevant-btn:hover {
+  background: #fee;
+  border-color: #c00;
+  color: #c00;
 }
 
 .inbox-btn:hover {
@@ -1027,31 +1043,6 @@ body > footer {
 /* ============================================================
    BLOG MANAGEMENT MODAL
    ============================================================ */
-.manage-blogs-btn {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  background: var(--ink-black);
-  color: white;
-  border: 1px solid var(--ink-black);
-  padding: 12px 20px;
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  transition: all 0.2s ease;
-  z-index: 100;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.manage-blogs-btn:hover {
-  background: var(--ink-gray);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
-}
-
 .blog-management-modal {
   display: none;
   position: fixed;
@@ -1401,23 +1392,8 @@ body > footer {
     border-bottom: none;
   }
 
-  .post-actions {
-    flex-direction: column;
-  }
-
-  .action-btn {
-    width: 100%;
-  }
-
   .search-box {
     max-width: 100%;
-  }
-
-  .manage-blogs-btn {
-    bottom: 16px;
-    right: 16px;
-    padding: 10px 16px;
-    font-size: 12px;
   }
 
   .blog-management-content {

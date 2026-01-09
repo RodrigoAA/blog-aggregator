@@ -122,21 +122,30 @@ function updateAuthUI() {
     }
 
     if (currentUser) {
-        // User is signed in
-        authBtn.textContent = 'Sign Out';
+        // User is signed in - show sign out icon
+        authBtn.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+        `;
+        authBtn.title = 'Sign Out';
         authBtn.onclick = signOut;
 
         const avatarUrl = currentUser.user_metadata?.avatar_url || '';
-        const displayName = currentUser.user_metadata?.full_name || currentUser.email;
 
-        userInfo.innerHTML = `
-            ${avatarUrl ? `<img src="${avatarUrl}" alt="Avatar" class="user-avatar">` : ''}
-            <span class="user-name">${displayName}</span>
-        `;
-        userInfo.style.display = 'flex';
+        userInfo.innerHTML = avatarUrl ? `<img src="${avatarUrl}" alt="Avatar" class="user-avatar">` : '';
+        userInfo.style.display = avatarUrl ? 'flex' : 'none';
     } else {
-        // User is signed out
-        authBtn.textContent = 'Sign In with Google';
+        // User is signed out - show sign in icon
+        authBtn.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        `;
+        authBtn.title = 'Sign In';
         authBtn.onclick = signInWithGoogle;
         userInfo.innerHTML = '';
         userInfo.style.display = 'none';
