@@ -1,23 +1,13 @@
-# Local versions - DO NOT COMMIT
-index-local.html
-index-deploy.html
-
-# Deploy folder - no longer needed
-deploy/
-
-# Backend node_modules (should be in backend/.gitignore but safety net)
-backend/node_modules/
-backend/package-lock.json
+# Dependencies
+node_modules/
+package-lock.json
 
 # Environment files
-backend/.env
 .env
-.env.local
-.env.production
+.env.*
 
 # Logs
 *.log
-npm-debug.log*
 logs/
 
 # System files
@@ -31,10 +21,9 @@ desktop.ini
 *.swp
 *.swo
 *~
-*.sublime-*
 
-# Claude plans (optional - keep local)
+# Claude Code
 .claude/
 
-# Local development server script (not needed in production)
+# Local development
 www/server-simple.js
