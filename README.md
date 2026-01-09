@@ -40,13 +40,13 @@ A minimalist RSS feed aggregator with a Kindle-inspired reading experience. Read
 
 ## 🚀 Live Demo
 
-**Frontend**: https://particulaselementales.netlify.app/
-**Backend API**: https://particulas-backend.onrender.com
+**Frontend**: https://particulaselementales.pages.dev (Cloudflare Pages)
+**Backend API**: https://particulas-backend.onrender.com (Render)
 **GitHub**: https://github.com/RodrigoAA/blog-aggregator
 
 ## 🏗️ Architecture
 
-### Frontend (Netlify)
+### Frontend (Cloudflare Pages)
 - **HTML5** - Semantic structure
 - **CSS3** - Kindle-inspired design system
 - **Vanilla JavaScript** - No frameworks, ~15KB total
@@ -124,22 +124,21 @@ Navigate to `http://localhost:8080`
 
 ## 🌐 Deployment
 
-### Frontend (Netlify)
+### Frontend (Cloudflare Pages)
 
-1. **Connect Repository**
-   - Link your GitHub repo to Netlify
-   - Set publish directory to `www`
+1. **Create Project**
+   - Go to Cloudflare Dashboard → Workers & Pages
+   - Click "Create" → "Pages" tab
+   - Choose "Upload assets" or "Connect to Git"
 
-2. **Build Settings**
-   ```
-   Base directory: www
-   Build command: (leave empty)
-   Publish directory: www
-   ```
+2. **If Using Direct Upload**
+   - Upload the `www` folder directly
+   - Deploy instantly
 
-3. **Deploy**
-   - Push to `main` branch
-   - Netlify auto-deploys
+3. **If Using Git Integration**
+   - Connect your GitHub repo
+   - Set output directory to `www`
+   - Cloudflare auto-deploys on push
 
 ### Backend (Multiple Options)
 
@@ -155,7 +154,7 @@ Navigate to `http://localhost:8080`
    ```
    PORT=3000
    NODE_ENV=production
-   ALLOWED_ORIGINS=https://particulaselementales.netlify.app
+   ALLOWED_ORIGINS=https://particulaselementales.pages.dev
    ```
 
 #### Option 2: Railway.app

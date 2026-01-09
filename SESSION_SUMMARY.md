@@ -1,5 +1,5 @@
 # Vibe Coding Session Summary - Blog Aggregator Project
-**Sessions:** January 6-8, 2026
+**Sessions:** January 6-9, 2026
 **Participant:** Rodrigo Aviles (Product Manager @ TaxDown)
 **First Coding Project:** ✅ Complete & Enhanced → 📖 Kindle-Inspired eReader MVP!
 
@@ -8,8 +8,8 @@
 ## 🎉 What We Built
 
 **Project:** Partículas elementales - Kindle-Inspired eReader & RSS Aggregator
-**Live Site:** https://particulaselementales.netlify.app/
-**Backend API:** https://particulas-backend.onrender.com
+**Live Site:** https://particulaselementales.pages.dev/ (Cloudflare Pages)
+**Backend API:** https://particulas-backend.onrender.com (Render)
 **GitHub Repo:** https://github.com/RodrigoAA/blog-aggregator
 
 A full-stack web application with Kindle-inspired reading experience. Aggregates blog posts from any RSS feeds, extracts full articles with Mozilla Readability, features text highlighting, intelligent post management, and offline caching. Built with vanilla JavaScript frontend and Node.js backend.
@@ -51,12 +51,12 @@ A full-stack web application with Kindle-inspired reading experience. Aggregates
 - **Repository Organization** - Clean file structure
 
 ### 5. Deployment & DevOps
-- **Netlify** - Static site hosting with auto-deploy
+- **Cloudflare Pages** - Static site hosting (migrated from Netlify)
 - **Render.com** - Backend hosting (Node.js)
 - **Environment Configuration** - Production vs development
-- **netlify.toml** - Deployment configuration
-- **Auto-deployment** - GitHub → Netlify/Render pipelines
+- **Auto-deployment** - GitHub → Cloudflare/Render pipelines
 - **Troubleshooting** - Debug deployment issues, check logs
+- **Platform Migration** - Netlify → Cloudflare Pages
 
 ### 6. Advanced JavaScript Concepts
 - **ES6+ Classes** - ArticleReader class with methods
@@ -104,9 +104,8 @@ A full-stack web application with Kindle-inspired reading experience. Aggregates
 |------------|---------|---------|
 | Git | Version control | Merge conflicts, branching |
 | GitHub | Code hosting | Repository, collaboration |
-| Netlify | Frontend hosting | Auto-deploy from GitHub |
+| Cloudflare Pages | Frontend hosting | Unlimited bandwidth, auto-deploy |
 | Render.com | Backend hosting | Node.js free tier |
-| netlify.toml | Deployment config | Publish directory setup |
 
 ### Replaced/Removed
 | Old Technology | Replaced With | Reason |
@@ -114,6 +113,7 @@ A full-stack web application with Kindle-inspired reading experience. Aggregates
 | corsproxy.io | Custom Express backend | More control, no third-party dependency |
 | OpenAI API | Mozilla Readability | Free, privacy-friendly, works offline |
 | Dark theme (v1.0) | Kindle theme (v2.0) | Better reading experience |
+| Netlify | Cloudflare Pages | Unlimited bandwidth, no usage limits |
 
 ---
 
@@ -620,7 +620,7 @@ Run `git status` to verify what you're adding! Never commit `.env` files!
 
 | Component | Location | Type | URL/Path |
 |-----------|----------|------|----------|
-| **Frontend (Production)** | Netlify | Static Site | https://particulaselementales.netlify.app/ |
+| **Frontend (Production)** | Cloudflare Pages | Static Site | https://particulaselementales.pages.dev/ |
 | **Backend (Production)** | Render.com | Node.js API | https://particulas-backend.onrender.com |
 | **Source Code** | GitHub | Git Repository | https://github.com/RodrigoAA/blog-aggregator |
 | **Local Frontend** | Your Computer | Dev Server | `http://localhost:8080` (via node server-simple.js) |
@@ -1091,10 +1091,10 @@ As a PM, you got hands-on experience with:
 ## 📌 Quick Reference
 
 **Your URLs:**
-- Frontend: https://particulaselementales.netlify.app/
+- Frontend: https://particulaselementales.pages.dev/
 - Backend API: https://particulas-backend.onrender.com
 - GitHub: https://github.com/RodrigoAA/blog-aggregator
-- Netlify Dashboard: https://app.netlify.com/sites/particulaselementales
+- Cloudflare Dashboard: https://dash.cloudflare.com/
 - Render Dashboard: https://dashboard.render.com/
 
 **Your Files:**
@@ -1125,8 +1125,47 @@ git push
 
 ---
 
+---
+
+## 🚀 Day 4 - January 9, 2026: Cloudflare Migration
+
+### Overview
+Migrated frontend hosting from Netlify to Cloudflare Pages due to Netlify usage limits.
+
+### Why Cloudflare Pages?
+| Feature | Netlify (Free) | Cloudflare Pages (Free) |
+|---------|---------------|------------------------|
+| Bandwidth | 100 GB/month | **Unlimited** |
+| Builds | 300 min/month | 500 builds/month |
+| Global CDN | Yes | Yes (faster) |
+
+### Migration Steps Completed
+1. ✅ Created Cloudflare Pages project via Direct Upload
+2. ✅ Connected GitHub repository for auto-deploys
+3. ✅ Updated backend CORS on Render.com
+4. ✅ Tested all features on new domain
+5. ✅ Deleted Netlify site
+6. ✅ Updated documentation (README, SESSION_SUMMARY)
+
+### Key Lesson: Workers vs Pages
+- **Cloudflare Workers** = Serverless functions (like AWS Lambda)
+- **Cloudflare Pages** = Static site hosting (like Netlify/Vercel)
+
+Initial confusion with `npx wrangler deploy` commands - those are for Workers, not Pages. Static sites just need the folder uploaded.
+
+### New Production URLs
+- **Frontend**: https://particulaselementales.pages.dev/
+- **Backend**: https://particulas-backend.onrender.com (unchanged)
+
+### Benefits Gained
+- No more bandwidth limits
+- Faster global CDN
+- Simpler pricing (free forever for this use case)
+
+---
+
 **Created with:** Claude Code
-**Your Journey:** From beginner to building a production-ready app in 3 days! 🚀🎉
+**Your Journey:** From beginner to building a production-ready app in 4 days! 🚀🎉
 
 ---
 
