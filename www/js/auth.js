@@ -87,6 +87,13 @@ async function signOut() {
 
     if (error) {
         console.error('Sign out error:', error);
+        // If session is missing, just clear local state and reload
+        if (error.message.includes('session')) {
+            currentUser = null;
+            updateAuthUI();
+            location.reload();
+            return;
+        }
         alert('Sign out failed: ' + error.message);
     }
 }
