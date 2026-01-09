@@ -505,10 +505,10 @@ function displayPosts(posts) {
                 <div class="post-actions">
                     ${status === POST_STATUS.INBOX ? `
                         <button class="action-btn read-btn" data-url="${escapeHtml(post.link)}" title="Mark as read">
-                            ✓ Read
+                            ✓ Mark Read
                         </button>
-                        <button class="action-btn not-relevant-btn" data-url="${escapeHtml(post.link)}" title="Not relevant">
-                            × Not Relevant
+                        <button class="action-btn not-relevant-btn" data-url="${escapeHtml(post.link)}" title="Skip this post">
+                            × Skip
                         </button>
                     ` : ''}
                     ${status === POST_STATUS.READ ? `
@@ -584,11 +584,9 @@ function attachPostClickHandlers() {
     const postCards = document.querySelectorAll('.post-card');
 
     postCards.forEach(card => {
-        // Click on title to open article
-        const titleElement = card.querySelector('.post-title');
-
+        // Click anywhere on card to open article
         const openArticle = (e) => {
-            // Don't trigger if clicking a button
+            // Don't trigger if clicking a button or action area
             if (e.target.tagName === 'BUTTON' || e.target.closest('.post-actions')) {
                 return;
             }
@@ -600,22 +598,18 @@ function attachPostClickHandlers() {
             // Mark as read when opening article
             markAsRead(postUrl);
 
-            // Wait for articleReader to be ready if needed
-            const tryOpenArticle = () => {
-                if (window.articleReader && typeof window.articleReader.open === 'function') {
-                    window.articleReader.open(postUrl, postTitle, blogName);
-                } else {
-                    // Fallback: open in new tab
-                    console.warn('ArticleReader not ready, opening in new tab');
-                    window.open(postUrl, '_blank', 'noopener,noreferrer');
-                }
-            };
-
-            tryOpenArticle();
+            // Open in article reader
+            if (window.articleReader && typeof window.articleReader.open === 'function') {
+                window.articleReader.open(postUrl, postTitle, blogName);
+            } else {
+                // Fallback: open in new tab
+                console.warn('ArticleReader not ready, opening in new tab');
+                window.open(postUrl, '_blank', 'noopener,noreferrer');
+            }
         };
 
-        titleElement.addEventListener('click', openArticle);
-        titleElement.style.cursor = 'pointer';
+        // Make entire card clickable
+        card.addEventListener('click', openArticle);
     });
 }
 
