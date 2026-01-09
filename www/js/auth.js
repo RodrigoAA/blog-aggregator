@@ -34,8 +34,10 @@ async function initAuth() {
         if (session) {
             currentUser = session.user;
             console.log('Existing session found:', currentUser.email);
-            updateAuthUI();
         }
+
+        // Always update UI (whether signed in or not)
+        updateAuthUI();
 
         // Listen for auth changes
         supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -53,6 +55,8 @@ async function initAuth() {
         console.log('Authentication initialized');
     } catch (error) {
         console.error('Auth initialization error:', error);
+        // Still try to update UI even on error
+        updateAuthUI();
     }
 }
 
