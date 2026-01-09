@@ -83,19 +83,29 @@ async function signInWithGoogle() {
 async function signOut() {
     console.log('Signing out...');
 
-    const { error } = await supabaseClient.auth.signOut();
-
-    if (error) {
+    try {
+        await supabaseClient.auth.signOut();
+    } catch (error) {
         console.error('Sign out error:', error);
-        // If session is missing, just clear local state and reload
-        if (error.message.includes('session')) {
-            currentUser = null;
-            updateAuthUI();
-            location.reload();
-            return;
-        }
-        alert('Sign out failed: ' + error.message);
     }
+
+    // Always clear local state and reload, regardless of errors
+    currentUser = null;
+
+    // Clear any Supabase auth data from storage
+    Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sb-')) {
+            localStorage.removeItem(key);
+        }
+    });
+    Object.keys(sessionStorage).forEach(key => {
+        if (key.startsWith('sb-')) {
+            sessionStorage.removeItem(key);
+        }
+    });
+
+    updateAuthUI();
+    location.reload();
 }
 
 // ============================================================
