@@ -546,6 +546,48 @@ main {
   margin: 2em 0;
 }
 
+/* AI Summary Section */
+.article-summary {
+  background: #f9f6f0;
+  border-left: 3px solid #8b7355;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  font-family: var(--font-sans);
+}
+
+.summary-header {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #8b7355;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.summary-tldr {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #333;
+  margin: 0 0 12px 0;
+}
+
+.summary-key-points {
+  margin: 0;
+  padding-left: 20px;
+  list-style-type: disc;
+}
+
+.summary-key-points li {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.summary-key-points li:last-child {
+  margin-bottom: 0;
+}
+
 /* Kindle-style highlighting */
 .article-content mark,
 .article-content .highlight {

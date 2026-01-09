@@ -3,7 +3,13 @@ const cors = require('cors');
 const axios = require('axios');
 const { Readability } = require('@mozilla/readability');
 const { JSDOM } = require('jsdom');
+const OpenAI = require('openai');
 require('dotenv').config();
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -334,6 +340,117 @@ app.get('/api/discover-feed', async (req, res) => {
   }
 });
 
+// Article summary endpoint (AI-powered)
+app.get('/api/summary', async (req, res) => {
+  const { url } = req.query;
+
+  if (!url) {
+    return res.status(400).json({
+      error: 'Missing parameter',
+      message: 'URL parameter required'
+    });
+  }
+
+  // Validate URL
+  try {
+    new URL(url);
+  } catch (e) {
+    return res.status(400).json({
+      error: 'Invalid URL',
+      message: 'The provided URL is not valid'
+    });
+  }
+
+  try {
+    console.log(`Generating summary for: ${url}`);
+
+    // 1. Fetch the article HTML
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8'
+      },
+      timeout: 15000,
+      maxRedirects: 5
+    });
+
+    // 2. Parse and extract article content
+    const dom = new JSDOM(response.data, { url });
+    const reader = new Readability(dom.window.document);
+    const article = reader.parse();
+
+    if (!article || !article.textContent) {
+      return res.status(404).json({
+        error: 'Extraction failed',
+        message: 'Could not extract article content'
+      });
+    }
+
+    // 3. Truncate text if too long (keep under token limits)
+    const maxChars = 12000;
+    const text = article.textContent.slice(0, maxChars);
+
+    // 4. Call OpenAI for summary
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `You are a helpful assistant that summarizes articles.
+Respond in the SAME LANGUAGE as the article.
+Return JSON with this exact structure:
+{
+  "tldr": "2-3 sentence summary of the main point",
+  "keyPoints": ["key point 1", "key point 2", "key point 3"]
+}
+Provide 3-5 key points. Be concise and informative.`
+        },
+        {
+          role: 'user',
+          content: `Summarize this article:\n\n${text}`
+        }
+      ],
+      response_format: { type: 'json_object' },
+      max_tokens: 500,
+      temperature: 0.3
+    });
+
+    const summary = JSON.parse(completion.choices[0].message.content);
+
+    console.log(`Summary generated for: ${article.title}`);
+
+    res.json({
+      tldr: summary.tldr,
+      keyPoints: summary.keyPoints,
+      model: 'gpt-4o-mini',
+      articleTitle: article.title
+    });
+
+  } catch (error) {
+    console.error('Summary generation error:', error.message);
+
+    if (error.code === 'ECONNABORTED') {
+      return res.status(504).json({
+        error: 'Timeout',
+        message: 'The article took too long to load'
+      });
+    }
+
+    if (error.response?.status === 401) {
+      return res.status(500).json({
+        error: 'API error',
+        message: 'OpenAI API key is invalid or missing'
+      });
+    }
+
+    res.status(500).json({
+      error: 'Summary failed',
+      message: error.message
+    });
+  }
+});
+
 // Catch-all for 404
 app.use((req, res) => {
   res.status(404).json({
@@ -357,5 +474,6 @@ app.listen(PORT, () => {
   console.log(`  GET /api/feed?url=<feed-url> - Fetch RSS feed`);
   console.log(`  GET /api/article?url=<article-url> - Extract article content`);
   console.log(`  GET /api/discover-feed?url=<website-url> - Discover RSS feed`);
+  console.log(`  GET /api/summary?url=<article-url> - Generate AI summary`);
   console.log(`===========================================`);
 });

@@ -163,6 +163,61 @@ class ArticleReader {
       this.initImageLazyLoad(articleContent);
       this.initHighlighting(articleContent);
     }
+
+    // Fetch AI summary in background (non-blocking)
+    this.fetchSummary(this.currentUrl);
+  }
+
+  // ============================================================
+  // AI SUMMARY FUNCTIONALITY
+  // ============================================================
+
+  async fetchSummary(articleUrl) {
+    try {
+      const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
+      const response = await fetch(
+        `${API_BASE_URL}/api/summary?url=${encodeURIComponent(articleUrl)}`
+      );
+
+      if (!response.ok) {
+        console.log('Summary not available');
+        return;
+      }
+
+      const data = await response.json();
+      this.insertSummarySection(data.tldr, data.keyPoints);
+
+    } catch (error) {
+      console.error('Failed to fetch summary:', error);
+    }
+  }
+
+  insertSummarySection(tldr, keyPoints) {
+    const articleBody = this.modal.querySelector('.article-body');
+    if (!articleBody) return;
+
+    // Remove existing summary if any
+    const existing = articleBody.querySelector('.article-summary');
+    if (existing) existing.remove();
+
+    // Create summary HTML
+    const summaryHtml = `
+      <div class="article-summary">
+        <div class="summary-header">AI Summary</div>
+        <p class="summary-tldr">${this.escapeHtml(tldr)}</p>
+        ${keyPoints && keyPoints.length > 0 ? `
+          <ul class="summary-key-points">
+            ${keyPoints.map(point => `<li>${this.escapeHtml(point)}</li>`).join('')}
+          </ul>
+        ` : ''}
+      </div>
+    `;
+
+    // Insert after article title
+    const articleTitle = articleBody.querySelector('.article-title');
+    if (articleTitle) {
+      articleTitle.insertAdjacentHTML('afterend', summaryHtml);
+    }
   }
 
   processContent(html) {
