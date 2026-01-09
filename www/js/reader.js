@@ -89,11 +89,14 @@ class ArticleReader {
     this.modal.querySelector('.article-loading').style.display = 'flex';
     this.modal.querySelector('.article-body').style.display = 'none';
 
+    // Start fetching summary in parallel (don't await yet)
+    const summaryPromise = this.fetchSummaryData(postUrl);
+
     // Check cache first
     const cached = this.getCachedArticle(postUrl);
     if (cached) {
       console.log('Using cached article:', postTitle);
-      this.displayArticle(cached, postTitle, blogName);
+      this.displayArticle(cached, postTitle, blogName, summaryPromise);
       return;
     }
 
@@ -114,8 +117,8 @@ class ArticleReader {
       // Cache the article
       this.cacheArticle(postUrl, article);
 
-      // Display article
-      this.displayArticle(article, postTitle, blogName);
+      // Display article (pass summary promise to handle when ready)
+      this.displayArticle(article, postTitle, blogName, summaryPromise);
 
     } catch (error) {
       console.error('Error loading article:', error);
@@ -123,7 +126,7 @@ class ArticleReader {
     }
   }
 
-  displayArticle(article, postTitle, blogName) {
+  async displayArticle(article, postTitle, blogName, summaryPromise) {
     // Hide loading
     this.modal.querySelector('.article-loading').style.display = 'none';
 
@@ -164,18 +167,25 @@ class ArticleReader {
       this.initHighlighting(articleContent);
     }
 
-    // Fetch AI summary in background (non-blocking)
-    this.fetchSummary(this.currentUrl);
+    // Handle summary when ready (was started in parallel during open())
+    if (summaryPromise) {
+      try {
+        const summaryData = await summaryPromise;
+        if (summaryData) {
+          this.insertSummarySection(summaryData.tldr, summaryData.keyPoints, summaryData.recommendation);
+        }
+      } catch (error) {
+        console.error('Failed to load summary:', error);
+      }
+    }
   }
 
   // ============================================================
   // AI SUMMARY FUNCTIONALITY
   // ============================================================
 
-  async fetchSummary(articleUrl) {
-    // Show loading indicator
-    this.showSummaryLoading();
-
+  async fetchSummaryData(articleUrl) {
+    // Returns summary data (called in parallel with article fetch)
     try {
       const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
 
@@ -191,46 +201,15 @@ class ArticleReader {
 
       if (!response.ok) {
         console.log('Summary not available');
-        this.hideSummaryLoading();
-        return;
+        return null;
       }
 
-      const data = await response.json();
-      this.insertSummarySection(data.tldr, data.keyPoints, data.recommendation);
+      return await response.json();
 
     } catch (error) {
       console.error('Failed to fetch summary:', error);
-      this.hideSummaryLoading();
+      return null;
     }
-  }
-
-  showSummaryLoading() {
-    const articleBody = this.modal.querySelector('.article-body');
-    if (!articleBody) return;
-
-    // Remove existing loading/summary
-    const existing = articleBody.querySelector('.article-summary');
-    if (existing) existing.remove();
-
-    const loadingHtml = `
-      <div class="article-summary summary-loading">
-        <div class="summary-header">AI Summary</div>
-        <div class="summary-loading-content">
-          <div class="summary-loading-spinner"></div>
-          <span>Generating summary...</span>
-        </div>
-      </div>
-    `;
-
-    const articleTitle = articleBody.querySelector('.article-title');
-    if (articleTitle) {
-      articleTitle.insertAdjacentHTML('afterend', loadingHtml);
-    }
-  }
-
-  hideSummaryLoading() {
-    const loading = this.modal.querySelector('.summary-loading');
-    if (loading) loading.remove();
   }
 
   insertSummarySection(tldr, keyPoints, recommendation) {
