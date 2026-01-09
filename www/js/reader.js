@@ -24,6 +24,7 @@ class ArticleReader {
         <div class="reading-progress"></div>
         <div class="article-header">
           <button class="close-btn" aria-label="Close article" title="Close (ESC)">×</button>
+          <button class="save-article-btn" aria-label="Save article" title="Save for later">★ Save</button>
           <div class="article-meta"></div>
         </div>
         <div class="article-body"></div>
@@ -46,6 +47,9 @@ class ArticleReader {
     modal.querySelector('.close-btn').addEventListener('click', () => this.close());
     modal.querySelector('.article-modal-overlay').addEventListener('click', () => this.close());
     modal.querySelector('.close-error-btn')?.addEventListener('click', () => this.close());
+
+    // Save button handler
+    modal.querySelector('.save-article-btn').addEventListener('click', () => this.toggleSave());
 
     // Progress indicator
     const contentEl = modal.querySelector('.article-modal-content');
@@ -187,6 +191,9 @@ class ArticleReader {
     if (summaryData) {
       this.insertSummarySection(summaryData.tldr, summaryData.keyPoints, summaryData.recommendation);
     }
+
+    // Update save button state
+    this.updateSaveButton();
   }
 
   // ============================================================
@@ -479,6 +486,50 @@ class ArticleReader {
     document.body.style.overflow = '';
     this.currentUrl = null;
     this.hideHighlightButton();
+  }
+
+  // Save/unsave article
+  toggleSave() {
+    if (!this.currentUrl) return;
+
+    const currentStatus = typeof getPostStatus === 'function' ? getPostStatus(this.currentUrl) : 'inbox';
+    const isSaved = currentStatus === 'saved';
+
+    if (isSaved) {
+      // Unsave - move to inbox
+      if (typeof markAsInbox === 'function') {
+        markAsInbox(this.currentUrl);
+      }
+    } else {
+      // Save
+      if (typeof markAsSaved === 'function') {
+        markAsSaved(this.currentUrl);
+      }
+    }
+
+    // Update button state
+    this.updateSaveButton();
+
+    // Refresh the post list if visible
+    if (typeof displayPosts === 'function' && typeof allPosts !== 'undefined') {
+      displayPosts(allPosts);
+    }
+  }
+
+  updateSaveButton() {
+    const saveBtn = this.modal.querySelector('.save-article-btn');
+    if (!saveBtn || !this.currentUrl) return;
+
+    const currentStatus = typeof getPostStatus === 'function' ? getPostStatus(this.currentUrl) : 'inbox';
+    const isSaved = currentStatus === 'saved';
+
+    if (isSaved) {
+      saveBtn.textContent = '★ Saved';
+      saveBtn.classList.add('saved');
+    } else {
+      saveBtn.textContent = '☆ Save';
+      saveBtn.classList.remove('saved');
+    }
   }
 
   // Cache management

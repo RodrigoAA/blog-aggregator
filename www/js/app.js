@@ -284,6 +284,7 @@ function formatDate(date) {
 // Post status constants
 const POST_STATUS = {
     INBOX: 'inbox',
+    SAVED: 'saved',
     READ: 'read',
     NOT_RELEVANT: 'not_relevant'
 };
@@ -325,6 +326,10 @@ function setPostStatus(postLink, status) {
 
 function markAsRead(postLink) {
     setPostStatus(postLink, POST_STATUS.READ);
+}
+
+function markAsSaved(postLink) {
+    setPostStatus(postLink, POST_STATUS.SAVED);
 }
 
 function markAsNotRelevant(postLink) {
@@ -408,6 +413,7 @@ function filterPostsByStatus(posts, status) {
 function getStatusCounts(posts) {
     const counts = {
         inbox: 0,
+        saved: 0,
         read: 0,
         not_relevant: 0
     };
@@ -472,8 +478,9 @@ function displayPosts(posts) {
     if (filteredPosts.length === 0) {
         const filterNames = {
             inbox: 'Inbox',
+            saved: 'Saved',
             read: 'Read',
-            not_relevant: 'Not Relevant'
+            not_relevant: 'Skipped'
         };
         postsContainer.innerHTML = `
             <div class="empty-state">
@@ -504,6 +511,9 @@ function displayPosts(posts) {
                 <p class="post-description">${escapeHtml(post.description)}</p>
                 <div class="post-actions">
                     ${status === POST_STATUS.INBOX ? `
+                        <button class="action-btn save-btn" data-url="${escapeHtml(post.link)}" title="Save for later">
+                            ★ Save
+                        </button>
                         <button class="action-btn read-btn" data-url="${escapeHtml(post.link)}" title="Mark as read">
                             ✓ Mark Read
                         </button>
@@ -511,7 +521,18 @@ function displayPosts(posts) {
                             × Skip
                         </button>
                     ` : ''}
+                    ${status === POST_STATUS.SAVED ? `
+                        <button class="action-btn read-btn" data-url="${escapeHtml(post.link)}" title="Mark as read">
+                            ✓ Mark Read
+                        </button>
+                        <button class="action-btn inbox-btn" data-url="${escapeHtml(post.link)}" title="Move to inbox">
+                            ↩ Unsave
+                        </button>
+                    ` : ''}
                     ${status === POST_STATUS.READ ? `
+                        <button class="action-btn save-btn" data-url="${escapeHtml(post.link)}" title="Save for later">
+                            ★ Save
+                        </button>
                         <button class="action-btn inbox-btn" data-url="${escapeHtml(post.link)}" title="Move to inbox">
                             ↩ Move to Inbox
                         </button>
@@ -559,12 +580,17 @@ function updateFilterCounts(posts) {
 
     // Update count badges
     const inboxBtn = document.querySelector('[data-filter="inbox"]');
+    const savedBtn = document.querySelector('[data-filter="saved"]');
     const readBtn = document.querySelector('[data-filter="read"]');
     const notRelevantBtn = document.querySelector('[data-filter="not_relevant"]');
 
     if (inboxBtn) {
         const badge = inboxBtn.querySelector('.count-badge');
         if (badge) badge.textContent = counts.inbox;
+    }
+    if (savedBtn) {
+        const badge = savedBtn.querySelector('.count-badge');
+        if (badge) badge.textContent = counts.saved;
     }
     if (readBtn) {
         const badge = readBtn.querySelector('.count-badge');
@@ -614,6 +640,16 @@ function attachPostClickHandlers() {
 }
 
 function attachActionButtonHandlers() {
+    // Save buttons
+    document.querySelectorAll('.save-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const postUrl = btn.dataset.url;
+            markAsSaved(postUrl);
+            displayPosts(allPosts);
+        });
+    });
+
     // Read buttons
     document.querySelectorAll('.read-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
