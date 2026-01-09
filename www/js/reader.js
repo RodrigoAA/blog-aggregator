@@ -175,9 +175,16 @@ class ArticleReader {
   async fetchSummary(articleUrl) {
     try {
       const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
-      const response = await fetch(
-        `${API_BASE_URL}/api/summary?url=${encodeURIComponent(articleUrl)}`
-      );
+
+      // Get user interests if available
+      const interests = typeof getUserInterests === 'function' ? getUserInterests() : '';
+
+      let apiUrl = `${API_BASE_URL}/api/summary?url=${encodeURIComponent(articleUrl)}`;
+      if (interests) {
+        apiUrl += `&interests=${encodeURIComponent(interests)}`;
+      }
+
+      const response = await fetch(apiUrl);
 
       if (!response.ok) {
         console.log('Summary not available');
@@ -185,14 +192,14 @@ class ArticleReader {
       }
 
       const data = await response.json();
-      this.insertSummarySection(data.tldr, data.keyPoints);
+      this.insertSummarySection(data.tldr, data.keyPoints, data.recommendation);
 
     } catch (error) {
       console.error('Failed to fetch summary:', error);
     }
   }
 
-  insertSummarySection(tldr, keyPoints) {
+  insertSummarySection(tldr, keyPoints, recommendation) {
     const articleBody = this.modal.querySelector('.article-body');
     if (!articleBody) return;
 
@@ -200,10 +207,26 @@ class ArticleReader {
     const existing = articleBody.querySelector('.article-summary');
     if (existing) existing.remove();
 
+    // Build recommendation HTML if available
+    let recommendationHtml = '';
+    if (recommendation && recommendation.score && recommendation.reason) {
+      const scoreClass = `recommendation-${recommendation.score}`;
+      const scoreLabel = recommendation.score === 'high' ? 'Highly Relevant'
+                       : recommendation.score === 'medium' ? 'Somewhat Relevant'
+                       : 'Low Relevance';
+      recommendationHtml = `
+        <div class="summary-recommendation ${scoreClass}">
+          <span class="recommendation-score">${scoreLabel}</span>
+          <span class="recommendation-reason">${this.escapeHtml(recommendation.reason)}</span>
+        </div>
+      `;
+    }
+
     // Create summary HTML
     const summaryHtml = `
       <div class="article-summary">
         <div class="summary-header">AI Summary</div>
+        ${recommendationHtml}
         <p class="summary-tldr">${this.escapeHtml(tldr)}</p>
         ${keyPoints && keyPoints.length > 0 ? `
           <ul class="summary-key-points">

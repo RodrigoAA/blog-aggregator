@@ -342,7 +342,7 @@ app.get('/api/discover-feed', async (req, res) => {
 
 // Article summary endpoint (AI-powered)
 app.get('/api/summary', async (req, res) => {
-  const { url } = req.query;
+  const { url, interests } = req.query;
 
   if (!url) {
     return res.status(400).json({
@@ -391,24 +391,47 @@ app.get('/api/summary', async (req, res) => {
     const maxChars = 12000;
     const text = article.textContent.slice(0, maxChars);
 
-    // 4. Call OpenAI for summary
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a helpful assistant that summarizes articles.
+    // 4. Build prompt based on whether user has interests
+    const hasInterests = interests && interests.trim().length > 0;
+
+    const systemPrompt = hasInterests
+      ? `You are a helpful assistant that summarizes articles and provides personalized reading recommendations.
+Respond in the SAME LANGUAGE as the article.
+Return JSON with this exact structure:
+{
+  "tldr": "2-3 sentence summary of the main point",
+  "keyPoints": ["key point 1", "key point 2", "key point 3"],
+  "recommendation": {
+    "score": "high" | "medium" | "low",
+    "reason": "Brief explanation of why this article is or isn't relevant to the reader's interests"
+  }
+}
+Provide 3-5 key points. Be concise and informative.
+For the recommendation, consider how well the article matches the reader's stated interests.`
+      : `You are a helpful assistant that summarizes articles.
 Respond in the SAME LANGUAGE as the article.
 Return JSON with this exact structure:
 {
   "tldr": "2-3 sentence summary of the main point",
   "keyPoints": ["key point 1", "key point 2", "key point 3"]
 }
-Provide 3-5 key points. Be concise and informative.`
+Provide 3-5 key points. Be concise and informative.`;
+
+    const userPrompt = hasInterests
+      ? `Reader's interests: ${interests}\n\nSummarize this article and assess its relevance:\n\n${text}`
+      : `Summarize this article:\n\n${text}`;
+
+    // 5. Call OpenAI for summary
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt
         },
         {
           role: 'user',
-          content: `Summarize this article:\n\n${text}`
+          content: userPrompt
         }
       ],
       response_format: { type: 'json_object' },
@@ -420,12 +443,20 @@ Provide 3-5 key points. Be concise and informative.`
 
     console.log(`Summary generated for: ${article.title}`);
 
-    res.json({
+    // Build response
+    const response = {
       tldr: summary.tldr,
       keyPoints: summary.keyPoints,
       model: 'gpt-4o-mini',
       articleTitle: article.title
-    });
+    };
+
+    // Include recommendation if present
+    if (summary.recommendation) {
+      response.recommendation = summary.recommendation;
+    }
+
+    res.json(response);
 
   } catch (error) {
     console.error('Summary generation error:', error.message);

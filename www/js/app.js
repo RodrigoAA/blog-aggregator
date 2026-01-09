@@ -720,11 +720,114 @@ function openBlogManagement() {
     const modal = document.getElementById('blog-management-modal');
     modal.classList.add('active');
     renderBlogList();
+    loadUserInterests();
 }
 
 function closeBlogManagement() {
     const modal = document.getElementById('blog-management-modal');
     modal.classList.remove('active');
+}
+
+// ============================================================
+// USER INTERESTS
+// ============================================================
+
+function loadUserInterests() {
+    const textarea = document.getElementById('user-interests');
+    if (!textarea) return;
+
+    // Load from localStorage
+    const interests = localStorage.getItem('userInterests') || '';
+    textarea.value = interests;
+
+    // If logged in, try to load from cloud (will overwrite if found)
+    if (isAuthenticated()) {
+        loadInterestsFromCloud();
+    }
+}
+
+async function loadInterestsFromCloud() {
+    if (!isAuthenticated()) return;
+
+    try {
+        const supabase = getSupabaseClient();
+        const user = getUser();
+
+        const { data, error } = await supabase
+            .from('user_settings')
+            .select('interests')
+            .eq('user_id', user.id)
+            .single();
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+            console.error('Error loading interests:', error);
+            return;
+        }
+
+        if (data?.interests) {
+            const textarea = document.getElementById('user-interests');
+            if (textarea) {
+                textarea.value = data.interests;
+                localStorage.setItem('userInterests', data.interests);
+            }
+        }
+    } catch (e) {
+        console.error('Failed to load interests from cloud:', e);
+    }
+}
+
+function saveUserInterests() {
+    const textarea = document.getElementById('user-interests');
+    if (!textarea) return;
+
+    const interests = textarea.value.trim();
+
+    // Save to localStorage
+    localStorage.setItem('userInterests', interests);
+
+    // Save to cloud if logged in
+    if (isAuthenticated()) {
+        saveInterestsToCloud(interests);
+    }
+
+    // Show feedback
+    const btn = document.querySelector('.save-interests-btn');
+    const originalText = btn.textContent;
+    btn.textContent = 'Saved!';
+    setTimeout(() => {
+        btn.textContent = originalText;
+    }, 1500);
+}
+
+async function saveInterestsToCloud(interests) {
+    if (!isAuthenticated()) return;
+
+    try {
+        const supabase = getSupabaseClient();
+        const user = getUser();
+
+        const { error } = await supabase
+            .from('user_settings')
+            .upsert({
+                user_id: user.id,
+                interests: interests,
+                updated_at: new Date().toISOString()
+            }, {
+                onConflict: 'user_id'
+            });
+
+        if (error) {
+            console.error('Error saving interests to cloud:', error);
+        } else {
+            console.log('Interests saved to cloud');
+        }
+    } catch (e) {
+        console.error('Failed to save interests to cloud:', e);
+    }
+}
+
+function getUserInterests() {
+    return localStorage.getItem('userInterests') || '';
 }
 
 function renderBlogList() {

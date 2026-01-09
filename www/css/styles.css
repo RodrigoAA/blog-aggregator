@@ -595,6 +595,59 @@ main {
   margin-bottom: 0;
 }
 
+/* Recommendation Display */
+.summary-recommendation {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.recommendation-high {
+  background: #e8f5e9;
+  border-left: 3px solid #4caf50;
+}
+
+.recommendation-medium {
+  background: #fff8e1;
+  border-left: 3px solid #ff9800;
+}
+
+.recommendation-low {
+  background: #fce4ec;
+  border-left: 3px solid #e91e63;
+}
+
+.recommendation-score {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.recommendation-high .recommendation-score {
+  color: #2e7d32;
+}
+
+.recommendation-medium .recommendation-score {
+  color: #e65100;
+}
+
+.recommendation-low .recommendation-score {
+  color: #c2185b;
+}
+
+.recommendation-reason {
+  font-family: var(--font-serif);
+  font-size: 13px;
+  color: #555;
+  line-height: 1.4;
+}
+
 /* Kindle-style highlighting */
 .article-content mark,
 .article-content .highlight {
@@ -1057,6 +1110,61 @@ main {
   background: var(--ink-light);
   color: white;
   border-color: var(--ink-light);
+}
+
+/* User Interests Section */
+.user-interests-section {
+  padding: 24px 0;
+  border-top: 1px solid var(--border-gray);
+}
+
+.user-interests-section h3 {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink-black);
+  margin-bottom: 8px;
+}
+
+.interests-description {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  color: var(--ink-gray);
+  margin-bottom: 12px;
+}
+
+#user-interests {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px;
+  font-family: var(--font-serif);
+  font-size: 15px;
+  border: 1px solid var(--border-gray);
+  border-radius: 0;
+  resize: vertical;
+  margin-bottom: 12px;
+}
+
+#user-interests:focus {
+  outline: none;
+  border-color: var(--ink-black);
+}
+
+.save-interests-btn {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  padding: 10px 20px;
+  background: var(--ink-black);
+  color: white;
+  border: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: background 0.2s ease;
+}
+
+.save-interests-btn:hover {
+  background: var(--ink-gray);
 }
 
 .add-blog-section {
