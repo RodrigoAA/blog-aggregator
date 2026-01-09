@@ -71,14 +71,26 @@ function saveBlogs(blogs) {
 
     // Sync to Supabase if logged in
     if (isAuthenticated()) {
+        // Set flag to skip next cloud load (we have fresh local data)
+        skipNextCloudLoad = true;
         saveBlogsToCloud(blogs);
     }
 }
+
+// Flag to skip cloud load (set after local save)
+let skipNextCloudLoad = false;
 
 // Load blogs from Supabase (called on init if logged in)
 async function loadBlogsFromCloud() {
     if (!isAuthenticated()) {
         blogsCache = getBlogs();
+        return;
+    }
+
+    // Skip if we just saved locally (avoid race condition)
+    if (skipNextCloudLoad) {
+        skipNextCloudLoad = false;
+        console.log('Skipping cloud load (using local cache)');
         return;
     }
 
