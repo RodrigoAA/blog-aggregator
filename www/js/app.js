@@ -514,17 +514,11 @@ function displayPosts(posts) {
                         <button class="action-btn save-btn" data-url="${escapeHtml(post.link)}" title="Save for later">
                             ★ Save
                         </button>
-                        <button class="action-btn read-btn" data-url="${escapeHtml(post.link)}" title="Mark as read">
-                            ✓ Mark Read
-                        </button>
                         <button class="action-btn not-relevant-btn" data-url="${escapeHtml(post.link)}" title="Skip this post">
                             × Skip
                         </button>
                     ` : ''}
                     ${status === POST_STATUS.SAVED ? `
-                        <button class="action-btn read-btn" data-url="${escapeHtml(post.link)}" title="Mark as read">
-                            ✓ Mark Read
-                        </button>
                         <button class="action-btn inbox-btn" data-url="${escapeHtml(post.link)}" title="Move to inbox">
                             ↩ Unsave
                         </button>
@@ -646,16 +640,6 @@ function attachActionButtonHandlers() {
             e.stopPropagation();
             const postUrl = btn.dataset.url;
             markAsSaved(postUrl);
-            displayPosts(allPosts);
-        });
-    });
-
-    // Read buttons
-    document.querySelectorAll('.read-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const postUrl = btn.dataset.url;
-            markAsRead(postUrl);
             displayPosts(allPosts);
         });
     });
