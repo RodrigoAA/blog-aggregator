@@ -1,6 +1,6 @@
 # Partículas Elementales
 
-A Kindle-inspired RSS reader with AI-powered summaries and cloud sync.
+A modern RSS reader with AI-powered summaries and cloud sync.
 
 **Live:** https://particulaselementales.pages.dev
 
@@ -11,23 +11,31 @@ A Kindle-inspired RSS reader with AI-powered summaries and cloud sync.
 - **AI summaries** (TL;DR + key points) powered by OpenAI GPT-4o-mini
 - **Personalized recommendations** based on your interests
 - **Text highlighting** with click-to-remove
-- **Kindle aesthetic** - paper-white design, serif typography
+- **Unified loading** - article and summary load together before display
 
 ### Smart Organization
-- **Inbox / Read / Skipped** - organize posts into categories
+- **Inbox / Saved / Read / Skipped** - four-tab workflow
+- **Save for later** - bookmark articles to revisit
 - **RSS auto-discovery** - enter any blog URL, we find the feed
-- **Blog management** - add/remove feeds via UI
+- **Quick actions** - icon buttons (★ save, 🗑 skip)
 
 ### Cloud Sync (with Google Sign-In)
 - **Blogs sync** across devices
-- **Read status sync** across devices
+- **Read/saved status sync** across devices
+- **AI summaries sync** across devices (no regeneration)
 - **Highlights sync** across devices
 - **User interests** for personalized recommendations
 
 ### Performance
 - **Parallel fetching** - article and summary load together
-- **Summary caching** - 30-day localStorage cache
+- **Summary caching** - cloud + 30-day localStorage cache
 - **Article caching** - 24-hour cache for offline reading
+
+### Modern UI
+- **Compact header** with icon buttons
+- **Card design** with subtle shadows and rounded corners
+- **Touch-friendly** - 44×44px button targets
+- **Micro-interactions** - scale animations on hover/click
 
 ## Tech Stack
 

@@ -8,11 +8,12 @@
 ## Skills Acquired
 
 ### Frontend Development
-- **HTML5** - Semantic structure, modals, forms
-- **CSS3** - Custom properties, Kindle-inspired design system, responsive design
+- **HTML5** - Semantic structure, modals, forms, SVG icons
+- **CSS3** - Custom properties, shadows, animations, line-clamp truncation
 - **Vanilla JavaScript** - ES6+ classes, async/await, DOM manipulation
 - **localStorage** - Caching strategies, data persistence
 - **Selection API** - Text highlighting with ranges
+- **UI/UX Polish** - Touch targets, micro-interactions, visual hierarchy
 
 ### Backend Development
 - **Node.js** - Server-side JavaScript runtime
@@ -39,14 +40,23 @@
 ### Architecture Patterns
 - Frontend/backend separation
 - API-based communication
-- Caching strategies (localStorage with expiry)
-- Parallel async operations
+- Multi-layer caching (cloud + localStorage)
+- Parallel async operations (Promise.all)
+- Unified loading states
 
 ### JavaScript Patterns
 - ES6 classes for encapsulation
 - async/await for API calls
 - Event delegation for dynamic content
 - Template literals for HTML generation
+- Conditional rendering based on state
+
+### CSS Patterns
+- CSS custom properties (variables)
+- Modern shadows instead of borders
+- CSS line-clamp for text truncation
+- Transform animations (scale on hover)
+- Transition timing for polish
 
 ### Security Practices
 - Environment variables for secrets
@@ -63,8 +73,9 @@
 | CORS errors fetching RSS | Browser security | Built own backend proxy | Own backend > third-party proxies |
 | Variable already declared | Same name used twice | Renamed to unique name | Check scope carefully |
 | Images not loading | Observer created before DOM | Split init from lazy load | Order matters with DOM |
-| Old version deploying | Wrong publish directory | Configure netlify.toml | Check deployment settings |
-| Merge conflicts | Remote had changes | git pull, resolve, push | Always pull before push |
+| Two loading spinners | Article showed before summary | Wait for both with Promise.all | Unified loading = better UX |
+| Redundant Mark Read button | Already marked when opened | Removed button entirely | Simplify when possible |
+| Vague timestamps | "Yesterday" not specific | Show actual date (Jan 8) | Clarity over cleverness |
 
 ---
 
@@ -105,12 +116,12 @@
 ## Quick Stats
 
 - **Duration:** 4 days (Jan 6-9, 2026)
-- **Lines of Code:** ~3,000+
+- **Commits:** 25+
 - **Files:** 11 in repository
+- **Supabase Tables:** 4 (user_blogs, post_statuses, highlights, summaries)
 - **Technologies:** 15+
-- **Problems Debugged:** 10+
 - **Monthly Cost:** $0 (free tiers)
 
 ---
 
-*From zero coding to a deployed full-stack app. Not just "Hello World" - a real product people can use.*
+*From zero coding to a deployed full-stack app with cloud sync, AI summaries, and polished UI.*
