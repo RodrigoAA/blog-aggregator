@@ -29,7 +29,7 @@ class ArticleReader {
         <div class="article-body"></div>
         <div class="article-loading">
           <div class="loading-spinner"></div>
-          <p>Loading article...</p>
+          <p class="loading-text">Loading article and generating summary...</p>
         </div>
         <div class="article-error" style="display: none;">
           <h2>Could not load article</h2>
@@ -89,44 +89,60 @@ class ArticleReader {
     this.modal.querySelector('.article-loading').style.display = 'flex';
     this.modal.querySelector('.article-body').style.display = 'none';
 
-    // Start fetching summary in parallel (don't await yet)
+    // Start fetching summary in parallel
     const summaryPromise = this.fetchSummaryData(postUrl);
 
-    // Check cache first
+    // Get article (from cache or fetch)
+    let article;
     const cached = this.getCachedArticle(postUrl);
+
     if (cached) {
       console.log('Using cached article:', postTitle);
-      this.displayArticle(cached, postTitle, blogName, summaryPromise);
-      return;
+      article = cached;
+    } else {
+      try {
+        const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
+        const response = await fetch(
+          `${API_BASE_URL}/api/article?url=${encodeURIComponent(postUrl)}`
+        );
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to load article');
+        }
+
+        article = await response.json();
+        this.cacheArticle(postUrl, article);
+
+      } catch (error) {
+        console.error('Error loading article:', error);
+        this.showError(error.message || 'Could not load article. Please try the original link.');
+        return;
+      }
     }
 
+    // Wait for summary to complete (article is ready, now wait for AI)
+    this.updateLoadingText('Generating AI summary...');
+    let summaryData = null;
     try {
-      // Fetch article content from backend
-      const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
-      const response = await fetch(
-        `${API_BASE_URL}/api/article?url=${encodeURIComponent(postUrl)}`
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to load article');
-      }
-
-      const article = await response.json();
-
-      // Cache the article
-      this.cacheArticle(postUrl, article);
-
-      // Display article (pass summary promise to handle when ready)
-      this.displayArticle(article, postTitle, blogName, summaryPromise);
-
+      summaryData = await summaryPromise;
     } catch (error) {
-      console.error('Error loading article:', error);
-      this.showError(error.message || 'Could not load article. Please try the original link.');
+      console.error('Summary generation failed:', error);
+      // Continue without summary - article is still shown
+    }
+
+    // Now display everything together
+    this.displayArticle(article, postTitle, blogName, summaryData);
+  }
+
+  updateLoadingText(text) {
+    const loadingText = this.modal.querySelector('.loading-text');
+    if (loadingText) {
+      loadingText.textContent = text;
     }
   }
 
-  async displayArticle(article, postTitle, blogName, summaryPromise) {
+  displayArticle(article, postTitle, blogName, summaryData) {
     // Hide loading
     this.modal.querySelector('.article-loading').style.display = 'none';
 
@@ -167,16 +183,9 @@ class ArticleReader {
       this.initHighlighting(articleContent);
     }
 
-    // Handle summary when ready (was started in parallel during open())
-    if (summaryPromise) {
-      try {
-        const summaryData = await summaryPromise;
-        if (summaryData) {
-          this.insertSummarySection(summaryData.tldr, summaryData.keyPoints, summaryData.recommendation);
-        }
-      } catch (error) {
-        console.error('Failed to load summary:', error);
-      }
+    // Insert summary if available (already loaded)
+    if (summaryData) {
+      this.insertSummarySection(summaryData.tldr, summaryData.keyPoints, summaryData.recommendation);
     }
   }
 
@@ -185,10 +194,19 @@ class ArticleReader {
   // ============================================================
 
   async fetchSummaryData(articleUrl) {
-    // Check cache first
+    // Check cloud cache first (if authenticated)
+    const cloudCached = await this.getCachedSummaryFromCloud(articleUrl);
+    if (cloudCached) {
+      console.log('Using cloud-cached summary');
+      // Also cache locally for offline access
+      this.cacheSummaryLocally(articleUrl, cloudCached);
+      return cloudCached;
+    }
+
+    // Check local cache
     const cached = this.getCachedSummary(articleUrl);
     if (cached) {
-      console.log('Using cached summary');
+      console.log('Using locally cached summary');
       return cached;
     }
 
@@ -213,7 +231,7 @@ class ArticleReader {
 
       const data = await response.json();
 
-      // Cache the summary
+      // Cache the summary locally and in cloud
       this.cacheSummary(articleUrl, data);
 
       return data;
@@ -224,7 +242,7 @@ class ArticleReader {
     }
   }
 
-  // Summary cache management
+  // Summary cache management - Local
   getCachedSummary(url) {
     try {
       const cache = JSON.parse(localStorage.getItem('summaryCache') || '{}');
@@ -246,7 +264,7 @@ class ArticleReader {
     }
   }
 
-  cacheSummary(url, data) {
+  cacheSummaryLocally(url, data) {
     try {
       let cache = JSON.parse(localStorage.getItem('summaryCache') || '{}');
 
@@ -265,6 +283,84 @@ class ArticleReader {
       localStorage.setItem('summaryCache', JSON.stringify(cache));
     } catch (e) {
       console.error('Error saving summary cache:', e);
+    }
+  }
+
+  cacheSummary(url, data) {
+    // Save locally
+    this.cacheSummaryLocally(url, data);
+
+    // Save to cloud if authenticated
+    this.cacheSummaryToCloud(url, data);
+  }
+
+  // Summary cache management - Cloud (Supabase)
+  async getCachedSummaryFromCloud(url) {
+    if (typeof isAuthenticated !== 'function' || !isAuthenticated()) {
+      return null;
+    }
+
+    try {
+      const supabase = getSupabaseClient();
+      const user = getUser();
+
+      const { data, error } = await supabase
+        .from('summaries')
+        .select('tldr, key_points, recommendation_score, recommendation_reason')
+        .eq('user_id', user.id)
+        .eq('article_url', url)
+        .single();
+
+      if (error || !data) {
+        return null;
+      }
+
+      // Reconstruct summary object
+      return {
+        tldr: data.tldr,
+        keyPoints: data.key_points,
+        recommendation: data.recommendation_score ? {
+          score: data.recommendation_score,
+          reason: data.recommendation_reason
+        } : null
+      };
+
+    } catch (e) {
+      console.error('Error reading summary from cloud:', e);
+      return null;
+    }
+  }
+
+  async cacheSummaryToCloud(url, data) {
+    if (typeof isAuthenticated !== 'function' || !isAuthenticated()) {
+      return;
+    }
+
+    try {
+      const supabase = getSupabaseClient();
+      const user = getUser();
+
+      const { error } = await supabase
+        .from('summaries')
+        .upsert({
+          user_id: user.id,
+          article_url: url,
+          tldr: data.tldr,
+          key_points: data.keyPoints,
+          recommendation_score: data.recommendation?.score || null,
+          recommendation_reason: data.recommendation?.reason || null,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,article_url'
+        });
+
+      if (error) {
+        console.error('Error saving summary to cloud:', error);
+      } else {
+        console.log('Summary saved to cloud');
+      }
+    } catch (e) {
+      console.error('Failed to save summary to cloud:', e);
     }
   }
 
