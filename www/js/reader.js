@@ -185,7 +185,14 @@ class ArticleReader {
   // ============================================================
 
   async fetchSummaryData(articleUrl) {
-    // Returns summary data (called in parallel with article fetch)
+    // Check cache first
+    const cached = this.getCachedSummary(articleUrl);
+    if (cached) {
+      console.log('Using cached summary');
+      return cached;
+    }
+
+    // Fetch from API
     try {
       const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
 
@@ -204,11 +211,60 @@ class ArticleReader {
         return null;
       }
 
-      return await response.json();
+      const data = await response.json();
+
+      // Cache the summary
+      this.cacheSummary(articleUrl, data);
+
+      return data;
 
     } catch (error) {
       console.error('Failed to fetch summary:', error);
       return null;
+    }
+  }
+
+  // Summary cache management
+  getCachedSummary(url) {
+    try {
+      const cache = JSON.parse(localStorage.getItem('summaryCache') || '{}');
+      const cached = cache[url];
+      if (!cached) return null;
+
+      // Cache expires after 30 days
+      const age = Date.now() - cached.timestamp;
+      if (age > 30 * 24 * 60 * 60 * 1000) {
+        delete cache[url];
+        localStorage.setItem('summaryCache', JSON.stringify(cache));
+        return null;
+      }
+
+      return cached.data;
+    } catch (e) {
+      console.error('Error reading summary cache:', e);
+      return null;
+    }
+  }
+
+  cacheSummary(url, data) {
+    try {
+      let cache = JSON.parse(localStorage.getItem('summaryCache') || '{}');
+
+      cache[url] = {
+        data,
+        timestamp: Date.now()
+      };
+
+      // Keep only last 100 summaries
+      const entries = Object.entries(cache);
+      if (entries.length > 100) {
+        entries.sort((a, b) => b[1].timestamp - a[1].timestamp);
+        cache = Object.fromEntries(entries.slice(0, 100));
+      }
+
+      localStorage.setItem('summaryCache', JSON.stringify(cache));
+    } catch (e) {
+      console.error('Error saving summary cache:', e);
     }
   }
 

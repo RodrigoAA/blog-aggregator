@@ -396,7 +396,7 @@ app.get('/api/summary', async (req, res) => {
 
     const systemPrompt = hasInterests
       ? `You are a helpful assistant that summarizes articles and provides personalized reading recommendations.
-Respond in the SAME LANGUAGE as the article.
+ALWAYS respond in SPANISH, regardless of the article's language.
 Return JSON with this EXACT structure (all fields required):
 {
   "tldr": "2-3 sentence summary of the main point",
@@ -412,7 +412,7 @@ IMPORTANT:
 - The recommendation.reason should explain why this article matches or doesn't match the reader's interests
 - You MUST include the recommendation field`
       : `You are a helpful assistant that summarizes articles.
-Respond in the SAME LANGUAGE as the article.
+ALWAYS respond in SPANISH, regardless of the article's language.
 Return JSON with this exact structure:
 {
   "tldr": "2-3 sentence summary of the main point",
