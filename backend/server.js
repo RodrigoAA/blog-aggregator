@@ -446,8 +446,8 @@ Provide 3-5 key points. Be concise and informative.`;
 
     console.log(`Summary generated for: ${article.title}`);
 
-    // Build response
-    const response = {
+    // Build result
+    const result = {
       tldr: summary.tldr,
       keyPoints: summary.keyPoints,
       model: 'gpt-4o-mini',
@@ -456,10 +456,10 @@ Provide 3-5 key points. Be concise and informative.`;
 
     // Include recommendation if present
     if (summary.recommendation) {
-      response.recommendation = summary.recommendation;
+      result.recommendation = summary.recommendation;
     }
 
-    res.json(response);
+    res.json(result);
 
   } catch (error) {
     console.error('Summary generation error:', error.message);
