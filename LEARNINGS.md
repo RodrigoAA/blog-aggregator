@@ -118,10 +118,10 @@
 ## Quick Stats
 
 - **Duration:** 4+ days (Jan 6-10, 2026)
-- **Commits:** 30+
-- **Files:** 11 in repository
-- **Supabase Tables:** 5 (user_blogs, post_statuses, highlights, summaries, user_settings)
-- **localStorage Keys:** 4 (blogs, postStatuses, postsCache, articleCache)
+- **Commits:** 35+
+- **Files:** 14 in repository (including documentation)
+- **Supabase Tables:** 6 (user_blogs, post_statuses, highlights, summaries, user_settings, manual_articles)
+- **localStorage Keys:** 5 (blogs, postStatuses, postsCache, articleCache, manualArticles)
 - **Technologies:** 15+
 - **Monthly Cost:** $0 (free tiers)
 
