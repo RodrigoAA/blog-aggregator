@@ -10,6 +10,9 @@
 // Backend API URL (set this before deploying)
 window.API_BASE_URL = 'https://particulas-backend.onrender.com';
 
+// Posts cache expiry time in milliseconds (default: 1 hour)
+const POSTS_CACHE_EXPIRY = 60 * 60 * 1000; // 1 hour
+
 // Default blogs configuration
 const DEFAULT_BLOGS = [
     {
@@ -187,6 +190,69 @@ async function fetchFeed(blog) {
         updateStatus(`Failed to load ${blog.name}: ${error.message}`);
         return { blog, error, success: false };
     }
+}
+
+// ============================================================
+// POSTS CACHE MANAGEMENT
+// ============================================================
+
+function getPostsCache() {
+    try {
+        const cached = localStorage.getItem('blogAggregator_postsCache');
+        if (!cached) return null;
+
+        const cache = JSON.parse(cached);
+
+        // Check if cache is expired
+        const now = Date.now();
+        if (now - cache.timestamp > POSTS_CACHE_EXPIRY) {
+            console.log('Posts cache expired');
+            return null;
+        }
+
+        // Check if blogs have changed (compare URLs)
+        const currentBlogs = getBlogs();
+        const currentBlogUrls = currentBlogs.map(b => b.url).sort().join(',');
+        const cachedBlogUrls = (cache.blogs || []).map(b => b.url).sort().join(',');
+
+        if (currentBlogUrls !== cachedBlogUrls) {
+            console.log('Blogs configuration changed, invalidating cache');
+            return null;
+        }
+
+        console.log(`Loading ${cache.posts.length} posts from cache`);
+
+        // Restore Date objects
+        cache.posts.forEach(post => {
+            if (post.date) {
+                post.date = new Date(post.date);
+            }
+        });
+
+        return cache.posts;
+    } catch (error) {
+        console.error('Error loading posts cache:', error);
+        return null;
+    }
+}
+
+function savePostsCache(posts, blogs) {
+    try {
+        const cache = {
+            posts: posts,
+            blogs: blogs,
+            timestamp: Date.now()
+        };
+        localStorage.setItem('blogAggregator_postsCache', JSON.stringify(cache));
+        console.log(`Cached ${posts.length} posts`);
+    } catch (error) {
+        console.error('Error saving posts cache:', error);
+    }
+}
+
+function clearPostsCache() {
+    localStorage.removeItem('blogAggregator_postsCache');
+    console.log('Posts cache cleared');
 }
 
 function updateStatus(message) {
@@ -673,7 +739,7 @@ function attachActionButtonHandlers() {
 // INITIALIZATION
 // ============================================================
 
-async function init() {
+async function init(forceRefresh = false) {
     try {
         // Show skeleton loading
         showSkeletonPosts(5);
@@ -706,6 +772,23 @@ async function init() {
             return;
         }
 
+        let allPosts;
+
+        // Try to load from cache first (unless force refresh)
+        if (!forceRefresh) {
+            const cachedPosts = getPostsCache();
+            if (cachedPosts && cachedPosts.length > 0) {
+                console.log('Using cached posts');
+                updateStatus('Loading from cache...');
+                allPosts = cachedPosts;
+
+                // Display cached posts immediately
+                displayPosts(allPosts);
+                return;
+            }
+        }
+
+        // Cache miss or force refresh - fetch from network
         updateStatus('Fetching feeds...');
 
         // Fetch all feeds in parallel
@@ -715,12 +798,15 @@ async function init() {
         updateStatus('Parsing posts...');
 
         // Parse all feeds and combine posts
-        const allPosts = feedResults.flatMap(result => parseFeed(result));
+        allPosts = feedResults.flatMap(result => parseFeed(result));
 
         console.log(`Total posts found: ${allPosts.length}`);
 
         const successCount = feedResults.filter(r => r.success).length;
         console.log(`Successfully loaded ${successCount} out of ${blogs.length} blogs`);
+
+        // Save to cache
+        savePostsCache(allPosts, blogs);
 
         // Display the posts
         displayPosts(allPosts);
@@ -972,11 +1058,14 @@ async function addNewBlog() {
     // Refresh the list
     renderBlogList();
 
+    // Clear cache since blogs changed
+    clearPostsCache();
+
     // Show success message
     alert('Blog added successfully! Refreshing posts...');
 
-    // Reload posts
-    init();
+    // Reload posts with force refresh
+    init(true);
 }
 
 function deleteBlog(index) {
@@ -988,9 +1077,32 @@ function deleteBlog(index) {
         saveBlogs(blogs);
         renderBlogList();
 
-        // Reload posts
-        init();
+        // Clear cache since blogs changed
+        clearPostsCache();
+
+        // Reload posts with force refresh
+        init(true);
     }
+}
+
+// Refresh posts (force fetch from network)
+function refreshPosts() {
+    const refreshBtn = document.getElementById('refresh-btn');
+    if (!refreshBtn) return;
+
+    // Add spinning animation class if it exists
+    refreshBtn.style.animation = 'spin 1s linear infinite';
+
+    console.log('Manually refreshing posts...');
+    init(true).then(() => {
+        // Remove animation when done
+        setTimeout(() => {
+            refreshBtn.style.animation = '';
+        }, 500);
+    }).catch((error) => {
+        console.error('Error refreshing posts:', error);
+        refreshBtn.style.animation = '';
+    });
 }
 
 // Start the app when page loads
