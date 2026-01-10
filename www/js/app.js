@@ -262,6 +262,9 @@ function clearPostsCache() {
 // In-memory cache for manual articles
 let manualArticlesCache = null;
 
+// Flag to skip cloud load (set after local save)
+let skipNextManualArticlesCloudLoad = false;
+
 function getManualArticles() {
     if (manualArticlesCache !== null) {
         return manualArticlesCache;
@@ -289,6 +292,8 @@ function addManualArticleToList(article) {
 
     // Sync to cloud if logged in
     if (isAuthenticated()) {
+        // Set flag to skip next cloud load (we have fresh local data)
+        skipNextManualArticlesCloudLoad = true;
         saveManualArticleToCloud(article);
     }
 
@@ -302,6 +307,8 @@ function deleteManualArticle(link) {
 
     // Delete from cloud if logged in
     if (isAuthenticated()) {
+        // Set flag to skip next cloud load (we have fresh local data)
+        skipNextManualArticlesCloudLoad = true;
         deleteManualArticleFromCloud(link);
     }
 }
@@ -309,6 +316,14 @@ function deleteManualArticle(link) {
 // Load manual articles from Supabase
 async function loadManualArticlesFromCloud() {
     if (!isAuthenticated()) {
+        manualArticlesCache = getManualArticles();
+        return;
+    }
+
+    // Skip if we just saved locally (avoid race condition)
+    if (skipNextManualArticlesCloudLoad) {
+        skipNextManualArticlesCloudLoad = false;
+        console.log('Skipping manual articles cloud load (using local cache)');
         manualArticlesCache = getManualArticles();
         return;
     }
