@@ -82,8 +82,9 @@ Manual articles sync via Supabase:
 
 **Schema**:
 ```sql
+-- Crear la tabla manual_articles
 CREATE TABLE manual_articles (
-  user_id UUID REFERENCES auth.users(id),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   url TEXT NOT NULL,
   title TEXT NOT NULL,
   description TEXT,
@@ -92,12 +93,47 @@ CREATE TABLE manual_articles (
   created_at TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (user_id, url)
 );
+
+-- Habilitar Row Level Security (RLS)
+ALTER TABLE manual_articles ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Los usuarios solo pueden ver sus propios artículos
+CREATE POLICY "Users can view own manual articles"
+  ON manual_articles FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Policy: Los usuarios solo pueden insertar sus propios artículos
+CREATE POLICY "Users can insert own manual articles"
+  ON manual_articles FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+-- Policy: Los usuarios solo pueden actualizar sus propios artículos
+CREATE POLICY "Users can update own manual articles"
+  ON manual_articles FOR UPDATE
+  USING (auth.uid() = user_id);
+
+-- Policy: Los usuarios solo pueden eliminar sus propios artículos
+CREATE POLICY "Users can delete own manual articles"
+  ON manual_articles FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- Índice para mejorar performance en queries ordenadas por fecha
+CREATE INDEX idx_manual_articles_user_created
+  ON manual_articles(user_id, created_at DESC);
 ```
+
+**Setup Instructions**:
+1. Go to your Supabase project
+2. Open SQL Editor
+3. Create a new query
+4. Paste the SQL above
+5. Run the query
 
 **Sync behavior**:
 - **Add**: Immediately syncs to cloud
 - **Delete**: Removes from cloud
 - **Login**: Loads all manual articles from cloud
+- **Race condition protection**: Uses flag to prevent overwriting fresh local data
 
 ### Integration with Feed
 
