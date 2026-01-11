@@ -233,6 +233,20 @@ body > footer {
   display: inline-block;
 }
 
+.manual-badge {
+  background: var(--highlight-yellow);
+  color: var(--ink-black);
+  padding: 4px 10px;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-left: 8px;
+}
+
 /* Title - prominent */
 .post-title {
   font-family: var(--font-sans);
@@ -1241,6 +1255,43 @@ body > footer {
 
 .save-interests-btn:hover {
   background: var(--ink-gray);
+}
+
+.add-article-section {
+  padding-top: 32px;
+  border-top: 2px solid var(--border-gray);
+}
+
+.add-article-section h3 {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink-black);
+  margin-bottom: 8px;
+}
+
+.add-article-btn {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: 12px 24px;
+  background: var(--ink-black);
+  color: white;
+  border: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.add-article-btn:hover {
+  background: var(--ink-gray);
+}
+
+.add-article-btn:disabled {
+  background: var(--border-gray);
+  color: var(--ink-light);
+  cursor: not-allowed;
 }
 
 .add-blog-section {

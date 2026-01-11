@@ -40,7 +40,8 @@
 ### Architecture Patterns
 - Frontend/backend separation
 - API-based communication
-- Multi-layer caching (cloud + localStorage)
+- Multi-layer caching (cloud + localStorage + RSS posts cache)
+- Cache invalidation strategies (timestamp + configuration change detection)
 - Parallel async operations (Promise.all)
 - Unified loading states
 
@@ -76,6 +77,7 @@
 | Two loading spinners | Article showed before summary | Wait for both with Promise.all | Unified loading = better UX |
 | Redundant Mark Read button | Already marked when opened | Removed button entirely | Simplify when possible |
 | Vague timestamps | "Yesterday" not specific | Show actual date (Jan 8) | Clarity over cleverness |
+| Slow page loads | Fetching all RSS feeds on every load | Cached posts in localStorage (1hr expiry) | Cache aggressively, invalidate smartly |
 
 ---
 
@@ -115,10 +117,11 @@
 
 ## Quick Stats
 
-- **Duration:** 4 days (Jan 6-9, 2026)
-- **Commits:** 25+
-- **Files:** 11 in repository
-- **Supabase Tables:** 4 (user_blogs, post_statuses, highlights, summaries)
+- **Duration:** 4+ days (Jan 6-10, 2026)
+- **Commits:** 35+
+- **Files:** 14 in repository (including documentation)
+- **Supabase Tables:** 6 (user_blogs, post_statuses, highlights, summaries, user_settings, manual_articles)
+- **localStorage Keys:** 5 (blogs, postStatuses, postsCache, articleCache, manualArticles)
 - **Technologies:** 15+
 - **Monthly Cost:** $0 (free tiers)
 

@@ -16,20 +16,25 @@ A modern RSS reader with AI-powered summaries and cloud sync.
 ### Smart Organization
 - **Inbox / Saved / Read / Skipped** - four-tab workflow
 - **Save for later** - bookmark articles to revisit
+- **Manual article saving** - add individual articles from any website
 - **RSS auto-discovery** - enter any blog URL, we find the feed
-- **Quick actions** - icon buttons (★ save, 🗑 skip)
+- **Quick actions** - icon buttons (★ save, 🗑 skip, ✕ delete manual articles)
 
 ### Cloud Sync (with Google Sign-In)
 - **Blogs sync** across devices
+- **Manual articles sync** across devices
 - **Read/saved status sync** across devices
 - **AI summaries sync** across devices (no regeneration)
 - **Highlights sync** across devices
 - **User interests** for personalized recommendations
 
 ### Performance
+- **Posts caching** - 1-hour cache for fetched RSS posts (instant page load)
 - **Parallel fetching** - article and summary load together
 - **Summary caching** - cloud + 30-day localStorage cache
 - **Article caching** - 24-hour cache for offline reading
+- **Smart cache invalidation** - auto-clears when blogs change
+- **Manual refresh** - refresh button to force fetch latest posts
 
 ### Modern UI
 - **Compact header** with icon buttons

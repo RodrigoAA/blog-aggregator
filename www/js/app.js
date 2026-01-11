@@ -255,6 +255,261 @@ function clearPostsCache() {
     console.log('Posts cache cleared');
 }
 
+// ============================================================
+// MANUAL ARTICLES MANAGEMENT
+// ============================================================
+
+// In-memory cache for manual articles
+let manualArticlesCache = null;
+
+// Flag to skip cloud load (set after local save)
+let skipNextManualArticlesCloudLoad = false;
+
+function getManualArticles() {
+    if (manualArticlesCache !== null) {
+        return manualArticlesCache;
+    }
+    const stored = localStorage.getItem('blogAggregator_manualArticles');
+    return stored ? JSON.parse(stored) : [];
+}
+
+function saveManualArticles(articles) {
+    manualArticlesCache = articles;
+    localStorage.setItem('blogAggregator_manualArticles', JSON.stringify(articles));
+}
+
+function addManualArticleToList(article) {
+    const articles = getManualArticles();
+
+    // Check for duplicates
+    if (articles.some(a => a.link === article.link)) {
+        console.log('Article already exists:', article.link);
+        return false;
+    }
+
+    articles.unshift(article); // Add at beginning
+    saveManualArticles(articles);
+
+    // Sync to cloud if logged in
+    if (isAuthenticated()) {
+        // Set flag to skip next cloud load (we have fresh local data)
+        skipNextManualArticlesCloudLoad = true;
+        saveManualArticleToCloud(article);
+    }
+
+    return true;
+}
+
+function deleteManualArticle(link) {
+    const articles = getManualArticles();
+    const filtered = articles.filter(a => a.link !== link);
+    saveManualArticles(filtered);
+
+    // Delete from cloud if logged in
+    if (isAuthenticated()) {
+        // Set flag to skip next cloud load (we have fresh local data)
+        skipNextManualArticlesCloudLoad = true;
+        deleteManualArticleFromCloud(link);
+    }
+}
+
+// Load manual articles from Supabase
+async function loadManualArticlesFromCloud() {
+    if (!isAuthenticated()) {
+        manualArticlesCache = getManualArticles();
+        return;
+    }
+
+    // Skip if we just saved locally (avoid race condition)
+    if (skipNextManualArticlesCloudLoad) {
+        skipNextManualArticlesCloudLoad = false;
+        console.log('Skipping manual articles cloud load (using local cache)');
+        manualArticlesCache = getManualArticles();
+        return;
+    }
+
+    try {
+        const supabase = getSupabaseClient();
+        const user = getUser();
+
+        const { data, error } = await supabase
+            .from('manual_articles')
+            .select('url, title, description, date, site_name')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error loading manual articles from cloud:', error);
+            manualArticlesCache = [];
+            return;
+        }
+
+        // Convert to post format
+        const articles = (data || []).map(item => ({
+            title: item.title,
+            link: item.url,
+            date: new Date(item.date),
+            description: item.description || '',
+            blogName: item.site_name || 'Manual',
+            blogSlug: 'manual',
+            isManual: true
+        }));
+
+        console.log('Loaded manual articles from cloud:', articles.length);
+        manualArticlesCache = articles;
+        localStorage.setItem('blogAggregator_manualArticles', JSON.stringify(articles));
+    } catch (error) {
+        console.error('Failed to load manual articles from cloud:', error);
+        manualArticlesCache = [];
+    }
+}
+
+// Save single manual article to Supabase
+async function saveManualArticleToCloud(article) {
+    if (!isAuthenticated()) return;
+
+    try {
+        const supabase = getSupabaseClient();
+        const user = getUser();
+
+        const { error } = await supabase
+            .from('manual_articles')
+            .upsert({
+                user_id: user.id,
+                url: article.link,
+                title: article.title,
+                description: article.description,
+                date: article.date.toISOString(),
+                site_name: article.blogName,
+                created_at: new Date().toISOString()
+            }, {
+                onConflict: 'user_id,url'
+            });
+
+        if (error) {
+            console.error('Error saving manual article to cloud:', error);
+        } else {
+            console.log('Manual article saved to cloud');
+        }
+    } catch (error) {
+        console.error('Failed to save manual article to cloud:', error);
+    }
+}
+
+// Delete manual article from Supabase
+async function deleteManualArticleFromCloud(url) {
+    if (!isAuthenticated()) return;
+
+    try {
+        const supabase = getSupabaseClient();
+        const user = getUser();
+
+        const { error } = await supabase
+            .from('manual_articles')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('url', url);
+
+        if (error) {
+            console.error('Error deleting manual article from cloud:', error);
+        }
+    } catch (error) {
+        console.error('Failed to delete manual article from cloud:', error);
+    }
+}
+
+// Fetch article metadata from backend
+async function fetchArticleMetadata(url) {
+    try {
+        const response = await fetch(
+            `${window.API_BASE_URL}/api/article?url=${encodeURIComponent(url)}`
+        );
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || `HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Create post object from article data
+        const post = {
+            title: data.title || 'Untitled',
+            link: url,
+            date: data.publishedTime ? new Date(data.publishedTime) : new Date(),
+            description: data.excerpt || (data.textContent ? data.textContent.substring(0, 200) + '...' : ''),
+            blogName: data.siteName || new URL(url).hostname,
+            blogSlug: 'manual',
+            isManual: true
+        };
+
+        return post;
+    } catch (error) {
+        console.error('Error fetching article metadata:', error);
+        throw error;
+    }
+}
+
+// UI function to add manual article
+async function addManualArticle() {
+    const urlInput = document.getElementById('article-url');
+    const addBtn = document.querySelector('.add-article-btn');
+
+    const url = urlInput.value.trim();
+
+    // Validation
+    if (!url) {
+        alert('Please enter an article URL');
+        return;
+    }
+
+    // Basic URL validation
+    try {
+        new URL(url);
+    } catch (e) {
+        alert('Please enter a valid URL');
+        return;
+    }
+
+    // Show loading state
+    addBtn.textContent = 'Extracting article...';
+    addBtn.disabled = true;
+
+    try {
+        // Fetch article metadata
+        const article = await fetchArticleMetadata(url);
+
+        // Add to list
+        const added = addManualArticleToList(article);
+
+        if (!added) {
+            alert('This article is already in your reading list');
+            addBtn.textContent = 'Add Article';
+            addBtn.disabled = false;
+            return;
+        }
+
+        // Clear input
+        urlInput.value = '';
+
+        // Reset button
+        addBtn.textContent = 'Article added!';
+        setTimeout(() => {
+            addBtn.textContent = 'Add Article';
+            addBtn.disabled = false;
+        }, 2000);
+
+        // Refresh posts display to include the new article
+        init();
+
+    } catch (error) {
+        console.error('Error adding manual article:', error);
+        alert(`Failed to add article: ${error.message}`);
+        addBtn.textContent = 'Add Article';
+        addBtn.disabled = false;
+    }
+}
+
 function updateStatus(message) {
     const loading = document.getElementById('loading');
     if (loading && loading.style.display !== 'none') {
@@ -554,9 +809,11 @@ function displayPosts(posts) {
             <article class="post-card ${statusClass}"
                      data-url="${escapeHtml(post.link)}"
                      data-title="${escapeHtml(post.title)}"
-                     data-blog="${escapeHtml(post.blogName)}">
+                     data-blog="${escapeHtml(post.blogName)}"
+                     data-is-manual="${post.isManual || false}">
                 <div class="post-header">
                     <span class="blog-source">${escapeHtml(post.blogName)}</span>
+                    ${post.isManual ? '<span class="manual-badge">✨ Manual</span>' : ''}
                 </div>
                 <h2 class="post-title">${escapeHtml(post.title)}</h2>
                 <div class="post-meta">
@@ -576,6 +833,14 @@ function displayPosts(posts) {
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                             </svg>
                         </button>
+                        ${post.isManual ? `
+                            <button class="action-icon-btn delete-manual-btn" data-url="${escapeHtml(post.link)}" title="Delete article">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        ` : ''}
                     ` : ''}
                     ${status === POST_STATUS.SAVED ? `
                         <button class="action-icon-btn inbox-btn" data-url="${escapeHtml(post.link)}" title="Unsave">
@@ -584,6 +849,14 @@ function displayPosts(posts) {
                                 <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
                             </svg>
                         </button>
+                        ${post.isManual ? `
+                            <button class="action-icon-btn delete-manual-btn" data-url="${escapeHtml(post.link)}" title="Delete article">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        ` : ''}
                     ` : ''}
                     ${status === POST_STATUS.READ ? `
                         <button class="action-icon-btn save-btn" data-url="${escapeHtml(post.link)}" title="Save for later">
@@ -597,6 +870,14 @@ function displayPosts(posts) {
                                 <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
                             </svg>
                         </button>
+                        ${post.isManual ? `
+                            <button class="action-icon-btn delete-manual-btn" data-url="${escapeHtml(post.link)}" title="Delete article">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        ` : ''}
                     ` : ''}
                     ${status === POST_STATUS.NOT_RELEVANT ? `
                         <button class="action-icon-btn inbox-btn" data-url="${escapeHtml(post.link)}" title="Move to Inbox">
@@ -605,6 +886,14 @@ function displayPosts(posts) {
                                 <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
                             </svg>
                         </button>
+                        ${post.isManual ? `
+                            <button class="action-icon-btn delete-manual-btn" data-url="${escapeHtml(post.link)}" title="Delete article">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        ` : ''}
                     ` : ''}
                 </div>
             </article>
@@ -733,6 +1022,22 @@ function attachActionButtonHandlers() {
             displayPosts(allPosts);
         });
     });
+
+    // Delete manual article buttons
+    document.querySelectorAll('.delete-manual-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const postUrl = btn.dataset.url;
+
+            if (confirm('Are you sure you want to delete this article?')) {
+                // Delete from manual articles list
+                deleteManualArticle(postUrl);
+
+                // Refresh display
+                init();
+            }
+        });
+    });
 }
 
 // ============================================================
@@ -753,6 +1058,7 @@ async function init(forceRefresh = false) {
             updateStatus('Syncing data...');
             await loadBlogsFromCloud();
             await loadPostStatusesFromCloud();
+            await loadManualArticlesFromCloud();
             // Load highlights if article reader is ready
             if (window.articleReader && window.articleReader.loadHighlightsFromCloud) {
                 await window.articleReader.loadHighlightsFromCloud();
@@ -762,51 +1068,66 @@ async function init(forceRefresh = false) {
         // Get blogs (from cache/localStorage)
         const blogs = getBlogs();
 
-        if (blogs.length === 0) {
+        // Get manual articles
+        const manualArticles = getManualArticles();
+
+        // Restore Date objects in manual articles (from localStorage)
+        manualArticles.forEach(article => {
+            if (article.date && typeof article.date === 'string') {
+                article.date = new Date(article.date);
+            }
+            article.isManual = true; // Ensure flag is set
+        });
+
+        if (blogs.length === 0 && manualArticles.length === 0) {
             document.getElementById('loading').innerHTML = `
                 <div class="empty-state">
-                    <h2>No blogs configured</h2>
-                    <p>Add some RSS feeds to get started.</p>
+                    <h2>No content configured</h2>
+                    <p>Add some RSS feeds or individual articles to get started.</p>
                 </div>
             `;
             return;
         }
 
-        let allPosts;
+        let rssPost = [];
 
-        // Try to load from cache first (unless force refresh)
-        if (!forceRefresh) {
-            const cachedPosts = getPostsCache();
-            if (cachedPosts && cachedPosts.length > 0) {
-                console.log('Using cached posts');
-                updateStatus('Loading from cache...');
-                allPosts = cachedPosts;
+        // Only fetch RSS posts if we have blogs configured
+        if (blogs.length > 0) {
+            // Try to load from cache first (unless force refresh)
+            if (!forceRefresh) {
+                const cachedPosts = getPostsCache();
+                if (cachedPosts && cachedPosts.length > 0) {
+                    console.log('Using cached RSS posts');
+                    rssPost = cachedPosts;
+                }
+            }
 
-                // Display cached posts immediately
-                displayPosts(allPosts);
-                return;
+            // Cache miss or force refresh - fetch from network
+            if (rssPost.length === 0) {
+                updateStatus('Fetching feeds...');
+
+                // Fetch all feeds in parallel
+                const feedPromises = blogs.map(blog => fetchFeed(blog));
+                const feedResults = await Promise.all(feedPromises);
+
+                updateStatus('Parsing posts...');
+
+                // Parse all feeds and combine posts
+                rssPost = feedResults.flatMap(result => parseFeed(result));
+
+                console.log(`Total RSS posts found: ${rssPost.length}`);
+
+                const successCount = feedResults.filter(r => r.success).length;
+                console.log(`Successfully loaded ${successCount} out of ${blogs.length} blogs`);
+
+                // Save to cache
+                savePostsCache(rssPost, blogs);
             }
         }
 
-        // Cache miss or force refresh - fetch from network
-        updateStatus('Fetching feeds...');
-
-        // Fetch all feeds in parallel
-        const feedPromises = blogs.map(blog => fetchFeed(blog));
-        const feedResults = await Promise.all(feedPromises);
-
-        updateStatus('Parsing posts...');
-
-        // Parse all feeds and combine posts
-        allPosts = feedResults.flatMap(result => parseFeed(result));
-
-        console.log(`Total posts found: ${allPosts.length}`);
-
-        const successCount = feedResults.filter(r => r.success).length;
-        console.log(`Successfully loaded ${successCount} out of ${blogs.length} blogs`);
-
-        // Save to cache
-        savePostsCache(allPosts, blogs);
+        // Combine RSS posts and manual articles
+        const allPosts = [...rssPost, ...manualArticles];
+        console.log(`Total posts (RSS + Manual): ${allPosts.length} (${rssPost.length} + ${manualArticles.length})`);
 
         // Display the posts
         displayPosts(allPosts);
