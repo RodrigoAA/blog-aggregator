@@ -2,7 +2,7 @@
 
 A modern RSS reader with AI-powered summaries and cloud sync.
 
-**Live:** https://particulaselementales.pages.dev
+**Live:** https://particulas-elementales.pages.dev
 
 ## Features
 
@@ -100,7 +100,7 @@ npx http-server -p 8080  # http://localhost:8080
 ### Backend (Render)
 ```
 PORT=3000
-ALLOWED_ORIGINS=https://particulaselementales.pages.dev
+ALLOWED_ORIGINS=https://particulas-elementales.pages.dev
 OPENAI_API_KEY=sk-...
 ```
 

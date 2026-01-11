@@ -271,7 +271,7 @@ window.API_BASE_URL = 'https://your-backend.onrender.com';
 1. Go to Cloudflare Pages dashboard
 2. Connect your GitHub repository
 3. Configure:
-   - **Project name**: `particulaselementales` (or your choice)
+   - **Project name**: `particulas-elementales` (or your choice)
    - **Build directory**: `www`
    - **Build command**: (leave empty - static site)
    - **Build output directory**: `/`
