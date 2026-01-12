@@ -6,56 +6,23 @@ A modern RSS reader with AI-powered summaries and cloud sync.
 
 ## Features
 
-### Reading Experience
 - **Full-screen article reader** with Mozilla Readability extraction
 - **AI summaries** (TL;DR + key points) powered by OpenAI GPT-4o-mini
-- **Personalized recommendations** based on your interests
+- **Four-tab workflow:** Inbox / Saved / Read / Skipped
+- **Manual article saving** - add articles from any website
 - **Text highlighting** with click-to-remove
-- **Unified loading** - article and summary load together before display
-
-### Smart Organization
-- **Inbox / Saved / Read / Skipped** - four-tab workflow
-- **Save for later** - bookmark articles to revisit
-- **Manual article saving** - add individual articles from any website
-- **RSS auto-discovery** - enter any blog URL, we find the feed
-- **Quick actions** - icon buttons (★ save, 🗑 skip, ✕ delete manual articles)
-
-### Cloud Sync (with Google Sign-In)
-- **Blogs sync** across devices
-- **Manual articles sync** across devices
-- **Read/saved status sync** across devices
-- **AI summaries sync** across devices (no regeneration)
-- **Highlights sync** across devices
-- **User interests** for personalized recommendations
-
-### Performance
-- **Posts caching** - 1-hour cache for fetched RSS posts (instant page load)
-- **Parallel fetching** - article and summary load together
-- **Summary caching** - cloud + 30-day localStorage cache
-- **Article caching** - 24-hour cache for offline reading
-- **Smart cache invalidation** - auto-clears when blogs change
-- **Manual refresh** - refresh button to force fetch latest posts
-
-### Modern UI
-- **Compact header** with icon buttons
-- **Card design** with subtle shadows and rounded corners
-- **Touch-friendly** - 44×44px button targets
-- **Micro-interactions** - scale animations on hover/click
+- **Cloud sync** (Google Sign-In) across devices
+- **Persistent cache** with new posts detection banner
 
 ## Tech Stack
 
-```
-Frontend (Cloudflare Pages):
-├── Vanilla JavaScript
-├── Supabase (auth + database)
-└── localStorage (caching)
-
-Backend (Render):
-├── Node.js + Express
-├── Mozilla Readability
-├── OpenAI API (GPT-4o-mini)
-└── RSS feed proxy
-```
+| Layer | Technology |
+|-------|------------|
+| Frontend | Vanilla JS, Supabase Auth |
+| Backend | Node.js, Express, Mozilla Readability |
+| AI | OpenAI GPT-4o-mini |
+| Database | Supabase (PostgreSQL) |
+| Hosting | Cloudflare Pages + Render.com |
 
 ## Architecture
 
@@ -71,43 +38,6 @@ Backend (Render):
 │  (auth + sync)  │
 └─────────────────┘
 ```
-
-## API Endpoints
-
-| Endpoint | Description |
-|----------|-------------|
-| `GET /health` | Health check |
-| `GET /api/feed?url=` | Proxy RSS feed |
-| `GET /api/article?url=` | Extract article content |
-| `GET /api/discover-feed?url=` | Find RSS feed for website |
-| `GET /api/summary?url=&interests=` | Generate AI summary |
-
-## Local Development
-
-```bash
-# Backend
-cd backend
-npm install
-npm start  # http://localhost:3000
-
-# Frontend
-cd www
-npx http-server -p 8080  # http://localhost:8080
-```
-
-## Environment Variables
-
-### Backend (Render)
-```
-PORT=3000
-ALLOWED_ORIGINS=https://particulas-elementales.pages.dev
-OPENAI_API_KEY=sk-...
-```
-
-## Deployment
-
-- **Frontend**: Push to GitHub → Cloudflare Pages auto-deploys
-- **Backend**: Push to GitHub → Render auto-deploys
 
 ## Project Structure
 
@@ -127,12 +57,164 @@ OPENAI_API_KEY=sk-...
 └── README.md
 ```
 
-## Credits
+## API Endpoints
 
-- [Mozilla Readability](https://github.com/mozilla/readability) - Article extraction
-- [Supabase](https://supabase.com) - Auth and database
-- [OpenAI](https://openai.com) - AI summaries
+| Endpoint | Description |
+|----------|-------------|
+| `GET /health` | Health check |
+| `GET /api/feed?url=` | Proxy RSS feed |
+| `GET /api/article?url=` | Extract article content |
+| `GET /api/discover-feed?url=` | Find RSS feed for website |
+| `GET /api/summary?url=&interests=` | Generate AI summary |
 
 ---
+
+## Setup
+
+### Prerequisites
+
+- GitHub, Cloudflare, Render.com, Supabase, OpenAI accounts
+
+### 1. Supabase Setup
+
+Create a project at [supabase.com](https://supabase.com), then run this SQL in the SQL Editor:
+
+```sql
+-- Table 1: user_blogs
+CREATE TABLE user_blogs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL,
+  url TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+ALTER TABLE user_blogs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own blogs" ON user_blogs
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Table 2: post_statuses
+CREATE TABLE post_statuses (
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  post_url TEXT NOT NULL,
+  status TEXT NOT NULL,
+  updated_at TIMESTAMP DEFAULT NOW(),
+  PRIMARY KEY (user_id, post_url)
+);
+ALTER TABLE post_statuses ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own statuses" ON post_statuses
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Table 3: summaries
+CREATE TABLE summaries (
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  article_url TEXT NOT NULL,
+  tldr TEXT NOT NULL,
+  key_points TEXT[] NOT NULL,
+  recommendation_score TEXT,
+  recommendation_reason TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  PRIMARY KEY (user_id, article_url)
+);
+ALTER TABLE summaries ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own summaries" ON summaries
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Table 4: highlights
+CREATE TABLE highlights (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  article_url TEXT NOT NULL,
+  text TEXT NOT NULL,
+  position INTEGER,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+ALTER TABLE highlights ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own highlights" ON highlights
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Table 5: user_settings
+CREATE TABLE user_settings (
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  interests TEXT,
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own settings" ON user_settings
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Table 6: manual_articles
+CREATE TABLE manual_articles (
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  url TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  date TIMESTAMP,
+  site_name TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  PRIMARY KEY (user_id, url)
+);
+ALTER TABLE manual_articles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage own articles" ON manual_articles
+  FOR ALL USING (auth.uid() = user_id);
+CREATE INDEX idx_manual_articles_user_created
+  ON manual_articles(user_id, created_at DESC);
+```
+
+Enable **Google OAuth** in Authentication → Providers.
+
+### 2. Backend (Render.com)
+
+1. Create Web Service from GitHub repo
+2. Set root directory: `backend`
+3. Build: `npm install` / Start: `npm start`
+4. Environment variables:
+   ```
+   PORT=3000
+   ALLOWED_ORIGINS=https://your-domain.pages.dev
+   OPENAI_API_KEY=sk-...
+   ```
+
+### 3. Frontend (Cloudflare Pages)
+
+1. Update `www/js/auth.js` with Supabase URL and anon key
+2. Update `www/js/app.js` with backend URL
+3. Deploy from GitHub, build directory: `www`
+
+---
+
+## Local Development
+
+```bash
+# Backend
+cd backend
+npm install
+echo "PORT=3000\nALLOWED_ORIGINS=http://localhost:8080\nOPENAI_API_KEY=sk-..." > .env
+npm start  # http://localhost:3000
+
+# Frontend
+cd www
+npx http-server -p 8080  # http://localhost:8080
+```
+
+---
+
+## Caching Strategy
+
+| Cache | Duration | Invalidation |
+|-------|----------|--------------|
+| RSS Posts | Permanent | When blogs change |
+| Articles | 24 hours | Automatic |
+| AI Summaries | 30 days local + cloud | Never |
+
+The refresh button checks for new posts in background. If found, a banner appears: "X new posts available".
+
+---
+
+## Credits
+
+- [Mozilla Readability](https://github.com/mozilla/readability)
+- [Supabase](https://supabase.com)
+- [OpenAI](https://openai.com)
 
 Built with Claude Code
