@@ -10,8 +10,9 @@
 // Backend API URL (set this before deploying)
 window.API_BASE_URL = 'https://particulas-backend.onrender.com';
 
-// Posts cache expiry time in milliseconds (default: 1 hour)
-const POSTS_CACHE_EXPIRY = 60 * 60 * 1000; // 1 hour
+// New posts indicator state
+let pendingNewPosts = [];
+let lastKnownPostLinks = new Set();
 
 // Default blogs configuration
 const DEFAULT_BLOGS = [
@@ -203,14 +204,7 @@ function getPostsCache() {
 
         const cache = JSON.parse(cached);
 
-        // Check if cache is expired
-        const now = Date.now();
-        if (now - cache.timestamp > POSTS_CACHE_EXPIRY) {
-            console.log('Posts cache expired');
-            return null;
-        }
-
-        // Check if blogs have changed (compare URLs)
+        // Check if blogs have changed (compare URLs) - this is the only invalidation
         const currentBlogs = getBlogs();
         const currentBlogUrls = currentBlogs.map(b => b.url).sort().join(',');
         const cachedBlogUrls = (cache.blogs || []).map(b => b.url).sort().join(',');
@@ -228,6 +222,9 @@ function getPostsCache() {
                 post.date = new Date(post.date);
             }
         });
+
+        // Store known post links for new posts detection
+        cache.posts.forEach(post => lastKnownPostLinks.add(post.link));
 
         return cache.posts;
     } catch (error) {
@@ -252,7 +249,115 @@ function savePostsCache(posts, blogs) {
 
 function clearPostsCache() {
     localStorage.removeItem('blogAggregator_postsCache');
+    lastKnownPostLinks.clear();
     console.log('Posts cache cleared');
+}
+
+// ============================================================
+// NEW POSTS INDICATOR
+// ============================================================
+
+function createNewPostsBanner() {
+    // Check if banner already exists
+    if (document.getElementById('new-posts-banner')) return;
+
+    const banner = document.createElement('div');
+    banner.id = 'new-posts-banner';
+    banner.className = 'new-posts-banner';
+    banner.innerHTML = `
+        <span class="new-posts-text"></span>
+        <button class="new-posts-btn" onclick="loadNewPosts()">Load new posts</button>
+        <button class="new-posts-dismiss" onclick="dismissNewPostsBanner()">×</button>
+    `;
+    banner.style.display = 'none';
+
+    // Insert after filters
+    const filters = document.querySelector('.filters');
+    if (filters) {
+        filters.parentNode.insertBefore(banner, filters.nextSibling);
+    }
+}
+
+function showNewPostsBanner(count) {
+    const banner = document.getElementById('new-posts-banner');
+    if (!banner) return;
+
+    const text = banner.querySelector('.new-posts-text');
+    text.textContent = `${count} new post${count > 1 ? 's' : ''} available`;
+    banner.style.display = 'flex';
+}
+
+function hideNewPostsBanner() {
+    const banner = document.getElementById('new-posts-banner');
+    if (banner) {
+        banner.style.display = 'none';
+    }
+    pendingNewPosts = [];
+}
+
+function dismissNewPostsBanner() {
+    hideNewPostsBanner();
+}
+
+function loadNewPosts() {
+    hideNewPostsBanner();
+    // Merge new posts with existing and refresh display
+    if (pendingNewPosts.length > 0) {
+        // Add new posts to cache
+        const cachedPosts = getPostsCache() || [];
+        const mergedPosts = [...pendingNewPosts, ...cachedPosts];
+
+        // Update known links
+        pendingNewPosts.forEach(post => lastKnownPostLinks.add(post.link));
+
+        // Save merged cache
+        const blogs = getBlogs();
+        savePostsCache(mergedPosts, blogs);
+
+        // Get manual articles
+        const manualArticles = getManualArticles();
+        manualArticles.forEach(article => {
+            if (article.date && typeof article.date === 'string') {
+                article.date = new Date(article.date);
+            }
+            article.isManual = true;
+        });
+
+        // Display merged posts
+        displayPosts([...mergedPosts, ...manualArticles]);
+
+        pendingNewPosts = [];
+    }
+}
+
+// Check for new posts in background (without replacing current view)
+async function checkForNewPosts() {
+    const blogs = getBlogs();
+    if (blogs.length === 0) return;
+
+    console.log('Checking for new posts in background...');
+
+    try {
+        // Fetch all feeds in parallel
+        const feedPromises = blogs.map(blog => fetchFeed(blog));
+        const feedResults = await Promise.all(feedPromises);
+
+        // Parse all feeds
+        const freshPosts = feedResults.flatMap(result => parseFeed(result));
+
+        // Find new posts (not in lastKnownPostLinks)
+        const newPosts = freshPosts.filter(post => !lastKnownPostLinks.has(post.link));
+
+        if (newPosts.length > 0) {
+            console.log(`Found ${newPosts.length} new posts`);
+            pendingNewPosts = newPosts;
+            showNewPostsBanner(newPosts.length);
+        } else {
+            console.log('No new posts found');
+        }
+    } catch (error) {
+        console.error('Error checking for new posts:', error);
+    }
 }
 
 // ============================================================
@@ -1406,28 +1511,37 @@ function deleteBlog(index) {
     }
 }
 
-// Refresh posts (force fetch from network)
+// Refresh posts - checks for new posts without losing current view
 function refreshPosts() {
     const refreshBtn = document.getElementById('refresh-btn');
     if (!refreshBtn) return;
 
-    // Add spinning animation class if it exists
+    // Add spinning animation
     refreshBtn.style.animation = 'spin 1s linear infinite';
 
-    console.log('Manually refreshing posts...');
-    init(true).then(() => {
+    console.log('Checking for new posts...');
+    checkForNewPosts().then(() => {
         // Remove animation when done
         setTimeout(() => {
             refreshBtn.style.animation = '';
         }, 500);
     }).catch((error) => {
-        console.error('Error refreshing posts:', error);
+        console.error('Error checking for new posts:', error);
         refreshBtn.style.animation = '';
     });
 }
 
+// Force refresh - completely reload all posts (used when blogs change)
+function forceRefreshPosts() {
+    clearPostsCache();
+    init(true);
+}
+
 // Start the app when page loads
 document.addEventListener('DOMContentLoaded', async () => {
+    // Create new posts banner
+    createNewPostsBanner();
+
     // Initialize authentication first
     if (typeof initAuth === 'function') {
         await initAuth();
