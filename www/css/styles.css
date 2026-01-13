@@ -473,21 +473,33 @@ body > footer {
   transform: translateY(-2px);
 }
 
-.action-icon-btn.save-btn:hover {
+.action-icon-btn.favorite-btn:hover {
   background: var(--highlight);
   border-color: var(--highlight);
   color: var(--bg-primary);
 }
 
-.action-icon-btn.not-relevant-btn:hover {
+.action-icon-btn.pending-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg-primary);
+}
+
+.action-icon-btn.clear-btn:hover {
+  background: var(--success);
+  border-color: var(--success);
+  color: var(--bg-primary);
+}
+
+.action-icon-btn.delete-manual-btn:hover {
   background: var(--danger);
   border-color: var(--danger);
   color: white;
 }
 
 .inbox-btn:hover {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--text-secondary);
+  border-color: var(--text-secondary);
   color: var(--bg-primary);
 }
 
