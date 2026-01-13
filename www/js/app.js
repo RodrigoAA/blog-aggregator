@@ -297,11 +297,15 @@ function hideNewPostsBanner() {
     if (banner) {
         banner.style.display = 'none';
     }
+}
+
+function clearPendingNewPosts() {
     pendingNewPosts = [];
 }
 
 function dismissNewPostsBanner() {
     hideNewPostsBanner();
+    clearPendingNewPosts();
 }
 
 function loadNewPosts() {
