@@ -60,6 +60,7 @@ A modern RSS reader with AI-powered summaries and cloud sync. Features an **Edit
 │
 ├── www/
 │   ├── index.html
+│   ├── add.html       # Mobile quick save page
 │   ├── css/styles.css
 │   └── js/
 │       ├── app.js     # Main logic + cloud sync
@@ -265,6 +266,28 @@ Icons are pre-generated in `extension/icons/` with a terracotta background for v
 
 ### Supported Platforms
 Auto-detects RSS feeds on: Substack, Medium, WordPress, Ghost, and any site with standard RSS/Atom links.
+
+---
+
+## Mobile Quick Save
+
+Save articles from your mobile browser using the clipboard-based capture page.
+
+### Setup (one time)
+
+1. Open `https://particulas-elementales.pages.dev/add.html` on your phone
+2. **iOS Safari:** Tap Share → "Add to Home Screen"
+3. **Android Chrome:** Menu (⋮) → "Add to Home Screen"
+
+### Usage
+
+1. Find an interesting article
+2. Copy the URL (Share → Copy Link)
+3. Tap the home screen shortcut
+4. The page auto-reads clipboard and shows the URL
+5. Tap "Save to Inbox"
+
+**Flow:** Copy → Tap → Tap = **3 taps**
 
 ---
 

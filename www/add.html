@@ -414,8 +414,6 @@
                     site_name: articleMeta?.siteName || hostname
                 };
 
-                console.log('Saving article:', articleData);
-
                 // Save to Supabase
                 const { error } = await supabase
                     .from('manual_articles')
