@@ -299,6 +299,26 @@ function hideNewPostsBanner() {
     }
 }
 
+function showNoNewPostsMessage() {
+    // Reuse the banner element for the message
+    const banner = document.getElementById('new-posts-banner');
+    if (!banner) return;
+
+    const text = banner.querySelector('.new-posts-text');
+    const btn = banner.querySelector('.new-posts-btn');
+
+    if (text) text.textContent = 'No new posts';
+    if (btn) btn.style.display = 'none';
+
+    banner.style.display = 'flex';
+
+    // Auto-hide after 2 seconds
+    setTimeout(() => {
+        banner.style.display = 'none';
+        if (btn) btn.style.display = '';
+    }, 2000);
+}
+
 function clearPendingNewPosts() {
     pendingNewPosts = [];
 }
@@ -369,6 +389,7 @@ async function checkForNewPosts() {
             showNewPostsBanner(newPosts.length);
         } else {
             console.log('No new posts found');
+            showNoNewPostsMessage();
         }
     } catch (error) {
         console.error('Error checking for new posts:', error);
