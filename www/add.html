@@ -404,15 +404,17 @@
                 const user = getUser();
 
                 // Prepare article data
+                const hostname = new URL(clipboardUrl).hostname;
                 const articleData = {
                     user_id: user.id,
                     url: clipboardUrl,
-                    title: articleMeta?.title || new URL(clipboardUrl).hostname,
-                    description: articleMeta?.excerpt || null,
+                    title: articleMeta?.title || hostname,
+                    description: articleMeta?.excerpt || '',
                     date: new Date().toISOString(),
-                    site_name: articleMeta?.siteName || new URL(clipboardUrl).hostname,
-                    created_at: new Date().toISOString()
+                    site_name: articleMeta?.siteName || hostname
                 };
+
+                console.log('Saving article:', articleData);
 
                 // Save to Supabase
                 const { error } = await supabase
@@ -433,7 +435,8 @@
 
             } catch (err) {
                 console.error('Save error:', err);
-                showStatus('error', 'Failed to save. Try again.');
+                const errorMsg = err.message || err.details || JSON.stringify(err);
+                showStatus('error', `Error: ${errorMsg}`);
                 saveBtn.disabled = false;
                 saveBtn.textContent = 'Save to Inbox';
             }
