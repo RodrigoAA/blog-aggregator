@@ -388,6 +388,7 @@ class ArticleReader {
                        : 'Low Relevance';
       recommendationHtml = `
         <div class="summary-recommendation ${scoreClass}">
+          <div class="recommendation-title">Recommendation</div>
           <span class="recommendation-score">${scoreLabel}</span>
           <span class="recommendation-reason">${this.escapeHtml(recommendation.reason)}</span>
         </div>
@@ -396,7 +397,8 @@ class ArticleReader {
       // No recommendation - prompt user to set interests
       recommendationHtml = `
         <div class="summary-recommendation recommendation-none">
-          <span class="recommendation-hint">Define your interests in Settings to get personalized recommendations</span>
+          <div class="recommendation-title">Recommendation</div>
+          <span class="recommendation-hint">Define your interests in <a href="#" onclick="openBlogManagement(); return false;">Settings</a> to get personalized recommendations</span>
         </div>
       `;
     }
