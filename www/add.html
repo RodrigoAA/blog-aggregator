@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Save Article - Partículas elementales</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%230a0a0a'/><circle cx='50' cy='50' r='6' fill='%23e85d04'/><ellipse cx='50' cy='50' rx='32' ry='12' fill='none' stroke='%23f5f0e8' stroke-width='2' opacity='0.6'/><ellipse cx='50' cy='50' rx='12' ry='32' fill='none' stroke='%23f5f0e8' stroke-width='2' opacity='0.6'/></svg>">
+
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #141414;
+            --bg-tertiary: #1a1a1a;
+            --text-primary: #f5f0e8;
+            --text-secondary: #a8a8a8;
+            --text-muted: #666;
+            --accent: #e85d04;
+            --accent-light: #ff6b1a;
+            --border: #2a2a2a;
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .status.loading {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        .status.success {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+        }
+
+        .status.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .status.ready {
+            background: rgba(232, 93, 4, 0.1);
+            color: var(--accent-light);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .url-preview {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            text-align: left;
+            display: none;
+        }
+
+        .url-preview.visible {
+            display: block;
+        }
+
+        .url-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .url-text {
+            font-size: 14px;
+            color: var(--text-primary);
+            word-break: break-all;
+            line-height: 1.4;
+        }
+
+        .article-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-top: 12px;
+            display: none;
+        }
+
+        .article-title.visible {
+            display: block;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-light);
+        }
+
+        .btn-primary:disabled {
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .login-prompt {
+            display: none;
+        }
+
+        .login-prompt.visible {
+            display: block;
+        }
+
+        .home-link {
+            margin-top: 24px;
+        }
+
+        .home-link a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .home-link a:hover {
+            color: var(--text-secondary);
+        }
+
+        .instructions {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            text-align: left;
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .instructions strong {
+            color: var(--text-primary);
+        }
+
+        .checkmark {
+            width: 20px;
+            height: 20px;
+            color: var(--success);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Partículas elementales</h1>
+        <p class="subtitle">Save article from clipboard</p>
+
+        <div class="card">
+            <div id="status" class="status loading">
+                <div class="spinner"></div>
+                <span>Reading clipboard...</span>
+            </div>
+
+            <div id="url-preview" class="url-preview">
+                <div class="url-label">URL</div>
+                <div id="url-text" class="url-text"></div>
+                <div id="article-title" class="article-title"></div>
+            </div>
+
+            <div id="action-buttons" class="btn-group" style="display: none;">
+                <button id="save-btn" class="btn btn-primary" onclick="saveArticle()">
+                    Save to Inbox
+                </button>
+                <button class="btn btn-secondary" onclick="readClipboard()">
+                    Read Clipboard Again
+                </button>
+            </div>
+
+            <div id="login-prompt" class="login-prompt">
+                <button class="btn btn-primary" onclick="signInWithGoogle()">
+                    Sign in with Google
+                </button>
+                <p style="margin-top: 12px; font-size: 13px; color: var(--text-muted);">
+                    Sign in to save articles to your account
+                </p>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <strong>How to use:</strong><br>
+            1. Copy an article URL from your browser<br>
+            2. Open this page (save it to your home screen!)<br>
+            3. Tap "Save to Inbox"
+        </div>
+
+        <div class="home-link">
+            <a href="/">← Back to reading list</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        let clipboardUrl = null;
+        let articleMeta = null;
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initAuth();
+
+            // Small delay to ensure auth state is ready
+            setTimeout(() => {
+                if (isAuthenticated()) {
+                    readClipboard();
+                } else {
+                    showLoginPrompt();
+                }
+            }, 500);
+        });
+
+        function showStatus(type, message) {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+
+            if (type === 'loading') {
+                status.innerHTML = `<div class="spinner"></div><span>${message}</span>`;
+            } else if (type === 'success') {
+                status.innerHTML = `<svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg><span>${message}</span>`;
+            } else {
+                status.innerHTML = `<span>${message}</span>`;
+            }
+        }
+
+        function showLoginPrompt() {
+            showStatus('error', 'Please sign in first');
+            document.getElementById('login-prompt').classList.add('visible');
+            document.getElementById('action-buttons').style.display = 'none';
+        }
+
+        async function readClipboard() {
+            showStatus('loading', 'Reading clipboard...');
+            document.getElementById('url-preview').classList.remove('visible');
+            document.getElementById('action-buttons').style.display = 'none';
+
+            try {
+                const text = await navigator.clipboard.readText();
+
+                if (isValidUrl(text)) {
+                    clipboardUrl = text.trim();
+                    document.getElementById('url-text').textContent = clipboardUrl;
+                    document.getElementById('url-preview').classList.add('visible');
+                    document.getElementById('action-buttons').style.display = 'flex';
+                    showStatus('ready', 'URL found! Ready to save');
+
+                    // Try to fetch article metadata
+                    fetchArticleMeta(clipboardUrl);
+                } else {
+                    showStatus('error', 'No valid URL in clipboard');
+                    document.getElementById('action-buttons').style.display = 'flex';
+                }
+            } catch (err) {
+                console.error('Clipboard error:', err);
+                showStatus('error', 'Could not read clipboard. Tap "Read Clipboard Again" after copying a URL.');
+                document.getElementById('action-buttons').style.display = 'flex';
+            }
+        }
+
+        function isValidUrl(string) {
+            try {
+                const url = new URL(string);
+                return url.protocol === 'http:' || url.protocol === 'https:';
+            } catch {
+                return false;
+            }
+        }
+
+        async function fetchArticleMeta(url) {
+            try {
+                const API_BASE_URL = 'https://blog-aggregator-backend.onrender.com';
+                const response = await fetch(`${API_BASE_URL}/api/article?url=${encodeURIComponent(url)}`);
+
+                if (response.ok) {
+                    articleMeta = await response.json();
+                    if (articleMeta.title) {
+                        const titleEl = document.getElementById('article-title');
+                        titleEl.textContent = articleMeta.title;
+                        titleEl.classList.add('visible');
+                    }
+                }
+            } catch (err) {
+                console.log('Could not fetch article metadata:', err);
+            }
+        }
+
+        async function saveArticle() {
+            if (!clipboardUrl) {
+                showStatus('error', 'No URL to save');
+                return;
+            }
+
+            if (!isAuthenticated()) {
+                showLoginPrompt();
+                return;
+            }
+
+            const saveBtn = document.getElementById('save-btn');
+            saveBtn.disabled = true;
+            showStatus('loading', 'Saving article...');
+
+            try {
+                const supabase = getSupabaseClient();
+                const user = getUser();
+
+                // Prepare article data
+                const articleData = {
+                    user_id: user.id,
+                    url: clipboardUrl,
+                    title: articleMeta?.title || new URL(clipboardUrl).hostname,
+                    description: articleMeta?.excerpt || null,
+                    date: new Date().toISOString(),
+                    site_name: articleMeta?.siteName || new URL(clipboardUrl).hostname,
+                    created_at: new Date().toISOString()
+                };
+
+                // Save to Supabase
+                const { error } = await supabase
+                    .from('manual_articles')
+                    .upsert(articleData, { onConflict: 'user_id,url' });
+
+                if (error) {
+                    throw error;
+                }
+
+                showStatus('success', 'Article saved!');
+                saveBtn.textContent = 'Saved!';
+
+                // Redirect to main app after short delay
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1500);
+
+            } catch (err) {
+                console.error('Save error:', err);
+                showStatus('error', 'Failed to save. Try again.');
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save to Inbox';
+            }
+        }
+    </script>
+</body>
+</html>
