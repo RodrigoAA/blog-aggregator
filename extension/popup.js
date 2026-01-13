@@ -28,6 +28,23 @@ async function detectRssFeeds() {
   const statusTextEl = document.getElementById('rssStatusText');
   const subscribeBtn = document.getElementById('subscribeRss');
 
+  // Check if we can access this tab
+  if (!currentTab?.url) {
+    statusTextEl.textContent = 'Cannot access this page';
+    return;
+  }
+
+  // Skip restricted URLs
+  const url = currentTab.url;
+  if (url.startsWith('chrome://') ||
+      url.startsWith('chrome-extension://') ||
+      url.startsWith('edge://') ||
+      url.startsWith('about:') ||
+      url.startsWith('chrome.google.com/webstore')) {
+    statusTextEl.textContent = 'Cannot check RSS on this page';
+    return;
+  }
+
   try {
     // Execute content script to find RSS feeds
     const results = await chrome.scripting.executeScript({
@@ -47,7 +64,12 @@ async function detectRssFeeds() {
     }
   } catch (error) {
     console.error('Error detecting RSS:', error);
-    statusTextEl.textContent = 'Could not check for RSS';
+    // Provide more specific error message
+    if (error.message?.includes('Cannot access')) {
+      statusTextEl.textContent = 'Cannot access this page';
+    } else {
+      statusTextEl.textContent = 'No RSS feed detected';
+    }
   }
 }
 

@@ -28,21 +28,19 @@
     function drawIcon(ctx, size) {
       const s = size;
 
-      // Background
+      // Background (terracotta for visibility)
+      ctx.fillStyle = '#e85d04';
+      ctx.fillRect(0, 0, s, s);
+
+      // Center dot (dark)
       ctx.fillStyle = '#0a0a0a';
       ctx.beginPath();
-      ctx.roundRect(0, 0, s, s, s * 0.16);
+      ctx.arc(s/2, s/2, s * 0.08, 0, Math.PI * 2);
       ctx.fill();
 
-      // Center dot (terracotta)
-      ctx.fillStyle = '#e85d04';
-      ctx.beginPath();
-      ctx.arc(s/2, s/2, s * 0.06, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Orbital ellipses
-      ctx.strokeStyle = 'rgba(245, 240, 232, 0.6)';
-      ctx.lineWidth = s * 0.02;
+      // Orbital ellipses (white/cream)
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.lineWidth = s * 0.025;
 
       // Horizontal ellipse
       ctx.beginPath();
@@ -54,24 +52,24 @@
       ctx.ellipse(s/2, s/2, s * 0.12, s * 0.32, 0, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Accent dots
-      ctx.fillStyle = '#e85d04';
+      // Accent dots (dark)
+      ctx.fillStyle = '#0a0a0a';
       ctx.beginPath();
-      ctx.arc(s * 0.26, s * 0.38, s * 0.03, 0, Math.PI * 2);
+      ctx.arc(s * 0.26, s * 0.38, s * 0.04, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.beginPath();
-      ctx.arc(s * 0.74, s * 0.62, s * 0.03, 0, Math.PI * 2);
+      ctx.arc(s * 0.74, s * 0.62, s * 0.04, 0, Math.PI * 2);
       ctx.fill();
 
-      // Light dots
-      ctx.fillStyle = 'rgba(245, 240, 232, 0.5)';
+      // Light dots (white)
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
       ctx.beginPath();
-      ctx.arc(s * 0.74, s * 0.38, s * 0.03, 0, Math.PI * 2);
+      ctx.arc(s * 0.74, s * 0.38, s * 0.04, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.beginPath();
-      ctx.arc(s * 0.26, s * 0.62, s * 0.03, 0, Math.PI * 2);
+      ctx.arc(s * 0.26, s * 0.62, s * 0.04, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -88,8 +86,11 @@
       const ctx = canvas.getContext('2d');
       drawIcon(ctx, size);
 
+      const label = document.createElement('div');
+      label.textContent = `${size}x${size}`;
+
       div.appendChild(canvas);
-      div.innerHTML += `<div>${size}x${size}</div>`;
+      div.appendChild(label);
       container.appendChild(div);
     });
 

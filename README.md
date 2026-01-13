@@ -237,11 +237,11 @@ A browser extension to quickly save articles and subscribe to RSS feeds.
 
 ### Installation
 
-1. Open `extension/generate-icons.html` in Chrome
-2. Click "Download All" and move PNGs to `extension/icons/`
-3. Go to `chrome://extensions/`
-4. Enable "Developer mode"
-5. Click "Load unpacked" and select the `extension/` folder
+1. Go to `chrome://extensions/`
+2. Enable "Developer mode"
+3. Click "Load unpacked" and select the `extension/` folder
+
+Icons are pre-generated in `extension/icons/` with a terracotta background for visibility in both light and dark browser themes. To regenerate, open `extension/generate-icons.html` in Chrome and click "Download All".
 
 ### Supported Platforms
 Auto-detects RSS feeds on: Substack, Medium, WordPress, Ghost, and any site with standard RSS/Atom links.
