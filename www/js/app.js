@@ -1287,6 +1287,7 @@ async function init(forceRefresh = false) {
         await loadBlogsFromCloud();
         await loadPostStatusesFromCloud();
         await loadManualArticlesFromCloud();
+        await loadInterestsFromCloud();
         // Load highlights if article reader is ready
         if (window.articleReader && window.articleReader.loadHighlightsFromCloud) {
             await window.articleReader.loadHighlightsFromCloud();
@@ -1424,10 +1425,12 @@ async function loadInterestsFromCloud() {
         }
 
         if (data?.interests) {
+            // Always save to localStorage
+            localStorage.setItem('userInterests', data.interests);
+            // Update textarea if modal is open
             const textarea = document.getElementById('user-interests');
             if (textarea) {
                 textarea.value = data.interests;
-                localStorage.setItem('userInterests', data.interests);
             }
         }
     } catch (e) {
