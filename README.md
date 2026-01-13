@@ -4,6 +4,8 @@ A modern RSS reader with AI-powered summaries and cloud sync. Features an **Edit
 
 **Live:** https://particulas-elementales.pages.dev
 
+![Editorial Noir Design](https://img.shields.io/badge/design-Editorial%20Noir-e85d04) ![License](https://img.shields.io/badge/license-MIT-blue) ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-green)
+
 ## Features
 
 - **Editorial Noir design** - Dark theme with Playfair Display typography
@@ -92,7 +94,8 @@ A modern RSS reader with AI-powered summaries and cloud sync. Features an **Edit
 
 ### Prerequisites
 
-- GitHub, Cloudflare, Render.com, Supabase, OpenAI accounts
+- **Node.js** >= 18.0.0
+- **Accounts:** GitHub, Cloudflare, Render.com, Supabase, OpenAI
 
 ### 1. Supabase Setup
 
@@ -183,7 +186,11 @@ CREATE INDEX idx_manual_articles_user_created
   ON manual_articles(user_id, created_at DESC);
 ```
 
-Enable **Google OAuth** in Authentication → Providers.
+**Enable Google OAuth:**
+1. Go to Authentication → Providers → Google
+2. Create OAuth credentials in [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+3. Add authorized redirect URI: `https://<your-project>.supabase.co/auth/v1/callback`
+4. Copy Client ID and Secret to Supabase
 
 ### 2. Backend (Render.com)
 
@@ -207,16 +214,32 @@ Enable **Google OAuth** in Authentication → Providers.
 
 ## Local Development
 
+### Backend
 ```bash
-# Backend
 cd backend
 npm install
-echo "PORT=3000\nALLOWED_ORIGINS=http://localhost:8080\nOPENAI_API_KEY=sk-..." > .env
-npm start  # http://localhost:3000
+```
 
-# Frontend
+Create `.env` file:
+```env
+PORT=3000
+ALLOWED_ORIGINS=http://localhost:8080
+OPENAI_API_KEY=sk-your-key-here
+```
+
+```bash
+npm start  # http://localhost:3000
+```
+
+### Frontend
+```bash
 cd www
 npx http-server -p 8080  # http://localhost:8080
+```
+
+Update `www/js/app.js` line ~10:
+```javascript
+window.API_BASE_URL = 'http://localhost:3000';
 ```
 
 ---
@@ -291,10 +314,28 @@ Save articles from your mobile browser using the clipboard-based capture page.
 
 ---
 
+## Troubleshooting
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| Backend returns 404 | Render free tier sleeping | Wait 30-60s, service auto-wakes on first request |
+| Google login fails on mobile | OAuth redirect issue | Clear browser cache, try again |
+| AI Summary not generating | Missing OpenAI API key | Check backend `.env` has valid `OPENAI_API_KEY` |
+| Articles show hostname as title | Backend was sleeping during save | Edit title manually in the quick save page |
+| Cloud sync not working | RLS policy missing | Verify all Supabase policies are created |
+
+---
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
 ## Credits
 
 - [Mozilla Readability](https://github.com/mozilla/readability)
 - [Supabase](https://supabase.com)
 - [OpenAI](https://openai.com)
 
-Built with Claude Code
+Built with [Claude Code](https://claude.ai/code)
