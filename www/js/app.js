@@ -52,6 +52,10 @@ let blogsCache = null;
 
 // Get blogs - returns cached data (call loadBlogsFromCloud first)
 function getBlogs() {
+    // Don't return any blogs if not authenticated
+    if (!isAuthenticated()) {
+        return [];
+    }
     if (blogsCache !== null) {
         return blogsCache;
     }
@@ -59,11 +63,6 @@ function getBlogs() {
     const stored = localStorage.getItem('blogAggregator_blogs');
     if (stored) {
         return JSON.parse(stored);
-    }
-    // Only return defaults for logged-out users
-    if (!isAuthenticated()) {
-        saveBlogs(DEFAULT_BLOGS);
-        return DEFAULT_BLOGS;
     }
     return [];
 }
@@ -332,6 +331,9 @@ function loadNewPosts() {
 
 // Check for new posts in background (without replacing current view)
 async function checkForNewPosts() {
+    // Don't check for new posts if not authenticated
+    if (!isAuthenticated()) return;
+
     const blogs = getBlogs();
     if (blogs.length === 0) return;
 
@@ -1155,19 +1157,30 @@ async function init(forceRefresh = false) {
         showSkeletonPosts(5);
 
         const loading = document.getElementById('loading');
+        const postsContainer = document.getElementById('posts');
         loading.textContent = 'Loading posts';
         loading.style.display = 'block';
 
-        // Load data from cloud if logged in
-        if (isAuthenticated()) {
-            updateStatus('Syncing data...');
-            await loadBlogsFromCloud();
-            await loadPostStatusesFromCloud();
-            await loadManualArticlesFromCloud();
-            // Load highlights if article reader is ready
-            if (window.articleReader && window.articleReader.loadHighlightsFromCloud) {
-                await window.articleReader.loadHighlightsFromCloud();
-            }
+        // If not authenticated, show sign-in prompt
+        if (!isAuthenticated()) {
+            loading.style.display = 'none';
+            postsContainer.innerHTML = `
+                <div class="empty-state">
+                    <h2>Welcome to Partículas elementales</h2>
+                    <p>Sign in with Google to sync your RSS feeds, saved articles, and reading progress across devices.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Load data from cloud
+        updateStatus('Syncing data...');
+        await loadBlogsFromCloud();
+        await loadPostStatusesFromCloud();
+        await loadManualArticlesFromCloud();
+        // Load highlights if article reader is ready
+        if (window.articleReader && window.articleReader.loadHighlightsFromCloud) {
+            await window.articleReader.loadHighlightsFromCloud();
         }
 
         // Get blogs (from cache/localStorage)
@@ -1185,10 +1198,11 @@ async function init(forceRefresh = false) {
         });
 
         if (blogs.length === 0 && manualArticles.length === 0) {
-            document.getElementById('loading').innerHTML = `
+            loading.style.display = 'none';
+            postsContainer.innerHTML = `
                 <div class="empty-state">
                     <h2>No content configured</h2>
-                    <p>Add some RSS feeds or individual articles to get started.</p>
+                    <p>Click the settings icon to add RSS feeds or individual articles.</p>
                 </div>
             `;
             return;
