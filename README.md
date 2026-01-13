@@ -1,18 +1,28 @@
 # Partículas Elementales
 
-A modern RSS reader with AI-powered summaries and cloud sync.
+A modern RSS reader with AI-powered summaries and cloud sync. Features an **Editorial Noir** design with dark theme and terracotta accents.
 
 **Live:** https://particulas-elementales.pages.dev
 
 ## Features
 
+- **Editorial Noir design** - Dark theme with Playfair Display typography
 - **Full-screen article reader** with Mozilla Readability extraction
 - **AI summaries** (TL;DR + key points) powered by OpenAI GPT-4o-mini
-- **Four-tab workflow:** Inbox / Saved / Read / Skipped
+- **Four-tab workflow:** Inbox → Pending → Favorites / Cleared
 - **Manual article saving** - add articles from any website
 - **Text highlighting** with click-to-remove
 - **Cloud sync** (Google Sign-In) across devices
 - **Persistent cache** with new posts detection banner
+
+## Post Categories
+
+| Status | Purpose |
+|--------|---------|
+| **Inbox** | New posts from RSS feeds |
+| **Pending** | Marked to read later |
+| **Favorites** | Posts you loved |
+| **Cleared** | Read + skipped (archived) |
 
 ## Tech Stack
 
@@ -97,7 +107,7 @@ CREATE POLICY "Users can manage own blogs" ON user_blogs
 CREATE TABLE post_statuses (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   post_url TEXT NOT NULL,
-  status TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('inbox', 'pending', 'favorite', 'cleared')),
   updated_at TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (user_id, post_url)
 );
