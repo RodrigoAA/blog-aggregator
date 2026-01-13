@@ -878,6 +878,17 @@ body > footer {
   line-height: 1.5;
 }
 
+.recommendation-none {
+  border-left: 3px solid var(--text-muted);
+}
+
+.recommendation-hint {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 /* Summary Loading */
 .summary-loading-content {
   display: flex;

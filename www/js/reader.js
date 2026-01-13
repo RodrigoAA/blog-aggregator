@@ -392,6 +392,13 @@ class ArticleReader {
           <span class="recommendation-reason">${this.escapeHtml(recommendation.reason)}</span>
         </div>
       `;
+    } else {
+      // No recommendation - prompt user to set interests
+      recommendationHtml = `
+        <div class="summary-recommendation recommendation-none">
+          <span class="recommendation-hint">Define your interests in Settings to get personalized recommendations</span>
+        </div>
+      `;
     }
 
     // Create summary HTML
