@@ -488,22 +488,22 @@ class ArticleReader {
     this.hideHighlightButton();
   }
 
-  // Save/unsave article
+  // Toggle favorite status
   toggleSave() {
     if (!this.currentUrl) return;
 
     const currentStatus = typeof getPostStatus === 'function' ? getPostStatus(this.currentUrl) : 'inbox';
-    const isSaved = currentStatus === 'saved';
+    const isFavorite = currentStatus === 'favorite';
 
-    if (isSaved) {
-      // Unsave - move to inbox
-      if (typeof markAsInbox === 'function') {
-        markAsInbox(this.currentUrl);
+    if (isFavorite) {
+      // Remove from favorites - move to cleared
+      if (typeof markAsCleared === 'function') {
+        markAsCleared(this.currentUrl);
       }
     } else {
-      // Save
-      if (typeof markAsSaved === 'function') {
-        markAsSaved(this.currentUrl);
+      // Add to favorites
+      if (typeof markAsFavorite === 'function') {
+        markAsFavorite(this.currentUrl);
       }
     }
 
@@ -521,13 +521,13 @@ class ArticleReader {
     if (!saveBtn || !this.currentUrl) return;
 
     const currentStatus = typeof getPostStatus === 'function' ? getPostStatus(this.currentUrl) : 'inbox';
-    const isSaved = currentStatus === 'saved';
+    const isFavorite = currentStatus === 'favorite';
 
-    if (isSaved) {
-      saveBtn.textContent = '★ Saved';
+    if (isFavorite) {
+      saveBtn.textContent = '★ Favorite';
       saveBtn.classList.add('saved');
     } else {
-      saveBtn.textContent = '☆ Save';
+      saveBtn.textContent = '☆ Favorite';
       saveBtn.classList.remove('saved');
     }
   }

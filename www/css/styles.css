@@ -419,14 +419,28 @@ body > footer {
   overflow: hidden;
 }
 
-/* Read status */
-.post-card.read {
-  opacity: 0.4;
+/* Cleared status */
+.post-card.cleared {
+  opacity: 0.5;
 }
 
-.post-card.read .post-title {
-  text-decoration: line-through;
-  text-decoration-color: var(--text-muted);
+.post-card.cleared .post-title {
+  color: var(--text-muted);
+}
+
+/* Favorite status */
+.post-card.favorite {
+  border-color: var(--highlight);
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(251, 191, 36, 0.05) 100%);
+}
+
+.post-card.favorite::before {
+  background: var(--highlight);
+  transform: scaleY(1);
+}
+
+.post-card.favorite .post-title {
+  color: var(--highlight);
 }
 
 /* Post actions */

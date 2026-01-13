@@ -700,9 +700,9 @@ function formatDate(date) {
 // Post status constants
 const POST_STATUS = {
     INBOX: 'inbox',
-    SAVED: 'saved',
-    READ: 'read',
-    NOT_RELEVANT: 'not_relevant'
+    PENDING: 'pending',     // Para leer después
+    FAVORITE: 'favorite',   // Posts que te encantaron
+    CLEARED: 'cleared'      // Leídos + descartados
 };
 
 // Current filter
@@ -716,7 +716,30 @@ function getPostStatuses() {
         return postStatusesCache;
     }
     const stored = localStorage.getItem('blogAggregator_postStatuses');
-    return stored ? JSON.parse(stored) : {};
+    if (!stored) return {};
+
+    const statuses = JSON.parse(stored);
+
+    // Migrate legacy status values
+    let migrated = false;
+    for (const url in statuses) {
+        const status = statuses[url];
+        if (status === 'saved') {
+            statuses[url] = 'pending';
+            migrated = true;
+        } else if (status === 'read' || status === 'not_relevant') {
+            statuses[url] = 'cleared';
+            migrated = true;
+        }
+    }
+
+    // Save migrated data
+    if (migrated) {
+        console.log('Migrated legacy post statuses to new format');
+        localStorage.setItem('blogAggregator_postStatuses', JSON.stringify(statuses));
+    }
+
+    return statuses;
 }
 
 function savePostStatuses(statuses) {
@@ -740,16 +763,16 @@ function setPostStatus(postLink, status) {
     }
 }
 
-function markAsRead(postLink) {
-    setPostStatus(postLink, POST_STATUS.READ);
+function markAsCleared(postLink) {
+    setPostStatus(postLink, POST_STATUS.CLEARED);
 }
 
-function markAsSaved(postLink) {
-    setPostStatus(postLink, POST_STATUS.SAVED);
+function markAsPending(postLink) {
+    setPostStatus(postLink, POST_STATUS.PENDING);
 }
 
-function markAsNotRelevant(postLink) {
-    setPostStatus(postLink, POST_STATUS.NOT_RELEVANT);
+function markAsFavorite(postLink) {
+    setPostStatus(postLink, POST_STATUS.FAVORITE);
 }
 
 function markAsInbox(postLink) {
@@ -778,13 +801,26 @@ async function loadPostStatusesFromCloud() {
             return;
         }
 
-        // Convert array to object
+        // Convert array to object and migrate legacy values
         const statuses = {};
+        let needsMigration = false;
         (data || []).forEach(item => {
-            statuses[item.post_url] = item.status;
+            let status = item.status;
+            // Migrate legacy values
+            if (status === 'saved') {
+                status = 'pending';
+                needsMigration = true;
+            } else if (status === 'read' || status === 'not_relevant') {
+                status = 'cleared';
+                needsMigration = true;
+            }
+            statuses[item.post_url] = status;
         });
 
         console.log('Loaded post statuses from cloud:', Object.keys(statuses).length);
+        if (needsMigration) {
+            console.log('Note: Some statuses need migration in Supabase. Run migration SQL.');
+        }
         postStatusesCache = statuses;
         localStorage.setItem('blogAggregator_postStatuses', JSON.stringify(statuses));
     } catch (error) {
@@ -829,9 +865,9 @@ function filterPostsByStatus(posts, status) {
 function getStatusCounts(posts) {
     const counts = {
         inbox: 0,
-        saved: 0,
-        read: 0,
-        not_relevant: 0
+        pending: 0,
+        favorite: 0,
+        cleared: 0
     };
 
     posts.forEach(post => {
@@ -894,9 +930,9 @@ function displayPosts(posts) {
     if (filteredPosts.length === 0) {
         const filterNames = {
             inbox: 'Inbox',
-            saved: 'Saved',
-            read: 'Read',
-            not_relevant: 'Skipped'
+            pending: 'Pending',
+            favorite: 'Favorites',
+            cleared: 'Cleared'
         };
         postsContainer.innerHTML = `
             <div class="empty-state">
@@ -910,7 +946,8 @@ function displayPosts(posts) {
     // Create HTML for each post
     postsContainer.innerHTML = filteredPosts.map(post => {
         const status = getPostStatus(post.link);
-        const statusClass = status === POST_STATUS.READ ? 'read' : '';
+        const statusClass = status === POST_STATUS.CLEARED ? 'cleared' :
+                           status === POST_STATUS.FAVORITE ? 'favorite' : '';
 
         return `
             <article class="post-card ${statusClass}"
@@ -920,7 +957,7 @@ function displayPosts(posts) {
                      data-is-manual="${post.isManual || false}">
                 <div class="post-header">
                     <span class="blog-source">${escapeHtml(post.blogName)}</span>
-                    ${post.isManual ? '<span class="manual-badge">✨ Manual</span>' : ''}
+                    ${post.isManual ? '<span class="manual-badge">Manual</span>' : ''}
                 </div>
                 <h2 class="post-title">${escapeHtml(post.title)}</h2>
                 <div class="post-meta">
@@ -929,12 +966,13 @@ function displayPosts(posts) {
                 <p class="post-description">${escapeHtml(post.description)}</p>
                 <div class="post-actions">
                     ${status === POST_STATUS.INBOX ? `
-                        <button class="action-icon-btn save-btn" data-url="${escapeHtml(post.link)}" title="Save for later">
+                        <button class="action-icon-btn pending-btn" data-url="${escapeHtml(post.link)}" title="Read later">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
                             </svg>
                         </button>
-                        <button class="action-icon-btn not-relevant-btn" data-url="${escapeHtml(post.link)}" title="Skip">
+                        <button class="action-icon-btn clear-btn" data-url="${escapeHtml(post.link)}" title="Clear">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"></polyline>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -949,8 +987,8 @@ function displayPosts(posts) {
                             </button>
                         ` : ''}
                     ` : ''}
-                    ${status === POST_STATUS.SAVED ? `
-                        <button class="action-icon-btn inbox-btn" data-url="${escapeHtml(post.link)}" title="Unsave">
+                    ${status === POST_STATUS.PENDING ? `
+                        <button class="action-icon-btn inbox-btn" data-url="${escapeHtml(post.link)}" title="Move to Inbox">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="1 4 1 10 7 10"></polyline>
                                 <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
@@ -965,8 +1003,8 @@ function displayPosts(posts) {
                             </button>
                         ` : ''}
                     ` : ''}
-                    ${status === POST_STATUS.READ ? `
-                        <button class="action-icon-btn save-btn" data-url="${escapeHtml(post.link)}" title="Save for later">
+                    ${status === POST_STATUS.CLEARED ? `
+                        <button class="action-icon-btn favorite-btn" data-url="${escapeHtml(post.link)}" title="Add to Favorites">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                             </svg>
@@ -986,7 +1024,12 @@ function displayPosts(posts) {
                             </button>
                         ` : ''}
                     ` : ''}
-                    ${status === POST_STATUS.NOT_RELEVANT ? `
+                    ${status === POST_STATUS.FAVORITE ? `
+                        <button class="action-icon-btn clear-btn" data-url="${escapeHtml(post.link)}" title="Remove from Favorites">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                        </button>
                         <button class="action-icon-btn inbox-btn" data-url="${escapeHtml(post.link)}" title="Move to Inbox">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="1 4 1 10 7 10"></polyline>
@@ -1040,25 +1083,25 @@ function updateFilterCounts(posts) {
 
     // Update count badges
     const inboxBtn = document.querySelector('[data-filter="inbox"]');
-    const savedBtn = document.querySelector('[data-filter="saved"]');
-    const readBtn = document.querySelector('[data-filter="read"]');
-    const notRelevantBtn = document.querySelector('[data-filter="not_relevant"]');
+    const pendingBtn = document.querySelector('[data-filter="pending"]');
+    const favoriteBtn = document.querySelector('[data-filter="favorite"]');
+    const clearedBtn = document.querySelector('[data-filter="cleared"]');
 
     if (inboxBtn) {
         const badge = inboxBtn.querySelector('.count-badge');
         if (badge) badge.textContent = counts.inbox;
     }
-    if (savedBtn) {
-        const badge = savedBtn.querySelector('.count-badge');
-        if (badge) badge.textContent = counts.saved;
+    if (pendingBtn) {
+        const badge = pendingBtn.querySelector('.count-badge');
+        if (badge) badge.textContent = counts.pending;
     }
-    if (readBtn) {
-        const badge = readBtn.querySelector('.count-badge');
-        if (badge) badge.textContent = counts.read;
+    if (favoriteBtn) {
+        const badge = favoriteBtn.querySelector('.count-badge');
+        if (badge) badge.textContent = counts.favorite;
     }
-    if (notRelevantBtn) {
-        const badge = notRelevantBtn.querySelector('.count-badge');
-        if (badge) badge.textContent = counts.not_relevant;
+    if (clearedBtn) {
+        const badge = clearedBtn.querySelector('.count-badge');
+        if (badge) badge.textContent = counts.cleared;
     }
 }
 
@@ -1081,8 +1124,8 @@ function attachPostClickHandlers() {
             const postTitle = card.dataset.title;
             const blogName = card.dataset.blog;
 
-            // Mark as read when opening article
-            markAsRead(postUrl);
+            // Mark as cleared when opening article
+            markAsCleared(postUrl);
 
             // Open in article reader
             if (window.articleReader && typeof window.articleReader.open === 'function') {
@@ -1100,22 +1143,32 @@ function attachPostClickHandlers() {
 }
 
 function attachActionButtonHandlers() {
-    // Save buttons
-    document.querySelectorAll('.save-btn').forEach(btn => {
+    // Pending buttons (read later)
+    document.querySelectorAll('.pending-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const postUrl = btn.dataset.url;
-            markAsSaved(postUrl);
+            markAsPending(postUrl);
             displayPosts(allPosts);
         });
     });
 
-    // Not relevant buttons
-    document.querySelectorAll('.not-relevant-btn').forEach(btn => {
+    // Clear buttons (skip/archive)
+    document.querySelectorAll('.clear-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const postUrl = btn.dataset.url;
-            markAsNotRelevant(postUrl);
+            markAsCleared(postUrl);
+            displayPosts(allPosts);
+        });
+    });
+
+    // Favorite buttons
+    document.querySelectorAll('.favorite-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const postUrl = btn.dataset.url;
+            markAsFavorite(postUrl);
             displayPosts(allPosts);
         });
     });
