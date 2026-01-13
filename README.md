@@ -215,13 +215,25 @@ npx http-server -p 8080  # http://localhost:8080
 
 ---
 
-## Caching Strategy
+## Caching & Sync Strategy
 
-| Cache | Duration | Invalidation |
-|-------|----------|--------------|
-| RSS Posts | Permanent | When blogs change |
-| Articles | 24 hours | Automatic |
-| AI Summaries | 30 days local + cloud | Never |
+| Data | Local Cache | Cloud Sync |
+|------|-------------|------------|
+| RSS Posts | Permanent (until blogs change) | No |
+| Manual Articles | localStorage | Supabase |
+| Post Statuses | localStorage | Supabase |
+| Blogs | localStorage | Supabase |
+| AI Summaries | 30 days | Supabase |
+| Highlights | localStorage | Supabase |
+
+### Offline-First Behavior
+
+- All data is cached locally in localStorage
+- Cloud sync happens on login and when data changes
+- **If cloud sync fails, local data is preserved** (no data loss)
+- Manual articles wait for cloud save before confirming
+
+### Refresh Behavior
 
 The refresh button checks for new posts in background. If found, a banner appears: "X new posts available".
 

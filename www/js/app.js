@@ -108,7 +108,8 @@ async function loadBlogsFromCloud() {
 
         if (error) {
             console.error('Error loading blogs from cloud:', error);
-            blogsCache = [];
+            // Keep local data on error instead of clearing
+            blogsCache = JSON.parse(localStorage.getItem('blogAggregator_blogs') || '[]');
             return;
         }
 
@@ -119,7 +120,8 @@ async function loadBlogsFromCloud() {
         localStorage.setItem('blogAggregator_blogs', JSON.stringify(blogsCache));
     } catch (error) {
         console.error('Failed to load blogs from cloud:', error);
-        blogsCache = [];
+        // Keep local data on error instead of clearing
+        blogsCache = JSON.parse(localStorage.getItem('blogAggregator_blogs') || '[]');
     }
 }
 
@@ -385,7 +387,7 @@ function saveManualArticles(articles) {
     localStorage.setItem('blogAggregator_manualArticles', JSON.stringify(articles));
 }
 
-function addManualArticleToList(article) {
+async function addManualArticleToList(article) {
     const articles = getManualArticles();
 
     // Check for duplicates
@@ -401,7 +403,7 @@ function addManualArticleToList(article) {
     if (isAuthenticated()) {
         // Set flag to skip next cloud load (we have fresh local data)
         skipNextManualArticlesCloudLoad = true;
-        saveManualArticleToCloud(article);
+        await saveManualArticleToCloud(article);
     }
 
     return true;
@@ -447,7 +449,8 @@ async function loadManualArticlesFromCloud() {
 
         if (error) {
             console.error('Error loading manual articles from cloud:', error);
-            manualArticlesCache = [];
+            // Keep local data on error instead of clearing
+            manualArticlesCache = getManualArticles();
             return;
         }
 
@@ -467,7 +470,8 @@ async function loadManualArticlesFromCloud() {
         localStorage.setItem('blogAggregator_manualArticles', JSON.stringify(articles));
     } catch (error) {
         console.error('Failed to load manual articles from cloud:', error);
-        manualArticlesCache = [];
+        // Keep local data on error instead of clearing
+        manualArticlesCache = getManualArticles();
     }
 }
 
@@ -587,7 +591,7 @@ async function addManualArticle() {
         const article = await fetchArticleMetadata(url);
 
         // Add to list
-        const added = addManualArticleToList(article);
+        const added = await addManualArticleToList(article);
 
         if (!added) {
             alert('This article is already in your reading list');
@@ -797,7 +801,8 @@ async function loadPostStatusesFromCloud() {
 
         if (error) {
             console.error('Error loading post statuses from cloud:', error);
-            postStatusesCache = {};
+            // Keep local data on error instead of clearing
+            postStatusesCache = JSON.parse(localStorage.getItem('blogAggregator_postStatuses') || '{}');
             return;
         }
 
@@ -825,7 +830,8 @@ async function loadPostStatusesFromCloud() {
         localStorage.setItem('blogAggregator_postStatuses', JSON.stringify(statuses));
     } catch (error) {
         console.error('Failed to load post statuses from cloud:', error);
-        postStatusesCache = {};
+        // Keep local data on error instead of clearing
+        postStatusesCache = JSON.parse(localStorage.getItem('blogAggregator_postStatuses') || '{}');
     }
 }
 
