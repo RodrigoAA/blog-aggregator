@@ -1622,6 +1622,74 @@ function forceRefreshPosts() {
     init(true);
 }
 
+// Handle URL parameters from browser extension
+async function handleExtensionParams() {
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get('action');
+
+    if (!action) return false;
+
+    // Clear URL params without reload
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    // Check if user is authenticated
+    if (!isAuthenticated()) {
+        alert('Please sign in first to add articles or blogs.');
+        return true;
+    }
+
+    if (action === 'add-article') {
+        const url = params.get('url');
+        const title = params.get('title');
+
+        if (url) {
+            // Open settings modal and pre-fill article URL
+            openBlogManagement();
+
+            // Wait for modal to render
+            setTimeout(() => {
+                const urlInput = document.getElementById('article-url');
+                if (urlInput) {
+                    urlInput.value = decodeURIComponent(url);
+                    urlInput.focus();
+
+                    // Show a hint
+                    alert(`Article URL pre-filled: "${decodeURIComponent(title || url)}"\n\nClick "Add Article" to save it.`);
+                }
+            }, 100);
+        }
+        return true;
+    }
+
+    if (action === 'add-blog') {
+        const url = params.get('url');
+        const name = params.get('name');
+
+        if (url) {
+            // Open settings modal and pre-fill blog info
+            openBlogManagement();
+
+            // Wait for modal to render
+            setTimeout(() => {
+                const nameInput = document.getElementById('blog-name');
+                const urlInput = document.getElementById('blog-url');
+
+                if (nameInput && urlInput) {
+                    nameInput.value = decodeURIComponent(name || '');
+                    urlInput.value = decodeURIComponent(url);
+                    nameInput.focus();
+
+                    // Show a hint
+                    alert(`RSS feed detected!\n\nName: ${decodeURIComponent(name || 'Unknown')}\nURL: ${decodeURIComponent(url)}\n\nClick "Add Blog" to subscribe.`);
+                }
+            }, 100);
+        }
+        return true;
+    }
+
+    return false;
+}
+
 // Start the app when page loads
 document.addEventListener('DOMContentLoaded', async () => {
     // Create new posts banner
@@ -1631,6 +1699,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (typeof initAuth === 'function') {
         await initAuth();
     }
+
+    // Handle extension parameters (after auth)
+    await handleExtensionParams();
+
     // Then load posts
     init();
 });

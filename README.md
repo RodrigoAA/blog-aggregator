@@ -64,6 +64,12 @@ A modern RSS reader with AI-powered summaries and cloud sync. Features an **Edit
 │       ├── reader.js  # Article reader + summaries
 │       └── auth.js    # Supabase authentication
 │
+├── extension/         # Chrome extension
+│   ├── manifest.json
+│   ├── popup.html/js
+│   ├── content.js
+│   └── icons/
+│
 └── README.md
 ```
 
@@ -218,6 +224,27 @@ npx http-server -p 8080  # http://localhost:8080
 | AI Summaries | 30 days local + cloud | Never |
 
 The refresh button checks for new posts in background. If found, a banner appears: "X new posts available".
+
+---
+
+## Chrome Extension
+
+A browser extension to quickly save articles and subscribe to RSS feeds.
+
+### Features
+- **Add Article** - Save current page to your reading list
+- **Subscribe to RSS** - Auto-detects RSS/Atom feeds on blogs
+
+### Installation
+
+1. Open `extension/generate-icons.html` in Chrome
+2. Click "Download All" and move PNGs to `extension/icons/`
+3. Go to `chrome://extensions/`
+4. Enable "Developer mode"
+5. Click "Load unpacked" and select the `extension/` folder
+
+### Supported Platforms
+Auto-detects RSS feeds on: Substack, Medium, WordPress, Ghost, and any site with standard RSS/Atom links.
 
 ---
 
