@@ -24,6 +24,13 @@ async function initAuth() {
     console.log('Initializing authentication...');
 
     try {
+        // Check if we have OAuth tokens in the URL hash (mobile redirect fix)
+        if (window.location.hash && window.location.hash.includes('access_token')) {
+            console.log('OAuth tokens detected in URL, processing...');
+            // Give Supabase a moment to process the tokens
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
         // Check for existing session
         const { data: { session }, error } = await supabaseClient.auth.getSession();
 
@@ -34,6 +41,10 @@ async function initAuth() {
         if (session) {
             currentUser = session.user;
             console.log('Existing session found:', currentUser.email);
+            // Clean up URL hash after successful auth
+            if (window.location.hash && window.location.hash.includes('access_token')) {
+                window.history.replaceState(null, '', window.location.pathname);
+            }
         }
 
         // Always update UI (whether signed in or not)
