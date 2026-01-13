@@ -9,6 +9,7 @@ A modern RSS reader with AI-powered summaries and cloud sync. Features an **Edit
 - **Editorial Noir design** - Dark theme with Playfair Display typography
 - **Full-screen article reader** with Mozilla Readability extraction
 - **AI summaries** (TL;DR + key points) powered by OpenAI GPT-4o-mini
+- **Reading Recommendations** - Personalized relevance scores based on your interests
 - **Four-tab workflow:** Inbox → Pending → Favorites / Cleared
 - **Manual article saving** - add articles from any website
 - **Text highlighting** with click-to-remove
@@ -131,11 +132,14 @@ CREATE TABLE summaries (
   recommendation_score TEXT,
   recommendation_reason TEXT,
   created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (user_id, article_url)
 );
 ALTER TABLE summaries ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage own summaries" ON summaries
   FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own summaries" ON summaries
+  FOR DELETE USING (auth.uid() = user_id);
 
 -- Table 4: highlights
 CREATE TABLE highlights (
@@ -224,7 +228,7 @@ npx http-server -p 8080  # http://localhost:8080
 | Manual Articles | localStorage | Supabase |
 | Post Statuses | localStorage | Supabase |
 | Blogs | localStorage | Supabase |
-| AI Summaries | 30 days | Supabase |
+| AI Summaries + Recommendations | 30 days (cleared on interests change) | Supabase |
 | Highlights | localStorage | Supabase |
 
 ### Offline-First Behavior

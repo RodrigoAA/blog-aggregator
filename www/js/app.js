@@ -1446,11 +1446,8 @@ async function saveUserInterests() {
     const newInterests = textarea.value.trim();
     const currentInterests = localStorage.getItem('userInterests') || '';
 
-    console.log('Saving interests - current:', currentInterests, 'new:', newInterests);
-
     // Check if interests actually changed
     if (newInterests !== currentInterests) {
-        console.log('Interests changed, showing confirmation...');
         // Show confirmation dialog
         const confirmed = confirm(
             'Si cambias tus intereses, las recomendaciones se recalcularán.\n\n' +
@@ -1464,9 +1461,7 @@ async function saveUserInterests() {
         }
 
         // Clear summary caches (local and cloud)
-        console.log('Clearing summary caches...');
         await clearSummaryCaches();
-        console.log('Summary caches cleared');
     }
 
     // Save to localStorage
@@ -1488,34 +1483,25 @@ async function saveUserInterests() {
 
 async function clearSummaryCaches() {
     // Clear local cache
-    const localCache = localStorage.getItem('summaryCache');
-    console.log('Local summaryCache before clear:', localCache ? 'exists' : 'empty');
     localStorage.removeItem('summaryCache');
-    console.log('Local summary cache cleared');
 
     // Clear cloud cache if authenticated
     if (isAuthenticated()) {
         try {
             const supabase = getSupabaseClient();
             const user = getUser();
-            console.log('Deleting cloud summaries for user:', user.id);
 
-            const { data, error, count } = await supabase
+            const { error } = await supabase
                 .from('summaries')
                 .delete()
-                .eq('user_id', user.id)
-                .select();
+                .eq('user_id', user.id);
 
             if (error) {
                 console.error('Error clearing cloud summaries:', error);
-            } else {
-                console.log('Cloud summary cache cleared, deleted rows:', data?.length || 0);
             }
         } catch (e) {
             console.error('Failed to clear cloud summaries:', e);
         }
-    } else {
-        console.log('Not authenticated, skipping cloud cache clear');
     }
 }
 
