@@ -1439,18 +1439,37 @@ async function loadInterestsFromCloud() {
     }
 }
 
-function saveUserInterests() {
+async function saveUserInterests() {
     const textarea = document.getElementById('user-interests');
     if (!textarea) return;
 
-    const interests = textarea.value.trim();
+    const newInterests = textarea.value.trim();
+    const currentInterests = localStorage.getItem('userInterests') || '';
+
+    // Check if interests actually changed
+    if (newInterests !== currentInterests) {
+        // Show confirmation dialog
+        const confirmed = confirm(
+            'Si cambias tus intereses, las recomendaciones se recalcularán.\n\n' +
+            '¿Deseas continuar?'
+        );
+
+        if (!confirmed) {
+            // Restore original value
+            textarea.value = currentInterests;
+            return;
+        }
+
+        // Clear summary caches (local and cloud)
+        await clearSummaryCaches();
+    }
 
     // Save to localStorage
-    localStorage.setItem('userInterests', interests);
+    localStorage.setItem('userInterests', newInterests);
 
     // Save to cloud if logged in
     if (isAuthenticated()) {
-        saveInterestsToCloud(interests);
+        saveInterestsToCloud(newInterests);
     }
 
     // Show feedback
@@ -1460,6 +1479,33 @@ function saveUserInterests() {
     setTimeout(() => {
         btn.textContent = originalText;
     }, 1500);
+}
+
+async function clearSummaryCaches() {
+    // Clear local cache
+    localStorage.removeItem('summaryCache');
+    console.log('Local summary cache cleared');
+
+    // Clear cloud cache if authenticated
+    if (isAuthenticated()) {
+        try {
+            const supabase = getSupabaseClient();
+            const user = getUser();
+
+            const { error } = await supabase
+                .from('summaries')
+                .delete()
+                .eq('user_id', user.id);
+
+            if (error) {
+                console.error('Error clearing cloud summaries:', error);
+            } else {
+                console.log('Cloud summary cache cleared');
+            }
+        } catch (e) {
+            console.error('Failed to clear cloud summaries:', e);
+        }
+    }
 }
 
 async function saveInterestsToCloud(interests) {
