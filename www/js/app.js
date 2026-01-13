@@ -1262,15 +1262,10 @@ function attachActionButtonHandlers() {
 
 async function init(forceRefresh = false) {
     try {
-        // Show skeleton loading
-        showSkeletonPosts(5);
-
         const loading = document.getElementById('loading');
         const postsContainer = document.getElementById('posts');
-        loading.textContent = 'Loading posts';
-        loading.style.display = 'block';
 
-        // If not authenticated, show sign-in prompt
+        // If not authenticated, show sign-in prompt immediately
         if (!isAuthenticated()) {
             loading.style.display = 'none';
             postsContainer.innerHTML = `
@@ -1281,6 +1276,11 @@ async function init(forceRefresh = false) {
             `;
             return;
         }
+
+        // Show skeleton loading (only if authenticated)
+        showSkeletonPosts(5);
+        loading.textContent = 'Loading posts';
+        loading.style.display = 'block';
 
         // Load data from cloud
         updateStatus('Syncing data...');
