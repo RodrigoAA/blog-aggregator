@@ -242,6 +242,10 @@ function savePostsCache(posts, blogs) {
             timestamp: Date.now()
         };
         localStorage.setItem('blogAggregator_postsCache', JSON.stringify(cache));
+
+        // Update lastKnownPostLinks to match cached posts
+        posts.forEach(post => lastKnownPostLinks.add(post.link));
+
         console.log(`Cached ${posts.length} posts`);
     } catch (error) {
         console.error('Error saving posts cache:', error);
@@ -306,12 +310,15 @@ function loadNewPosts() {
     if (pendingNewPosts.length > 0) {
         // Add new posts to cache
         const cachedPosts = getPostsCache() || [];
-        const mergedPosts = [...pendingNewPosts, ...cachedPosts];
 
-        // Update known links
-        pendingNewPosts.forEach(post => lastKnownPostLinks.add(post.link));
+        // Deduplicate: new posts first, then cached (excluding duplicates)
+        const newPostLinks = new Set(pendingNewPosts.map(p => p.link));
+        const uniqueCachedPosts = cachedPosts.filter(p => !newPostLinks.has(p.link));
+        const mergedPosts = [...pendingNewPosts, ...uniqueCachedPosts];
 
-        // Save merged cache
+        console.log(`Merging ${pendingNewPosts.length} new + ${uniqueCachedPosts.length} cached = ${mergedPosts.length} total`);
+
+        // Save merged cache (this also updates lastKnownPostLinks)
         const blogs = getBlogs();
         savePostsCache(mergedPosts, blogs);
 
