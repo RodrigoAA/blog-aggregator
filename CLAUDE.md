@@ -25,6 +25,11 @@ RSS reader with AI-powered summaries and cloud sync. Editorial Noir design (dark
 
 ## Project Rules
 
+### UI/Frontend Design:
+- Always use the frontend-design skill when creating or modifying UI components
+- Skill reference: https://github.com/anthropics/skills/blob/main/skills/frontend-design/SKILL.md
+- This project follows "Editorial Noir" aesthetic: dark theme, Playfair Display typography, terracotta accents
+
 ### After implementing new features:
 - Update README.md with new functionality
 - Add new files to the project structure section if needed
