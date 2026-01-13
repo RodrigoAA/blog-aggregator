@@ -309,6 +309,7 @@ function dismissNewPostsBanner() {
 }
 
 function loadNewPosts() {
+    console.log('loadNewPosts called, pendingNewPosts:', pendingNewPosts.length);
     hideNewPostsBanner();
     // Merge new posts with existing and refresh display
     if (pendingNewPosts.length > 0) {
