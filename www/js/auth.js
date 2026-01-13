@@ -73,6 +73,9 @@ async function signInWithGoogle() {
         return;
     }
 
+    // Small delay to ensure mobile browsers process the user gesture
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
