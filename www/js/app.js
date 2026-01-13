@@ -1182,6 +1182,7 @@ function attachPostClickHandlers() {
 
             // Mark as cleared when opening article
             markAsCleared(postUrl);
+            displayPosts(allPosts);
 
             // Open in article reader
             if (window.articleReader && typeof window.articleReader.open === 'function') {
