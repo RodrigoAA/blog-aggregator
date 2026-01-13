@@ -67,6 +67,12 @@ async function initAuth() {
 async function signInWithGoogle() {
     console.log('Initiating Google sign-in...');
 
+    // Ensure supabase client is ready (fixes mobile timing issues)
+    if (!supabaseClient || !supabaseClient.auth) {
+        alert('Authentication not ready. Please try again.');
+        return;
+    }
+
     const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {

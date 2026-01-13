@@ -24,6 +24,10 @@ desktop.ini
 
 # Claude Code
 .claude/
+tmpclaude-*
+
+# Personal files
+Referencias/
 
 # Local development
 www/server-simple.js
