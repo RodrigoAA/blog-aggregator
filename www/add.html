@@ -140,16 +140,25 @@
             line-height: 1.4;
         }
 
-        .article-title {
-            font-size: 16px;
-            font-weight: 600;
+        .title-input {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: 500;
             color: var(--text-primary);
             margin-top: 12px;
-            display: none;
         }
 
-        .article-title.visible {
-            display: block;
+        .title-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .title-input::placeholder {
+            color: var(--text-muted);
         }
 
         .btn {
@@ -256,7 +265,7 @@
             <div id="url-preview" class="url-preview">
                 <div class="url-label">URL</div>
                 <div id="url-text" class="url-text"></div>
-                <div id="article-title" class="article-title"></div>
+                <input type="text" id="article-title" class="title-input" placeholder="Article title (editable)">
             </div>
 
             <div id="action-buttons" class="btn-group" style="display: none;">
@@ -342,9 +351,14 @@
                     document.getElementById('url-text').textContent = clipboardUrl;
                     document.getElementById('url-preview').classList.add('visible');
                     document.getElementById('action-buttons').style.display = 'flex';
+
+                    // Pre-fill title with hostname (will be updated if metadata loads)
+                    const hostname = new URL(clipboardUrl).hostname.replace('www.', '');
+                    document.getElementById('article-title').value = hostname;
+
                     showStatus('ready', 'URL found! Ready to save');
 
-                    // Try to fetch article metadata
+                    // Try to fetch article metadata (will update title if successful)
                     fetchArticleMeta(clipboardUrl);
                 } else {
                     showStatus('error', 'No valid URL in clipboard');
@@ -374,9 +388,7 @@
                 if (response.ok) {
                     articleMeta = await response.json();
                     if (articleMeta.title) {
-                        const titleEl = document.getElementById('article-title');
-                        titleEl.textContent = articleMeta.title;
-                        titleEl.classList.add('visible');
+                        document.getElementById('article-title').value = articleMeta.title;
                     }
                 }
             } catch (err) {
@@ -404,11 +416,12 @@
                 const user = getUser();
 
                 // Prepare article data
-                const hostname = new URL(clipboardUrl).hostname;
+                const hostname = new URL(clipboardUrl).hostname.replace('www.', '');
+                const titleInput = document.getElementById('article-title').value.trim();
                 const articleData = {
                     user_id: user.id,
                     url: clipboardUrl,
-                    title: articleMeta?.title || hostname,
+                    title: titleInput || hostname,
                     description: articleMeta?.excerpt || '',
                     date: new Date().toISOString(),
                     site_name: articleMeta?.siteName || hostname
