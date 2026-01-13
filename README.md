@@ -14,6 +14,7 @@ A modern RSS reader with AI-powered summaries and cloud sync. Features an **Edit
 - **Text highlighting** with click-to-remove
 - **Cloud sync** (Google Sign-In) across devices
 - **Persistent cache** with new posts detection banner
+- **Mobile-friendly** - works on iOS and Android browsers
 
 ## Post Categories
 
@@ -235,7 +236,10 @@ npx http-server -p 8080  # http://localhost:8080
 
 ### Refresh Behavior
 
-The refresh button checks for new posts in background. If found, a banner appears: "X new posts available".
+- The refresh button checks for new posts in background
+- If new posts found: banner appears with "X new posts available"
+- If no new posts: shows "No new posts" message (auto-hides after 2s)
+- New posts are merged with cache without losing current view
 
 ---
 
