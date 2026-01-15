@@ -961,7 +961,7 @@ function showSkeletonPosts(count = 5) {
 // Store all posts globally for filtering
 let allPosts = [];
 
-function displayPosts(posts) {
+async function displayPosts(posts) {
     const postsContainer = document.getElementById('posts');
     const loadingIndicator = document.getElementById('loading');
 
@@ -1007,8 +1007,14 @@ function displayPosts(posts) {
         return;
     }
 
+    // Get weekly post banner HTML (only for inbox)
+    let weeklyBannerHtml = '';
+    if (currentFilter === POST_STATUS.INBOX) {
+        weeklyBannerHtml = await getWeeklyPostBannerHtml();
+    }
+
     // Create HTML for each post
-    postsContainer.innerHTML = filteredPosts.map(post => {
+    const postsHtml = filteredPosts.map(post => {
         const status = getPostStatus(post.link);
         const statusClass = status === POST_STATUS.CLEARED ? 'cleared' :
                            status === POST_STATUS.FAVORITE ? 'favorite' : '';
@@ -1132,9 +1138,17 @@ function displayPosts(posts) {
         `;
     }).join('');
 
+    // Combine banner and posts grid
+    postsContainer.innerHTML = weeklyBannerHtml + postsHtml;
+
     // Attach click handlers
     attachPostClickHandlers();
     attachActionButtonHandlers();
+
+    // Attach weekly banner handler if present
+    if (weeklyBannerHtml) {
+        attachWeeklyBannerHandler();
+    }
 }
 
 function escapeHtml(text) {
@@ -2267,6 +2281,293 @@ async function clearAllHighlightsFromCloud() {
     } catch (e) {
         console.error('Failed to clear highlights from cloud:', e);
     }
+}
+
+// ============================================================
+// POST DE LA SEMANA (WEEKLY FEATURED POST)
+// ============================================================
+
+/**
+ * Get the weekly featured post
+ * Logic: Posts from last 7 days with recommendation_score='high', most recent first
+ */
+async function getWeeklyPost() {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    // Get all posts from cache
+    let cachedPosts = [];
+    try {
+        const cache = JSON.parse(localStorage.getItem('blogAggregator_postsCache') || '{}');
+        cachedPosts = cache.posts || [];
+    } catch (e) {
+        console.error('Error reading posts cache:', e);
+    }
+
+    const manualArticles = getManualArticles().filter(a => a.source !== 'twitter');
+    const allPostsList = [...cachedPosts, ...manualArticles];
+
+    // Filter posts from last 7 days
+    const recentPosts = allPostsList.filter(post => {
+        const postDate = new Date(post.date);
+        return postDate >= sevenDaysAgo;
+    });
+
+    if (recentPosts.length === 0) {
+        return null;
+    }
+
+    // Get summaries with high recommendation score
+    const highScorePosts = [];
+
+    for (const post of recentPosts) {
+        const summary = await getSummaryForPost(post.link);
+        if (summary && summary.recommendation?.score === 'high') {
+            highScorePosts.push({
+                post,
+                summary
+            });
+        }
+    }
+
+    if (highScorePosts.length === 0) {
+        return null;
+    }
+
+    // Sort by date (most recent first) and return the first one
+    highScorePosts.sort((a, b) => new Date(b.post.date) - new Date(a.post.date));
+    return highScorePosts[0];
+}
+
+/**
+ * Get summary for a specific post (from local cache or cloud)
+ */
+async function getSummaryForPost(articleUrl) {
+    // Check local cache first
+    try {
+        const localCache = JSON.parse(localStorage.getItem('summaryCache') || '{}');
+        const cached = localCache[articleUrl];
+        if (cached?.data) {
+            return cached.data;
+        }
+    } catch (e) {
+        console.error('Error reading local summary cache:', e);
+    }
+
+    // Check cloud if authenticated
+    if (typeof isAuthenticated === 'function' && isAuthenticated()) {
+        try {
+            const supabase = getSupabaseClient();
+            const user = getUser();
+
+            const { data, error } = await supabase
+                .from('summaries')
+                .select('tldr, key_points, recommendation_score, recommendation_reason')
+                .eq('user_id', user.id)
+                .eq('article_url', articleUrl)
+                .single();
+
+            if (!error && data) {
+                return {
+                    tldr: data.tldr,
+                    keyPoints: data.key_points,
+                    recommendation: data.recommendation_score ? {
+                        score: data.recommendation_score,
+                        reason: data.recommendation_reason
+                    } : null
+                };
+            }
+        } catch (e) {
+            console.error('Error fetching summary from cloud:', e);
+        }
+    }
+
+    return null;
+}
+
+// Set to true for testing with mock data
+const WEEKLY_BANNER_MOCK = false;
+
+/**
+ * Get HTML for the weekly post banner (shown in Inbox)
+ * Returns empty string if no weekly post is available
+ */
+async function getWeeklyPostBannerHtml() {
+    try {
+        // Check if banner was dismissed this session
+        if (sessionStorage.getItem('weeklyBannerDismissed') === 'true') {
+            return '';
+        }
+
+        let post, summary;
+
+        // Mock data for testing
+        if (WEEKLY_BANNER_MOCK) {
+            post = {
+                title: 'The Art of Slow Reading in a Fast World',
+                blogName: 'Simon Sarris',
+                link: 'https://simonsarris.substack.com/p/example',
+                date: new Date()
+            };
+            summary = {
+                tldr: 'En un mundo de scroll infinito, recuperar la lectura profunda es un acto revolucionario. Este ensayo explora cómo la atención sostenida transforma no solo lo que leemos, sino quiénes somos.',
+                recommendation: { score: 'high' }
+            };
+        } else {
+            const weeklyData = await getWeeklyPost();
+            if (!weeklyData) {
+                return '';
+            }
+            post = weeklyData.post;
+            summary = weeklyData.summary;
+        }
+
+        return `
+            <div class="weekly-banner">
+                <div class="weekly-banner-illustration">
+                    ${getWeeklyIllustrationSVG()}
+                </div>
+                <div class="weekly-banner-content">
+                    <div class="weekly-banner-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                        Post de la Semana
+                    </div>
+                    <h2 class="weekly-banner-title">${escapeHtml(post.title)}</h2>
+                    <div class="weekly-banner-meta">
+                        <span class="weekly-banner-source">${escapeHtml(post.blogName)}</span>
+                        <span class="weekly-banner-date">${formatDate(new Date(post.date))}</span>
+                    </div>
+                    ${summary.tldr ? `<p class="weekly-banner-summary">${escapeHtml(summary.tldr)}</p>` : ''}
+                    <button class="weekly-banner-btn"
+                            data-url="${escapeHtml(post.link)}"
+                            data-title="${escapeHtml(post.title)}"
+                            data-blog="${escapeHtml(post.blogName)}">
+                        Leer articulo
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </button>
+                </div>
+                <button class="weekly-banner-dismiss" title="Ocultar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error getting weekly post banner:', error);
+        return '';
+    }
+}
+
+/**
+ * Attach click handlers for weekly banner
+ */
+function attachWeeklyBannerHandler() {
+    const readBtn = document.querySelector('.weekly-banner-btn');
+    if (readBtn) {
+        readBtn.addEventListener('click', () => {
+            const url = readBtn.dataset.url;
+            const title = readBtn.dataset.title;
+            const blog = readBtn.dataset.blog;
+            openWeeklyArticle(url, title, blog);
+        });
+    }
+
+    const dismissBtn = document.querySelector('.weekly-banner-dismiss');
+    if (dismissBtn) {
+        dismissBtn.addEventListener('click', () => {
+            const banner = document.querySelector('.weekly-banner');
+            if (banner) {
+                banner.classList.add('dismissed');
+                // Store dismissal in session (resets on page reload)
+                sessionStorage.setItem('weeklyBannerDismissed', 'true');
+            }
+        });
+    }
+
+    // Also make the banner clickable (except buttons)
+    const banner = document.querySelector('.weekly-banner');
+    if (banner) {
+        banner.addEventListener('click', (e) => {
+            if (!e.target.closest('button')) {
+                const readBtn = banner.querySelector('.weekly-banner-btn');
+                if (readBtn) readBtn.click();
+            }
+        });
+    }
+}
+
+/**
+ * Open the weekly featured article in reader
+ */
+function openWeeklyArticle(url, title, blogName) {
+    // Mark as cleared (read)
+    setPostStatus(url, POST_STATUS.CLEARED);
+
+    // Open in article reader
+    if (window.articleReader && typeof window.articleReader.open === 'function') {
+        window.articleReader.open(url, title, blogName);
+    } else {
+        window.open(url, '_blank', 'noopener,noreferrer');
+    }
+}
+
+/**
+ * Get decorative SVG illustration for weekly post
+ * Editorial Noir style with terracotta accents
+ */
+function getWeeklyIllustrationSVG() {
+    return `
+        <svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#111111"/>
+                    <stop offset="100%" style="stop-color:#1a1a1a"/>
+                </linearGradient>
+                <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:#e85d04"/>
+                    <stop offset="100%" style="stop-color:#fb923c"/>
+                </linearGradient>
+            </defs>
+
+            <rect x="0" y="0" width="400" height="200" fill="url(#bgGrad)"/>
+
+            <circle cx="50" cy="40" r="3" fill="#e85d04" opacity="0.6"/>
+            <circle cx="350" cy="160" r="4" fill="#e85d04" opacity="0.5"/>
+            <circle cx="320" cy="30" r="2" fill="#f5f0e8" opacity="0.3"/>
+            <circle cx="80" cy="170" r="3" fill="#f5f0e8" opacity="0.2"/>
+
+            <g transform="translate(150, 50)">
+                <rect x="0" y="0" width="8" height="100" fill="url(#accentGrad)" rx="2"/>
+                <rect x="10" y="5" width="90" height="90" fill="#1a1a1a" stroke="#2a2a2a" stroke-width="1" rx="2"/>
+                <rect x="20" y="20" width="60" height="3" fill="#3a3a3a" rx="1"/>
+                <rect x="20" y="30" width="70" height="3" fill="#3a3a3a" rx="1"/>
+                <rect x="20" y="40" width="50" height="3" fill="#3a3a3a" rx="1"/>
+                <rect x="20" y="50" width="65" height="3" fill="#3a3a3a" rx="1"/>
+                <rect x="20" y="60" width="55" height="3" fill="#3a3a3a" rx="1"/>
+                <rect x="20" y="70" width="45" height="3" fill="#e85d04" opacity="0.6" rx="1"/>
+            </g>
+
+            <g transform="translate(280, 80)">
+                <polygon points="20,0 24,14 40,14 28,22 32,38 20,28 8,38 12,22 0,14 16,14" fill="#e85d04" opacity="0.8"/>
+            </g>
+
+            <g opacity="0.05">
+                <line x1="0" y1="50" x2="400" y2="50" stroke="#f5f0e8"/>
+                <line x1="0" y1="100" x2="400" y2="100" stroke="#f5f0e8"/>
+                <line x1="0" y1="150" x2="400" y2="150" stroke="#f5f0e8"/>
+                <line x1="100" y1="0" x2="100" y2="200" stroke="#f5f0e8"/>
+                <line x1="200" y1="0" x2="200" y2="200" stroke="#f5f0e8"/>
+                <line x1="300" y1="0" x2="300" y2="200" stroke="#f5f0e8"/>
+            </g>
+        </svg>
+    `;
 }
 
 // Start the app when page loads

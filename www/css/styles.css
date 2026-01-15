@@ -2404,3 +2404,201 @@ body > footer {
   color: var(--text-muted);
   font-family: var(--font-mono);
 }
+
+/* ============================================================
+   POST DE LA SEMANA - Weekly Banner Hero
+   ============================================================ */
+
+.weekly-banner {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 24px;
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 8px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s var(--ease-out);
+  animation: fadeInDown 0.5s var(--ease-out);
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.weekly-banner:hover {
+  border-color: var(--accent);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.weekly-banner.dismissed {
+  display: none;
+}
+
+.weekly-banner-illustration {
+  flex-shrink: 0;
+  width: 180px;
+  height: 140px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+.weekly-banner-illustration svg {
+  width: 100%;
+  height: 100%;
+}
+
+.weekly-banner-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.weekly-banner-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.weekly-banner-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin: 0 0 8px 0;
+}
+
+.weekly-banner-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.weekly-banner-source {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent-light);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.weekly-banner-date {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.weekly-banner-summary {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0 0 16px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.weekly-banner-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 20px;
+  background: var(--accent);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.25s var(--ease-out);
+  width: fit-content;
+}
+
+.weekly-banner-btn:hover {
+  background: var(--accent-light);
+  transform: translateY(-1px);
+}
+
+.weekly-banner-btn svg {
+  transition: transform 0.25s var(--ease-out);
+}
+
+.weekly-banner-btn:hover svg {
+  transform: translateX(3px);
+}
+
+.weekly-banner-dismiss {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s var(--ease-out);
+}
+
+.weekly-banner:hover .weekly-banner-dismiss {
+  opacity: 1;
+}
+
+.weekly-banner-dismiss:hover {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+  .weekly-banner {
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .weekly-banner-illustration {
+    width: 100%;
+    height: 120px;
+  }
+
+  .weekly-banner-title {
+    font-size: 18px;
+  }
+
+  .weekly-banner-summary {
+    -webkit-line-clamp: 3;
+  }
+
+  .weekly-banner-dismiss {
+    opacity: 1;
+  }
+}
