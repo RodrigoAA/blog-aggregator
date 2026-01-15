@@ -191,10 +191,10 @@ class TinderMode {
                 <div class="tinder-card-content">
                     <div class="tinder-card-header">
                         <span class="tinder-card-source">${escapeHtml(post.blogName)}</span>
-                        ${post.isManual ? '<span class="tinder-card-badge">Manual</span>' : ''}
+                        <span class="tinder-card-readtime"></span>
                     </div>
                     <h2 class="tinder-card-title">${escapeHtml(post.title)}</h2>
-                    <div class="tinder-card-tldr">
+                    <div class="tinder-card-tldr tinder-card-tldr-loading">
                         <span class="tinder-tldr-label">TL;DR</span>
                         <p class="tinder-tldr-text">
                             <span class="tinder-loading-atom">
@@ -206,10 +206,7 @@ class TinderMode {
                         </p>
                     </div>
                     <div class="tinder-card-footer">
-                        <div class="tinder-card-meta">
-                            <span class="tinder-card-date">${formattedDate}</span>
-                            <span class="tinder-card-readtime"></span>
-                        </div>
+                        <span class="tinder-card-date">${formattedDate}</span>
                         <div class="tinder-flames" data-score="">
                             <span class="tinder-flame">🔥</span>
                             <span class="tinder-flame">🔥</span>
@@ -228,16 +225,22 @@ class TinderMode {
     }
 
     async loadSummaryForCard(card, postUrl) {
+        const tldrContainer = card.querySelector('.tinder-card-tldr');
         const tldrElement = card.querySelector('.tinder-tldr-text');
         const flamesElement = card.querySelector('.tinder-flames');
         const readtimeElement = card.querySelector('.tinder-card-readtime');
         if (!tldrElement) return;
+
+        const showContent = () => {
+            tldrContainer?.classList.remove('tinder-card-tldr-loading');
+        };
 
         try {
             // Check local cache first (uses global function from utils.js)
             const cached = getCachedSummary(postUrl);
             if (cached?.tldr) {
                 tldrElement.textContent = cached.tldr;
+                showContent();
                 this.updateFlames(flamesElement, cached.recommendation?.score);
                 this.updateReadingTime(readtimeElement, cached.readingTime);
                 return;
@@ -250,11 +253,13 @@ class TinderMode {
             if (!data || !data.tldr) {
                 tldrElement.textContent = 'Resumen no disponible';
                 tldrElement.classList.add('tinder-tldr-unavailable');
+                showContent();
                 this.updateFlames(flamesElement, null);
                 return;
             }
 
             tldrElement.textContent = data.tldr;
+            showContent();
             // Cache locally (uses global function from utils.js)
             cacheSummaryLocally(postUrl, data);
 
@@ -266,6 +271,7 @@ class TinderMode {
             console.error('Failed to load summary:', error);
             tldrElement.textContent = 'Error al cargar resumen';
             tldrElement.classList.add('tinder-tldr-unavailable');
+            showContent();
             this.updateFlames(flamesElement, null);
         }
     }
