@@ -196,7 +196,14 @@ class TinderMode {
                     <h2 class="tinder-card-title">${escapeHtml(post.title)}</h2>
                     <div class="tinder-card-tldr">
                         <span class="tinder-tldr-label">TL;DR</span>
-                        <p class="tinder-tldr-text"><span class="tinder-loading-dots"></span></p>
+                        <p class="tinder-tldr-text">
+                            <span class="tinder-loading-atom">
+                                <span class="atom-nucleus"></span>
+                                <span class="atom-particle atom-particle-1"></span>
+                                <span class="atom-particle atom-particle-2"></span>
+                                <span class="atom-particle atom-particle-3"></span>
+                            </span>
+                        </p>
                     </div>
                     <div class="tinder-card-footer">
                         <div class="tinder-card-meta">

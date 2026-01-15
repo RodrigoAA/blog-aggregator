@@ -2654,18 +2654,66 @@ body > footer {
   font-style: italic;
 }
 
-/* Loading dots animation */
-.tinder-loading-dots::after {
-  content: 'Cargando';
-  animation: loading-dots 1.5s infinite;
+/* Atom loading animation */
+.tinder-loading-atom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  position: relative;
 }
 
-@keyframes loading-dots {
-  0% { content: 'Cargando'; }
-  25% { content: 'Cargando.'; }
-  50% { content: 'Cargando..'; }
-  75% { content: 'Cargando...'; }
-  100% { content: 'Cargando'; }
+.atom-nucleus {
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  position: absolute;
+  animation: nucleus-pulse 1.5s ease-in-out infinite;
+}
+
+.atom-particle {
+  width: 5px;
+  height: 5px;
+  background: var(--text-primary);
+  border-radius: 50%;
+  position: absolute;
+  opacity: 0.7;
+}
+
+.atom-particle-1 {
+  animation: orbit-1 1.2s linear infinite;
+}
+
+.atom-particle-2 {
+  animation: orbit-2 1.2s linear infinite;
+  animation-delay: -0.4s;
+}
+
+.atom-particle-3 {
+  animation: orbit-3 1.2s linear infinite;
+  animation-delay: -0.8s;
+}
+
+@keyframes nucleus-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+@keyframes orbit-1 {
+  0% { transform: rotate(0deg) translateX(16px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(16px) rotate(-360deg); }
+}
+
+@keyframes orbit-2 {
+  0% { transform: rotate(60deg) translateX(16px) rotate(-60deg); }
+  100% { transform: rotate(420deg) translateX(16px) rotate(-420deg); }
+}
+
+@keyframes orbit-3 {
+  0% { transform: rotate(120deg) translateX(16px) rotate(-120deg); }
+  100% { transform: rotate(480deg) translateX(16px) rotate(-480deg); }
 }
 
 /* Card Overlays (Action Labels) */
