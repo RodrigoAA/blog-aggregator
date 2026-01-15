@@ -39,6 +39,7 @@ OPENAI_API_KEY=sk-...
    - `auth.js` - Supabase authentication with Google OAuth
    - `twitter-import.js` - Twitter bookmarks import, folder management, classification
    - `tinder-mode.js` - `TinderMode` class: mobile swipe interface for inbox triage
+   - `utils.js` - Shared utilities: `escapeHtml()`, summary caching, `fetchSummary()`
    - `classify-tweets.js` - One-time script to auto-classify tweets into folders
 
 2. **Backend (backend/)** - Express API hosted on Render.com
