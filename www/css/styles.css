@@ -2007,6 +2007,7 @@ body > footer {
   height: 24px;
   background: var(--border);
   margin: 0 8px;
+  flex-shrink: 0;
 }
 
 /* Twitter Author Badge in Post Cards */
@@ -2031,8 +2032,295 @@ body > footer {
 }
 
 /* Twitter post styling */
+.twitter-post-layout {
+  display: flex;
+  gap: 16px;
+}
+
+.twitter-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.twitter-avatar-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.twitter-post-content {
+  flex: 1;
+  min-width: 0;
+}
+
 .twitter-post .post-header {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+.twitter-author-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.twitter-date {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.twitter-text {
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin-top: 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Twitter media */
+.twitter-media {
+  margin-top: 12px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.twitter-media-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2px;
+}
+
+.twitter-media-item {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+  object-fit: cover;
+  display: block;
+}
+
+.twitter-media-grid .twitter-media-item {
+  height: 150px;
+}
+
+.twitter-video {
+  position: relative;
+}
+
+.twitter-video img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.twitter-video-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.twitter-video-badge svg {
+  margin-left: 4px;
+}
+
+/* Thread indicator badge */
+.thread-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-tertiary);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--accent-glow);
+}
+
+/* Twitter section header */
+.twitter-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.twitter-section-count {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.twitter-delete-all-btn {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  padding: 6px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.twitter-delete-all-btn:hover {
+  background: var(--danger);
+  color: white;
+}
+
+/* Twitter folders */
+.twitter-section-header {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.twitter-folders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.twitter-folder-btn {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.twitter-folder-btn:hover {
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+
+.twitter-folder-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.twitter-folder-add-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.twitter-folder-add-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.twitter-folder-select {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-width: 120px;
+}
+
+.twitter-folder-select:hover {
+  border-color: var(--text-muted);
+}
+
+/* Folder manager modal */
+.folder-manager-body {
+  padding: 20px;
+}
+
+.folder-add-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.folder-add-form input {
+  flex: 1;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.folder-add-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.folder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.folder-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+.folder-name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.folder-count {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.folder-delete-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s ease;
+}
+
+.folder-delete-btn:hover {
+  color: var(--danger);
+}
+
+.folder-empty {
+  color: var(--text-muted);
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
 }

@@ -32,27 +32,59 @@ class TwitterBookmarksImporter {
 
     /**
      * Normalize different export formats to common structure
+     * Supports: X Bookmarks Exporter, twitter-web-exporter, and others
      */
     normalizeBookmark(rawBookmark) {
         // Handle different field names from various exporters
         const tweetUrl = this.normalizeUrl(
-            rawBookmark.link || rawBookmark.url || rawBookmark.tweetUrl || ''
+            rawBookmark.url || rawBookmark.link || rawBookmark.tweetUrl || ''
         );
+
+        // Get text content (twitter-web-exporter uses full_text)
+        const text = rawBookmark.full_text || rawBookmark.tweetText || rawBookmark.text || rawBookmark.content || '';
+
+        // Get author info (twitter-web-exporter uses name/screen_name)
+        const authorName = rawBookmark.name || rawBookmark.authorName || rawBookmark.author || '';
+        const authorHandle = rawBookmark.screen_name || rawBookmark.handle || rawBookmark.screenName || rawBookmark.username || '';
+
+        // Get date (twitter-web-exporter uses created_at)
+        const dateStr = rawBookmark.created_at || rawBookmark.time || rawBookmark.createdAt || rawBookmark.timestamp;
+        const date = dateStr ? new Date(dateStr) : new Date();
+
+        // Get engagement data (twitter-web-exporter uses favorite_count, retweet_count, reply_count)
+        const likes = parseInt(rawBookmark.favorite_count || rawBookmark.likes || rawBookmark.likeCount || rawBookmark.favoriteCount || 0) || 0;
+        const retweets = parseInt(rawBookmark.retweet_count || rawBookmark.retweets || rawBookmark.retweetCount || 0) || 0;
+        const replies = parseInt(rawBookmark.reply_count || rawBookmark.replies || rawBookmark.replyCount || 0) || 0;
+
+        // Get profile image (twitter-web-exporter uses profile_image_url)
+        const profileImage = rawBookmark.profile_image_url || rawBookmark.profileImageUrl || '';
+        // Get higher resolution image by replacing _normal with _bigger or removing size suffix
+        const profileImageHQ = profileImage.replace('_normal.', '_bigger.');
+
+        // Get media (images/videos)
+        const media = (rawBookmark.media || []).map(m => ({
+            type: m.type || 'photo',
+            url: m.original || m.url || m.thumbnail || '',
+            thumbnail: m.thumbnail || m.url || ''
+        })).filter(m => m.url);
 
         return {
             url: tweetUrl,
-            title: this.extractTweetTitle(rawBookmark),
-            description: rawBookmark.tweetText || rawBookmark.text || rawBookmark.content || '',
-            date: new Date(rawBookmark.time || rawBookmark.createdAt || rawBookmark.timestamp || Date.now()),
+            title: this.extractTweetTitle({ ...rawBookmark, tweetText: text, authorName }),
+            description: text,
+            date: date,
             siteName: 'Twitter',
             source: 'twitter',
-            authorName: rawBookmark.authorName || rawBookmark.author || rawBookmark.name || '',
-            authorHandle: rawBookmark.handle || rawBookmark.screenName || rawBookmark.username || '',
+            authorName: authorName,
+            authorHandle: authorHandle ? (authorHandle.startsWith('@') ? authorHandle : `@${authorHandle}`) : '',
+            profileImage: profileImageHQ,
+            media: media,
             engagementData: {
-                retweets: parseInt(rawBookmark.retweets || rawBookmark.retweetCount || 0) || 0,
-                likes: parseInt(rawBookmark.likes || rawBookmark.likeCount || rawBookmark.favoriteCount || 0) || 0,
-                replies: parseInt(rawBookmark.replies || rawBookmark.replyCount || 0) || 0
-            }
+                retweets,
+                likes,
+                replies
+            },
+            isThread: !!(rawBookmark.in_reply_to || rawBookmark.quoted_status)
         };
     }
 
@@ -80,15 +112,22 @@ class TwitterBookmarksImporter {
      * Extract meaningful title from tweet
      */
     extractTweetTitle(bookmark) {
-        const text = bookmark.tweetText || bookmark.text || bookmark.content || '';
-        const authorName = bookmark.authorName || bookmark.author || bookmark.name || 'Unknown';
+        const text = bookmark.tweetText || bookmark.full_text || bookmark.text || bookmark.content || '';
+        const authorName = bookmark.authorName || bookmark.name || bookmark.author || 'Unknown';
 
         if (!text) {
             return `Tweet by ${authorName}`;
         }
 
+        // Remove t.co URLs for cleaner title
+        const cleanText = text.replace(/https?:\/\/t\.co\/\w+/g, '').trim();
+
+        if (!cleanText) {
+            return `Tweet by ${authorName}`;
+        }
+
         // Use first sentence or truncate
-        const firstSentence = text.split(/[.!?]\s/)[0];
+        const firstSentence = cleanText.split(/[.!?\n]/)[0].trim();
         const truncated = firstSentence.length > 100
             ? firstSentence.substring(0, 97) + '...'
             : firstSentence;
@@ -146,7 +185,10 @@ class TwitterBookmarksImporter {
                     source: 'twitter',
                     authorName: bookmark.authorName,
                     authorHandle: bookmark.authorHandle,
-                    engagementData: bookmark.engagementData
+                    profileImage: bookmark.profileImage,
+                    media: bookmark.media,
+                    engagementData: bookmark.engagementData,
+                    isThread: bookmark.isThread || false
                 };
 
                 const added = await addTwitterBookmark(article);
@@ -237,7 +279,10 @@ async function saveTwitterBookmarkToCloud(article) {
             source: 'twitter',
             author_name: article.authorName || null,
             author_handle: article.authorHandle || null,
+            profile_image: article.profileImage || null,
+            media: article.media || null,
             engagement_data: article.engagementData || null,
+            is_thread: article.isThread || false,
             created_at: new Date().toISOString()
         };
 
@@ -421,8 +466,353 @@ function updateTwitterFilterCount() {
     }
 }
 
+// ============================================================
+// FOLDERS MANAGEMENT
+// ============================================================
+
+const TWITTER_FOLDERS_KEY = 'twitter_folders';
+
+// Default folders based on user's bookmarks structure
+const DEFAULT_TWITTER_FOLDERS = [
+    // Main categories
+    { name: 'Product', slug: 'product' },
+    { name: 'Carrera', slug: 'carrera' },
+    { name: 'Empleo', slug: 'empleo' },
+    { name: 'AI', slug: 'ai' },
+    { name: 'Agents', slug: 'agents' },
+    { name: 'LLMs & Tools', slug: 'llms-tools' },
+    { name: 'MCP', slug: 'mcp' },
+    { name: 'Vibe Coding', slug: 'vibe-coding' },
+    { name: 'Frameworks/Methodologies', slug: 'frameworks-methodologies' },
+    { name: 'Strategy', slug: 'strategy' },
+    { name: 'User Research', slug: 'user-research' },
+    { name: 'Discovery', slug: 'discovery' },
+    { name: 'Growth', slug: 'growth' },
+    { name: 'PMF/MVP/VP', slug: 'pmf-mvp-vp' },
+    { name: 'UXUI', slug: 'uxui' },
+    { name: 'PRDs', slug: 'prds' },
+    { name: 'Metricas', slug: 'metricas' },
+    { name: 'OKRs', slug: 'okrs' },
+    { name: 'Comunicación', slug: 'comunicacion' },
+    { name: 'R&D/Tech', slug: 'rd-tech' },
+    { name: 'Marketing', slug: 'marketing' },
+    { name: 'Ventas/Finanzas', slug: 'ventas-finanzas' },
+    { name: 'Competitive', slug: 'competitive' },
+    { name: 'Proyectos', slug: 'proyectos' },
+    { name: 'Referencias', slug: 'referencias' },
+    { name: 'Onboarding', slug: 'onboarding' },
+    { name: 'Interview Prep', slug: 'interview-prep' },
+    { name: 'Being a Good PM', slug: 'being-a-good-pm' }
+];
+
+function getTwitterFolders() {
+    const stored = localStorage.getItem(TWITTER_FOLDERS_KEY);
+    if (stored) {
+        return JSON.parse(stored);
+    }
+    // Initialize with default folders on first use
+    localStorage.setItem(TWITTER_FOLDERS_KEY, JSON.stringify(DEFAULT_TWITTER_FOLDERS));
+    return DEFAULT_TWITTER_FOLDERS;
+}
+
+function saveTwitterFolders(folders) {
+    localStorage.setItem(TWITTER_FOLDERS_KEY, JSON.stringify(folders));
+    if (isAuthenticated()) {
+        saveTwitterFoldersToCloud(folders);
+    }
+}
+
+function addTwitterFolder(name) {
+    const folders = getTwitterFolders();
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+    if (folders.some(f => f.slug === slug)) {
+        return false; // Already exists
+    }
+
+    folders.push({ name, slug });
+    saveTwitterFolders(folders);
+    return true;
+}
+
+function deleteTwitterFolder(slug) {
+    const folders = getTwitterFolders();
+    const filtered = folders.filter(f => f.slug !== slug);
+    saveTwitterFolders(filtered);
+
+    // Move tweets from deleted folder to no folder
+    const articles = getManualArticles();
+    let updated = false;
+    articles.forEach(a => {
+        if (a.source === 'twitter' && a.folder === slug) {
+            a.folder = null;
+            updated = true;
+        }
+    });
+    if (updated) {
+        saveManualArticles(articles);
+    }
+}
+
+function resetTwitterFoldersToDefaults() {
+    if (confirm('Reset folders to defaults? This will add missing default folders but keep your existing ones.')) {
+        const currentFolders = getTwitterFolders();
+        const currentSlugs = new Set(currentFolders.map(f => f.slug));
+
+        // Add missing default folders
+        DEFAULT_TWITTER_FOLDERS.forEach(df => {
+            if (!currentSlugs.has(df.slug)) {
+                currentFolders.push(df);
+            }
+        });
+
+        saveTwitterFolders(currentFolders);
+        renderFolderList();
+        displayTwitterPosts();
+    }
+}
+
+async function saveTwitterFoldersToCloud(folders) {
+    if (!isAuthenticated()) return;
+
+    try {
+        const supabase = getSupabaseClient();
+        const user = getUser();
+
+        const { error } = await supabase
+            .from('user_settings')
+            .upsert({
+                user_id: user.id,
+                twitter_folders: folders,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' });
+
+        if (error) console.error('Error saving folders:', error);
+    } catch (e) {
+        console.error('Failed to save folders:', e);
+    }
+}
+
+async function loadTwitterFoldersFromCloud() {
+    if (!isAuthenticated()) return;
+
+    try {
+        const supabase = getSupabaseClient();
+        const user = getUser();
+
+        const { data, error } = await supabase
+            .from('user_settings')
+            .select('twitter_folders')
+            .eq('user_id', user.id)
+            .single();
+
+        if (error && error.code !== 'PGRST116') {
+            console.error('Error loading folders:', error);
+            return;
+        }
+
+        if (data?.twitter_folders) {
+            localStorage.setItem(TWITTER_FOLDERS_KEY, JSON.stringify(data.twitter_folders));
+        }
+    } catch (e) {
+        console.error('Failed to load folders:', e);
+    }
+}
+
+function setTweetFolder(tweetUrl, folderSlug) {
+    const articles = getManualArticles();
+    const article = articles.find(a => a.link === tweetUrl);
+
+    if (article) {
+        article.folder = folderSlug;
+        saveManualArticles(articles);
+
+        // Update in cloud
+        if (isAuthenticated()) {
+            updateTweetFolderInCloud(tweetUrl, folderSlug);
+        }
+    }
+}
+
+async function updateTweetFolderInCloud(url, folderSlug) {
+    if (!isAuthenticated()) return;
+
+    try {
+        const supabase = getSupabaseClient();
+        const user = getUser();
+
+        const { error } = await supabase
+            .from('manual_articles')
+            .update({ folder: folderSlug })
+            .eq('user_id', user.id)
+            .eq('url', url);
+
+        if (error) console.error('Error updating folder:', error);
+    } catch (e) {
+        console.error('Failed to update folder:', e);
+    }
+}
+
+// Current folder filter (null = all, '' = uncategorized, 'slug' = specific folder)
+let currentTwitterFolder = null;
+
+function setTwitterFolderFilter(folderSlug) {
+    currentTwitterFolder = folderSlug;
+    displayTwitterPosts();
+}
+
+/**
+ * Delete all Twitter bookmarks
+ */
+async function deleteAllTwitterBookmarks() {
+    const twitterBookmarks = getTwitterBookmarks();
+
+    if (twitterBookmarks.length === 0) {
+        alert('No Twitter bookmarks to delete.');
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to delete all ${twitterBookmarks.length} Twitter bookmarks?`)) {
+        return;
+    }
+
+    // Get all manual articles and filter out Twitter ones
+    const allArticles = getManualArticles();
+    const nonTwitterArticles = allArticles.filter(a => a.source !== 'twitter');
+
+    // Save filtered list
+    saveManualArticles(nonTwitterArticles);
+
+    // Delete from cloud if authenticated
+    if (isAuthenticated()) {
+        try {
+            const supabase = getSupabaseClient();
+            const user = getUser();
+
+            const { error } = await supabase
+                .from('manual_articles')
+                .delete()
+                .eq('user_id', user.id)
+                .eq('source', 'twitter');
+
+            if (error) {
+                console.error('Error deleting Twitter bookmarks from cloud:', error);
+            } else {
+                console.log('Twitter bookmarks deleted from cloud');
+            }
+        } catch (error) {
+            console.error('Failed to delete Twitter bookmarks from cloud:', error);
+        }
+    }
+
+    // Update UI
+    updateTwitterFilterCount();
+    displayTwitterPosts();
+}
+
+// ============================================================
+// FOLDER MANAGER MODAL
+// ============================================================
+
+function openFolderManager() {
+    let modal = document.getElementById('folder-manager-modal');
+
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'folder-manager-modal';
+        modal.className = 'twitter-import-modal';
+        modal.innerHTML = `
+            <div class="twitter-import-overlay" onclick="closeFolderManager()"></div>
+            <div class="twitter-import-content" style="max-width: 400px;">
+                <div class="twitter-import-header">
+                    <h2>Manage Folders</h2>
+                    <button class="twitter-import-close" onclick="closeFolderManager()">&times;</button>
+                </div>
+                <div class="folder-manager-body">
+                    <div class="folder-add-form">
+                        <input type="text" id="new-folder-name" placeholder="New folder name" />
+                        <button class="twitter-btn-primary" onclick="createFolder()">Add</button>
+                    </div>
+                    <div class="folder-list" id="folder-list"></div>
+                    <button class="twitter-btn-secondary" onclick="resetTwitterFoldersToDefaults()" style="margin-top: 16px; width: 100%;">
+                        Reset to Default Folders
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    renderFolderList();
+    modal.classList.add('active');
+}
+
+function closeFolderManager() {
+    const modal = document.getElementById('folder-manager-modal');
+    if (modal) modal.classList.remove('active');
+}
+
+function renderFolderList() {
+    const list = document.getElementById('folder-list');
+    if (!list) return;
+
+    const folders = getTwitterFolders();
+    const articles = getManualArticles().filter(a => a.source === 'twitter');
+
+    if (folders.length === 0) {
+        list.innerHTML = '<p class="folder-empty">No folders yet. Create one above.</p>';
+        return;
+    }
+
+    list.innerHTML = folders.map(f => {
+        const count = articles.filter(a => a.folder === f.slug).length;
+        return `
+            <div class="folder-item">
+                <span class="folder-name">${escapeHtml(f.name)}</span>
+                <span class="folder-count">${count} tweets</span>
+                <button class="folder-delete-btn" onclick="confirmDeleteFolder('${f.slug}', '${escapeHtml(f.name)}')" title="Delete folder">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+function createFolder() {
+    const input = document.getElementById('new-folder-name');
+    const name = input.value.trim();
+
+    if (!name) {
+        alert('Please enter a folder name');
+        return;
+    }
+
+    if (addTwitterFolder(name)) {
+        input.value = '';
+        renderFolderList();
+        displayTwitterPosts(); // Refresh to show new folder
+    } else {
+        alert('A folder with this name already exists');
+    }
+}
+
+function confirmDeleteFolder(slug, name) {
+    if (confirm(`Delete folder "${name}"? Tweets will be moved to Uncategorized.`)) {
+        deleteTwitterFolder(slug);
+        renderFolderList();
+        displayTwitterPosts();
+    }
+}
+
 // Initialize Twitter count on page load
 document.addEventListener('DOMContentLoaded', () => {
     // Small delay to ensure manual articles are loaded
     setTimeout(updateTwitterFilterCount, 500);
+    // Load folders from cloud
+    if (typeof loadTwitterFoldersFromCloud === 'function') {
+        loadTwitterFoldersFromCloud();
+    }
 });
