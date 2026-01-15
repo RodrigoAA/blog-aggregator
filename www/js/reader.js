@@ -614,13 +614,42 @@ class ArticleReader {
   }
 
   initHighlighting(articleBody) {
-    // Listen for text selection
+    // Listen for text selection - desktop
     articleBody.addEventListener('mouseup', (e) => {
       setTimeout(() => this.handleTextSelection(e), 10);
     });
 
+    // Listen for text selection - mobile (touchend + selectionchange)
+    articleBody.addEventListener('touchend', (e) => {
+      // Delay to let selection finalize on mobile
+      setTimeout(() => this.handleTextSelection(e), 300);
+    });
+
+    // Also listen to selectionchange for better mobile support
+    document.addEventListener('selectionchange', () => {
+      // Only handle if modal is open and selection is within article
+      if (this.modal.classList.contains('active')) {
+        setTimeout(() => {
+          const selection = window.getSelection();
+          if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            if (articleBody.contains(range.commonAncestorContainer)) {
+              this.handleTextSelection(null);
+            }
+          }
+        }, 100);
+      }
+    });
+
     // Hide button when clicking elsewhere
     document.addEventListener('mousedown', (e) => {
+      if (!e.target.closest('.highlight-btn') && !e.target.closest('.article-content')) {
+        this.hideHighlightButton();
+      }
+    });
+
+    // Hide button on touch outside - mobile
+    document.addEventListener('touchstart', (e) => {
       if (!e.target.closest('.highlight-btn') && !e.target.closest('.article-content')) {
         this.hideHighlightButton();
       }
@@ -647,8 +676,18 @@ class ArticleReader {
       const range = selection.getRangeAt(0);
       const rect = range.getBoundingClientRect();
 
-      this.highlightBtn.style.left = rect.left + rect.width / 2 - this.highlightBtn.offsetWidth / 2 + 'px';
-      this.highlightBtn.style.top = rect.top - 50 + window.scrollY + 'px';
+      // Position button above selection (using fixed positioning for mobile compatibility)
+      const buttonWidth = this.highlightBtn.offsetWidth || 100;
+      let left = rect.left + rect.width / 2 - buttonWidth / 2;
+      let top = rect.top - 50;
+
+      // Keep button within viewport bounds
+      const padding = 10;
+      left = Math.max(padding, Math.min(left, window.innerWidth - buttonWidth - padding));
+      top = Math.max(padding, top);
+
+      this.highlightBtn.style.left = left + 'px';
+      this.highlightBtn.style.top = top + 'px';
       this.highlightBtn.classList.add('show');
     } else {
       this.hideHighlightButton();
