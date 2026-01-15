@@ -91,7 +91,7 @@ Posts flow through four states:
 **Twitter bookmarks** are separate from the main workflow:
 - Stored with `source: 'twitter'` in `manual_articles`
 - Displayed in dedicated Twitter tab (not mixed with RSS)
-- Organized into folders (28 pre-configured + custom)
+- Organized into custom folders (user-created)
 - Open directly in Twitter (no reader mode)
 
 ## Styling Guidelines

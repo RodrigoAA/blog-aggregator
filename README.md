@@ -303,9 +303,8 @@ Import your Twitter/X bookmarks and organize them with folders.
 
 ### Folder Organization
 
-- **28 pre-configured folders** for product management topics (AI, Strategy, User Research, etc.)
 - Create custom folders via "Manage Folders"
-- Assign folders to tweets individually or use classification scripts
+- Assign folders to tweets individually
 - Folders sync to cloud for cross-device access
 
 ### Features

@@ -472,47 +472,9 @@ function updateTwitterFilterCount() {
 
 const TWITTER_FOLDERS_KEY = 'twitter_folders';
 
-// Default folders based on user's bookmarks structure
-const DEFAULT_TWITTER_FOLDERS = [
-    // Main categories
-    { name: 'Product', slug: 'product' },
-    { name: 'Carrera', slug: 'carrera' },
-    { name: 'Empleo', slug: 'empleo' },
-    { name: 'AI', slug: 'ai' },
-    { name: 'Agents', slug: 'agents' },
-    { name: 'LLMs & Tools', slug: 'llms-tools' },
-    { name: 'MCP', slug: 'mcp' },
-    { name: 'Vibe Coding', slug: 'vibe-coding' },
-    { name: 'Frameworks/Methodologies', slug: 'frameworks-methodologies' },
-    { name: 'Strategy', slug: 'strategy' },
-    { name: 'User Research', slug: 'user-research' },
-    { name: 'Discovery', slug: 'discovery' },
-    { name: 'Growth', slug: 'growth' },
-    { name: 'PMF/MVP/VP', slug: 'pmf-mvp-vp' },
-    { name: 'UXUI', slug: 'uxui' },
-    { name: 'PRDs', slug: 'prds' },
-    { name: 'Metricas', slug: 'metricas' },
-    { name: 'OKRs', slug: 'okrs' },
-    { name: 'Comunicación', slug: 'comunicacion' },
-    { name: 'R&D/Tech', slug: 'rd-tech' },
-    { name: 'Marketing', slug: 'marketing' },
-    { name: 'Ventas/Finanzas', slug: 'ventas-finanzas' },
-    { name: 'Competitive', slug: 'competitive' },
-    { name: 'Proyectos', slug: 'proyectos' },
-    { name: 'Referencias', slug: 'referencias' },
-    { name: 'Onboarding', slug: 'onboarding' },
-    { name: 'Interview Prep', slug: 'interview-prep' },
-    { name: 'Being a Good PM', slug: 'being-a-good-pm' }
-];
-
 function getTwitterFolders() {
     const stored = localStorage.getItem(TWITTER_FOLDERS_KEY);
-    if (stored) {
-        return JSON.parse(stored);
-    }
-    // Initialize with default folders on first use
-    localStorage.setItem(TWITTER_FOLDERS_KEY, JSON.stringify(DEFAULT_TWITTER_FOLDERS));
-    return DEFAULT_TWITTER_FOLDERS;
+    return stored ? JSON.parse(stored) : [];
 }
 
 function saveTwitterFolders(folders) {
@@ -551,24 +513,6 @@ function deleteTwitterFolder(slug) {
     });
     if (updated) {
         saveManualArticles(articles);
-    }
-}
-
-function resetTwitterFoldersToDefaults() {
-    if (confirm('Reset folders to defaults? This will add missing default folders but keep your existing ones.')) {
-        const currentFolders = getTwitterFolders();
-        const currentSlugs = new Set(currentFolders.map(f => f.slug));
-
-        // Add missing default folders
-        DEFAULT_TWITTER_FOLDERS.forEach(df => {
-            if (!currentSlugs.has(df.slug)) {
-                currentFolders.push(df);
-            }
-        });
-
-        saveTwitterFolders(currentFolders);
-        renderFolderList();
-        displayTwitterPosts();
     }
 }
 
@@ -734,9 +678,6 @@ function openFolderManager() {
                         <button class="twitter-btn-primary" onclick="createFolder()">Add</button>
                     </div>
                     <div class="folder-list" id="folder-list"></div>
-                    <button class="twitter-btn-secondary" onclick="resetTwitterFoldersToDefaults()" style="margin-top: 16px; width: 100%;">
-                        Reset to Default Folders
-                    </button>
                 </div>
             </div>
         `;
