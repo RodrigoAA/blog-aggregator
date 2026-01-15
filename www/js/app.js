@@ -1135,6 +1135,9 @@ function displayPosts(posts) {
     // Attach click handlers
     attachPostClickHandlers();
     attachActionButtonHandlers();
+
+    // Update Tinder mode trigger visibility
+    updateTinderTriggerVisibility();
 }
 
 function escapeHtml(text) {
@@ -1163,6 +1166,25 @@ function setFilter(filter) {
         displayHighlights();
     } else {
         displayPosts(allPosts);
+    }
+
+    // Update Tinder mode trigger visibility
+    updateTinderTriggerVisibility();
+}
+
+// Update Tinder mode FAB visibility (mobile only, Inbox with posts)
+function updateTinderTriggerVisibility() {
+    const trigger = document.getElementById('tinder-mode-trigger');
+    if (!trigger) return;
+
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    const isInbox = currentFilter === POST_STATUS.INBOX;
+    const hasInboxPosts = filterPostsByStatus(allPosts, POST_STATUS.INBOX).length > 0;
+
+    if (isMobile && isInbox && hasInboxPosts) {
+        trigger.classList.add('visible');
+    } else {
+        trigger.classList.remove('visible');
     }
 }
 
