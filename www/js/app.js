@@ -2394,6 +2394,11 @@ const WEEKLY_BANNER_MOCK = false;
  */
 async function getWeeklyPostBannerHtml() {
     try {
+        // Check if banner was dismissed this session
+        if (sessionStorage.getItem('weeklyBannerDismissed') === 'true') {
+            return '';
+        }
+
         let post, summary;
 
         // Mock data for testing
@@ -2446,6 +2451,12 @@ async function getWeeklyPostBannerHtml() {
                         </svg>
                     </button>
                 </div>
+                <button class="weekly-banner-dismiss" title="Ocultar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
         `;
     } catch (error) {
@@ -2465,6 +2476,18 @@ function attachWeeklyBannerHandler() {
             const title = readBtn.dataset.title;
             const blog = readBtn.dataset.blog;
             openWeeklyArticle(url, title, blog);
+        });
+    }
+
+    const dismissBtn = document.querySelector('.weekly-banner-dismiss');
+    if (dismissBtn) {
+        dismissBtn.addEventListener('click', () => {
+            const banner = document.querySelector('.weekly-banner');
+            if (banner) {
+                banner.classList.add('dismissed');
+                // Store dismissal in session (resets on page reload)
+                sessionStorage.setItem('weeklyBannerDismissed', 'true');
+            }
         });
     }
 
