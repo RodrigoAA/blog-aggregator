@@ -2,8 +2,8 @@
 
 **Project**: Partículas Elementales
 **Feature**: Import Twitter/X bookmarks into RSS reader
-**Date**: 2026-01-14
-**Status**: Planning Phase
+**Date**: 2026-01-15
+**Status**: Implementation Phase
 
 ---
 
@@ -93,16 +93,42 @@ For each bookmark:
   - Check if URL already exists (dedupe)
   - Create article object with tweet metadata
   - Save to manual_articles table with source='twitter'
-  - Set post status to 'inbox'
+  - NO post status assignment (tweets live in separate section)
         ↓
-Display imported bookmarks in inbox feed
+Display imported bookmarks in SEPARATE "Twitter" section
         ↓
 All existing features work:
   - AI summaries (when article is opened)
   - Highlights
-  - Status changes (pending/favorite/cleared)
+  - Move to favorites/cleared if desired
   - Cloud sync via Supabase
 ```
+
+### UI Architecture: Separate Twitter Section
+
+**Key Decision**: Twitter bookmarks are displayed in a **dedicated sidebar section**, NOT mixed with RSS feed posts.
+
+```
+Sidebar Navigation:
+─────────────────────
+Inbox (12)
+Pending (3)
+Favorites (5)
+Cleared
+─────────────────────
+Twitter (47)    ← NEW separate section
+```
+
+**Rationale**:
+- Keeps RSS feed clean and focused on blog content
+- Twitter content has different consumption patterns
+- User can optionally move individual tweets to favorites/cleared
+- Cleaner mental model: "feeds" vs "social bookmarks"
+
+**Implementation**:
+- Filter by `source === 'twitter'` instead of `status`
+- Tweets don't need `status` field initially
+- User can manually move tweets to favorites/cleared if desired
 
 ### Database Schema Changes
 
@@ -162,6 +188,20 @@ ON manual_articles(user_id, source, created_at DESC);
 ```
 
 ### Step 2: Create Import UI Component
+
+**Add Twitter section to sidebar** (`www/index.html` in navigation):
+
+```html
+<!-- After the existing nav items (inbox, pending, favorites, cleared) -->
+<div class="nav-separator"></div>
+<a href="#" class="nav-item" data-section="twitter" onclick="showTwitterSection()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    </svg>
+    <span>Twitter</span>
+    <span class="nav-count" id="twitter-count">0</span>
+</a>
+```
 
 **Add import button to header** (`www/index.html` after line 57):
 
@@ -284,10 +324,8 @@ class TwitterBookmarksImporter {
                 const added = await addManualArticleToList(article);
 
                 if (added) {
-                    const status = this.importOptions.markAsPending
-                        ? POST_STATUS.PENDING
-                        : POST_STATUS.INBOX;
-                    setPostStatus(bookmark.url, status);
+                    // No status assignment - tweets live in separate Twitter section
+                    // User can manually move to favorites/cleared if desired
                     results.success++;
                 }
 
@@ -545,11 +583,12 @@ app.get('/api/twitter/bookmarks', async (req, res) => {
 - [ ] Export bookmarks from Twitter using browser extension
 - [ ] Upload JSON file to import modal
 - [ ] Verify stats are correct (total, new, duplicates)
-- [ ] Adjust import options (skip duplicates, mark as pending)
+- [ ] Adjust import options (skip duplicates)
 - [ ] Start import and monitor progress
-- [ ] Verify all bookmarks appear in inbox
+- [ ] Verify all bookmarks appear in **Twitter section** (not inbox)
 - [ ] Check that Twitter metadata is preserved
 - [ ] Test duplicate detection on re-import
+- [ ] Test moving tweets to favorites/cleared
 - [ ] Verify cloud sync to Supabase
 - [ ] Test error handling (invalid file, network failure)
 - [ ] Test on mobile browsers
@@ -579,17 +618,16 @@ app.get('/api/twitter/bookmarks', async (req, res) => {
 2. Click the import icon (upload arrow) in the header
 3. Click "Choose File" and select your `bookmarks.json`
 4. Review the import preview and adjust options:
-   - ✓ Skip duplicates (recommended)
-   - Mark as "Pending" vs "Inbox"
+   - Skip duplicates (recommended)
    - Preserve Twitter metadata (author, engagement)
 5. Click "Import X Bookmarks"
 
 #### Step 3: Enjoy
 
-Your imported bookmarks will appear in your inbox feed. All features work as expected:
+Your imported bookmarks will appear in a **dedicated "Twitter" section** in the sidebar (separate from your RSS feeds). All features work as expected:
 - AI summaries (generated when you open the article)
 - Highlighting
-- Status changes (pending, favorite, cleared)
+- Move to favorites or cleared if desired
 - Cloud sync across devices
 
 **Note**: Twitter/X threads are imported as individual tweets. To read the full context, click "Read at source" in the article reader.
@@ -630,6 +668,7 @@ Your imported bookmarks will appear in your inbox feed. All features work as exp
   - [ ] Add index for performance
 
 - [ ] **Frontend - Import UI**
+  - [ ] Add "Twitter" section to sidebar navigation
   - [ ] Add import button to header (`www/index.html`)
   - [ ] Create 4-step import modal (instructions, preview, progress, complete)
   - [ ] Add modal styling to `www/css/styles.css` (Editorial Noir theme)
