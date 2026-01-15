@@ -2329,34 +2329,48 @@ body > footer {
 }
 
 /* ============================================================
-   HIGHLIGHTS SECTION
+   HIGHLIGHTS SECTION (in Settings Modal)
    ============================================================ */
 
-/* Section header */
-.highlights-section-header {
+.highlights-section {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.highlights-section h3 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.highlights-empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-style: italic;
+  padding: 12px 0;
+}
+
+.highlights-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding: 12px 16px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  margin-bottom: 12px;
 }
 
 .highlights-count {
   color: var(--text-secondary);
-  font-size: 0.9rem;
-  font-family: var(--font-body);
+  font-size: 0.85rem;
 }
 
 .highlights-clear-all-btn {
   background: transparent;
   color: var(--danger);
   border: 1px solid var(--danger);
-  padding: 6px 14px;
+  padding: 4px 10px;
   border-radius: var(--radius-md);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -2366,41 +2380,66 @@ body > footer {
   color: white;
 }
 
-/* Highlight card styling */
-.highlight-card {
-  border-left: 3px solid var(--highlight, #ffc107);
+.highlights-modal-list {
+  max-height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.highlight-card:hover {
-  border-left-color: var(--accent);
-}
-
-.highlight-text-display {
-  font-family: var(--font-body);
-  font-size: 1.1rem;
-  font-style: italic;
-  line-height: 1.7;
-  color: var(--text-primary);
-  margin: 16px 0;
-  padding: 16px 20px;
+.highlight-modal-item {
   background: var(--bg-tertiary);
   border-radius: var(--radius-md);
+  padding: 12px;
   border-left: 3px solid var(--highlight, #ffc107);
 }
 
-.highlight-article-link {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  margin-bottom: 16px;
+.highlight-modal-text {
+  font-size: 0.9rem;
+  font-style: italic;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+  line-height: 1.5;
 }
 
-.highlight-article-title {
+.highlight-modal-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.highlight-modal-source {
   color: var(--accent);
-  font-weight: 500;
 }
 
-.highlight-date {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
+.highlight-modal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.highlight-modal-open,
+.highlight-modal-delete {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.highlight-modal-open:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.highlight-modal-delete:hover {
+  border-color: var(--danger);
+  color: var(--danger);
 }

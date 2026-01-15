@@ -676,15 +676,20 @@ class ArticleReader {
       const range = selection.getRangeAt(0);
       const rect = range.getBoundingClientRect();
 
-      // Position button above selection (using fixed positioning for mobile compatibility)
+      // Position button BELOW selection to avoid native mobile context menu
       const buttonWidth = this.highlightBtn.offsetWidth || 100;
+      const buttonHeight = 40;
       let left = rect.left + rect.width / 2 - buttonWidth / 2;
-      let top = rect.top - 50;
+      let top = rect.bottom + 10; // Below selection with small gap
 
       // Keep button within viewport bounds
       const padding = 10;
       left = Math.max(padding, Math.min(left, window.innerWidth - buttonWidth - padding));
-      top = Math.max(padding, top);
+
+      // If button would go off bottom of screen, try above selection
+      if (top + buttonHeight > window.innerHeight - padding) {
+        top = rect.top - buttonHeight - 10;
+      }
 
       this.highlightBtn.style.left = left + 'px';
       this.highlightBtn.style.top = top + 'px';
@@ -891,22 +896,31 @@ class ArticleReader {
   }
 
   // Delete highlight from Supabase
-  async deleteHighlightFromCloud(text, position) {
+  async deleteHighlightFromCloud(text, position, articleUrl = null) {
     if (typeof isAuthenticated !== 'function' || !isAuthenticated()) return;
 
     try {
       const supabase = getSupabaseClient();
       const user = getUser();
 
+      // Use provided articleUrl or fall back to currentUrl
+      const url = articleUrl || this.currentUrl;
+      if (!url) {
+        console.error('No article URL for highlight deletion');
+        return;
+      }
+
       const { error } = await supabase
         .from('highlights')
         .delete()
         .eq('user_id', user.id)
-        .eq('article_url', this.currentUrl)
+        .eq('article_url', url)
         .eq('text', text);
 
       if (error) {
         console.error('Error deleting highlight from cloud:', error);
+      } else {
+        console.log('Highlight deleted from cloud:', text.substring(0, 30) + '...');
       }
     } catch (e) {
       console.error('Failed to delete highlight from cloud:', e);

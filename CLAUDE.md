@@ -94,9 +94,9 @@ Posts flow through four states:
 - Organized into custom folders (user-created)
 - Open directly in Twitter (no reader mode)
 
-**Highlights section** collects all text passages highlighted while reading:
+**Highlights** are text passages saved while reading:
 - Stored in `highlights` table (keyed by `article_url`)
-- Displayed in dedicated Highlights tab with chronological order
+- Browse all highlights in Settings modal (not a filter tab)
 - Each highlight links back to its source article
 - Click to open article, delete individual or clear all
 

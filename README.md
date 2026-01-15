@@ -12,10 +12,10 @@ A modern RSS reader with AI-powered summaries and cloud sync. Features an **Edit
 - **Full-screen article reader** with Mozilla Readability extraction
 - **AI summaries** (TL;DR + key points) powered by OpenAI GPT-4o-mini
 - **Reading Recommendations** - Personalized relevance scores based on your interests
-- **Five-tab workflow:** Inbox → Pending → Favorites / Cleared + Twitter + Highlights
+- **Five-tab workflow:** Inbox → Pending → Favorites / Cleared + Twitter
 - **Twitter/X bookmarks import** - Import bookmarks via JSON export with folder organization
 - **Manual article saving** - add articles from any website
-- **Text highlighting** with click-to-remove and dedicated Highlights section to browse all saved passages
+- **Text highlighting** with click-to-remove (browse saved highlights in Settings)
 - **Cloud sync** (Google Sign-In) across devices
 - **Persistent cache** with new posts detection banner
 - **Mobile-friendly** - works on iOS and Android browsers
@@ -29,7 +29,6 @@ A modern RSS reader with AI-powered summaries and cloud sync. Features an **Edit
 | **Favorites** | Posts you loved |
 | **Cleared** | Read + skipped (archived) |
 | **Twitter** | Imported Twitter/X bookmarks (separate section with folders) |
-| **Highlights** | All text passages you've highlighted while reading |
 
 ## Tech Stack
 
