@@ -13,6 +13,7 @@ A modern RSS reader with AI-powered summaries and cloud sync. Features an **Edit
 - **AI summaries** (TL;DR + key points) powered by OpenAI GPT-4o-mini
 - **Reading Recommendations** - Personalized relevance scores based on your interests
 - **Four-tab workflow:** Inbox → Pending → Favorites / Cleared
+- **Twitter/X bookmarks import** - Import bookmarks via JSON export with folder organization
 - **Manual article saving** - add articles from any website
 - **Text highlighting** with click-to-remove
 - **Cloud sync** (Google Sign-In) across devices
@@ -27,6 +28,7 @@ A modern RSS reader with AI-powered summaries and cloud sync. Features an **Edit
 | **Pending** | Marked to read later |
 | **Favorites** | Posts you loved |
 | **Cleared** | Read + skipped (archived) |
+| **Twitter** | Imported Twitter/X bookmarks (separate section with folders) |
 
 ## Tech Stack
 
@@ -65,9 +67,11 @@ A modern RSS reader with AI-powered summaries and cloud sync. Features an **Edit
 │   ├── add.html       # Mobile quick save page
 │   ├── css/styles.css
 │   └── js/
-│       ├── app.js     # Main logic + cloud sync
-│       ├── reader.js  # Article reader + summaries
-│       └── auth.js    # Supabase authentication
+│       ├── app.js            # Main logic + cloud sync
+│       ├── reader.js         # Article reader + summaries
+│       ├── auth.js           # Supabase authentication
+│       ├── twitter-import.js # Twitter bookmarks import + folders
+│       └── classify-tweets.js # One-time tweet classification script
 │
 ├── extension/         # Chrome extension
 │   ├── manifest.json
@@ -184,6 +188,19 @@ CREATE POLICY "Users can manage own articles" ON manual_articles
   FOR ALL USING (auth.uid() = user_id);
 CREATE INDEX idx_manual_articles_user_created
   ON manual_articles(user_id, created_at DESC);
+
+-- Twitter bookmarks support (run if upgrading from older version)
+ALTER TABLE manual_articles ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'manual';
+ALTER TABLE manual_articles ADD COLUMN IF NOT EXISTS author_name TEXT;
+ALTER TABLE manual_articles ADD COLUMN IF NOT EXISTS author_handle TEXT;
+ALTER TABLE manual_articles ADD COLUMN IF NOT EXISTS profile_image TEXT;
+ALTER TABLE manual_articles ADD COLUMN IF NOT EXISTS media JSONB;
+ALTER TABLE manual_articles ADD COLUMN IF NOT EXISTS engagement_data JSONB;
+ALTER TABLE manual_articles ADD COLUMN IF NOT EXISTS is_thread BOOLEAN DEFAULT FALSE;
+ALTER TABLE manual_articles ADD COLUMN IF NOT EXISTS folder TEXT;
+
+-- Update user_settings for Twitter folders
+ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS twitter_folders JSONB;
 ```
 
 **Enable Google OAuth:**
@@ -250,6 +267,8 @@ window.API_BASE_URL = 'http://localhost:3000';
 |------|-------------|------------|
 | RSS Posts | Permanent (until blogs change) | No |
 | Manual Articles | localStorage | Supabase |
+| Twitter Bookmarks | localStorage | Supabase |
+| Twitter Folders | localStorage | Supabase (user_settings) |
 | Post Statuses | localStorage | Supabase |
 | Blogs | localStorage | Supabase |
 | AI Summaries + Recommendations | 30 days (cleared on interests change) | Supabase |
@@ -268,6 +287,35 @@ window.API_BASE_URL = 'http://localhost:3000';
 - If new posts found: banner appears with "X new posts available"
 - If no new posts: shows "No new posts" message (auto-hides after 2s)
 - New posts are merged with cache without losing current view
+
+---
+
+## Twitter Bookmarks Import
+
+Import your Twitter/X bookmarks and organize them with folders.
+
+### How to Export Bookmarks
+
+1. Install [twitter-web-exporter](https://github.com/prinsss/twitter-web-exporter) browser extension
+2. Visit your [Twitter/X bookmarks page](https://twitter.com/i/bookmarks)
+3. Use the extension to export as JSON
+4. Upload the JSON file in the app (click the upload icon in header)
+
+### Folder Organization
+
+- **28 pre-configured folders** for product management topics (AI, Strategy, User Research, etc.)
+- Create custom folders via "Manage Folders"
+- Assign folders to tweets individually or use classification scripts
+- Folders sync to cloud for cross-device access
+
+### Features
+
+- Profile images and author handles
+- Media display (images/videos)
+- Thread indicator badge
+- Engagement stats (likes, retweets)
+- Direct links to Twitter (no reader mode)
+- Delete all functionality
 
 ---
 

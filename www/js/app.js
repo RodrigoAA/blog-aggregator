@@ -475,7 +475,7 @@ async function loadManualArticlesFromCloud() {
 
         const { data, error } = await supabase
             .from('manual_articles')
-            .select('url, title, description, date, site_name')
+            .select('url, title, description, date, site_name, source, author_name, author_handle, profile_image, media, engagement_data, is_thread, folder')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
 
@@ -486,16 +486,37 @@ async function loadManualArticlesFromCloud() {
             return;
         }
 
-        // Convert to post format
-        const articles = (data || []).map(item => ({
-            title: item.title,
-            link: item.url,
-            date: new Date(item.date),
-            description: item.description || '',
-            blogName: item.site_name || 'Manual',
-            blogSlug: 'manual',
-            isManual: true
-        }));
+        // Get existing local data to preserve folder assignments not yet synced to cloud
+        const localArticles = JSON.parse(localStorage.getItem('blogAggregator_manualArticles') || '[]');
+        const localFolderMap = new Map();
+        localArticles.forEach(a => {
+            if (a.folder) {
+                localFolderMap.set(a.link, a.folder);
+            }
+        });
+
+        // Convert to post format, preserving local folder if cloud has null
+        const articles = (data || []).map(item => {
+            const localFolder = localFolderMap.get(item.url);
+            return {
+                title: item.title,
+                link: item.url,
+                date: new Date(item.date),
+                description: item.description || '',
+                blogName: item.site_name || 'Manual',
+                blogSlug: item.source === 'twitter' ? 'twitter' : 'manual',
+                isManual: true,
+                source: item.source || 'manual',
+                authorName: item.author_name || '',
+                authorHandle: item.author_handle || '',
+                profileImage: item.profile_image || '',
+                media: item.media || [],
+                engagementData: item.engagement_data || null,
+                isThread: item.is_thread || false,
+                // Prefer cloud folder, fall back to local folder if cloud is null
+                folder: item.folder || localFolder || null
+            };
+        });
 
         console.log('Loaded manual articles from cloud:', articles.length);
         manualArticlesCache = articles;
@@ -1131,7 +1152,162 @@ function setFilter(filter) {
     document.querySelector(`[data-filter="${filter}"]`)?.classList.add('active');
 
     // Re-display posts with new filter
-    displayPosts(allPosts);
+    if (filter === 'twitter') {
+        displayTwitterPosts();
+    } else {
+        displayPosts(allPosts);
+    }
+}
+
+// Display Twitter bookmarks (separate from RSS posts)
+function displayTwitterPosts() {
+    const postsContainer = document.getElementById('posts');
+    const loadingIndicator = document.getElementById('loading');
+
+    loadingIndicator.style.display = 'none';
+
+    // Get Twitter bookmarks from manual articles
+    const twitterPosts = getManualArticles().filter(a => a.source === 'twitter');
+
+    // Update filter counts (for Twitter badge)
+    updateFilterCounts(allPosts);
+
+    if (twitterPosts.length === 0) {
+        postsContainer.innerHTML = `
+            <div class="empty-state">
+                <h2>No Twitter bookmarks</h2>
+                <p>Import your Twitter/X bookmarks using the import button in the header.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Get folders
+    const folders = typeof getTwitterFolders === 'function' ? getTwitterFolders() : [];
+    const currentFolder = typeof currentTwitterFolder !== 'undefined' ? currentTwitterFolder : null;
+
+    // Filter by folder if selected
+    let filteredPosts = twitterPosts;
+    if (currentFolder === '') {
+        // Uncategorized
+        filteredPosts = twitterPosts.filter(p => !p.folder);
+    } else if (currentFolder) {
+        filteredPosts = twitterPosts.filter(p => p.folder === currentFolder);
+    }
+
+    // Count posts per folder
+    const uncategorizedCount = twitterPosts.filter(p => !p.folder).length;
+
+    // Add header with folders and delete all button
+    const headerHtml = `
+        <div class="twitter-section-header">
+            <div class="twitter-folders">
+                <button class="twitter-folder-btn ${currentFolder === null ? 'active' : ''}" onclick="setTwitterFolderFilter(null)">
+                    All (${twitterPosts.length})
+                </button>
+                <button class="twitter-folder-btn ${currentFolder === '' ? 'active' : ''}" onclick="setTwitterFolderFilter('')">
+                    Uncategorized (${uncategorizedCount})
+                </button>
+                ${folders.map(f => {
+                    const count = twitterPosts.filter(p => p.folder === f.slug).length;
+                    return `<button class="twitter-folder-btn ${currentFolder === f.slug ? 'active' : ''}" onclick="setTwitterFolderFilter('${f.slug}')">
+                        ${escapeHtml(f.name)} (${count})
+                    </button>`;
+                }).join('')}
+                <button class="twitter-folder-add-btn" onclick="openFolderManager()" title="Manage folders">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+            <button class="twitter-delete-all-btn" onclick="deleteAllTwitterBookmarks()">
+                Delete All
+            </button>
+        </div>
+    `;
+
+    // Sort by date (newest first)
+    twitterPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    // Show empty state if no posts in current folder
+    if (filteredPosts.length === 0 && currentFolder !== null) {
+        postsContainer.innerHTML = headerHtml + `
+            <div class="empty-state">
+                <h2>No tweets in this folder</h2>
+                <p>Move tweets here or select a different folder.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Create HTML for each tweet
+    postsContainer.innerHTML = headerHtml + filteredPosts.map(post => {
+        return `
+            <article class="post-card twitter-post"
+                     data-url="${escapeHtml(post.link)}"
+                     data-title="${escapeHtml(post.title)}"
+                     data-blog="${escapeHtml(post.blogName || 'Twitter')}"
+                     data-is-manual="true">
+                <div class="twitter-post-layout">
+                    ${post.profileImage ? `
+                        <img class="twitter-avatar" src="${escapeHtml(post.profileImage)}" alt="${escapeHtml(post.authorName)}" onerror="this.style.display='none'" />
+                    ` : `
+                        <div class="twitter-avatar-placeholder">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                            </svg>
+                        </div>
+                    `}
+                    <div class="twitter-post-content">
+                        <div class="post-header">
+                            <span class="twitter-author-name">${escapeHtml(post.authorName || 'Twitter')}</span>
+                            ${post.authorHandle ? `<span class="twitter-handle">${escapeHtml(post.authorHandle)}</span>` : ''}
+                            <span class="twitter-date">${formatDate(new Date(post.date))}</span>
+                            ${post.isThread ? `<span class="thread-badge" title="Part of a thread - click to see full context on Twitter">Thread</span>` : ''}
+                        </div>
+                        <p class="twitter-text">${escapeHtml(post.description || '')}</p>
+                        ${post.media && post.media.length > 0 ? `
+                            <div class="twitter-media ${post.media.length > 1 ? 'twitter-media-grid' : ''}">
+                                ${post.media.slice(0, 4).map(m => `
+                                    ${m.type === 'video' ? `
+                                        <div class="twitter-media-item twitter-video">
+                                            <img src="${escapeHtml(m.thumbnail)}" alt="Video thumbnail" />
+                                            <div class="twitter-video-badge">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    ` : `
+                                        <img class="twitter-media-item" src="${escapeHtml(m.url)}" alt="Tweet image" onerror="this.style.display='none'" />
+                                    `}
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="post-actions">
+                            <select class="twitter-folder-select" data-url="${escapeHtml(post.link)}" onchange="setTweetFolder('${escapeHtml(post.link)}', this.value); displayTwitterPosts();">
+                                <option value="" ${!post.folder ? 'selected' : ''}>No folder</option>
+                                ${folders.map(f => `<option value="${f.slug}" ${post.folder === f.slug ? 'selected' : ''}>${escapeHtml(f.name)}</option>`).join('')}
+                            </select>
+                            <button class="action-icon-btn delete-manual-btn" data-url="${escapeHtml(post.link)}" title="Delete bookmark">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        `;
+    }).join('');
+
+    // Attach click handlers
+    attachPostClickHandlers();
+    attachActionButtonHandlers();
 }
 
 function updateFilterCounts(posts) {
@@ -1142,6 +1318,7 @@ function updateFilterCounts(posts) {
     const pendingBtn = document.querySelector('[data-filter="pending"]');
     const favoriteBtn = document.querySelector('[data-filter="favorite"]');
     const clearedBtn = document.querySelector('[data-filter="cleared"]');
+    const twitterBtn = document.querySelector('[data-filter="twitter"]');
 
     if (inboxBtn) {
         const badge = inboxBtn.querySelector('.count-badge');
@@ -1158,6 +1335,14 @@ function updateFilterCounts(posts) {
     if (clearedBtn) {
         const badge = clearedBtn.querySelector('.count-badge');
         if (badge) badge.textContent = counts.cleared;
+    }
+    if (twitterBtn) {
+        const badge = twitterBtn.querySelector('.count-badge');
+        if (badge) {
+            // Count Twitter bookmarks from manual articles
+            const twitterCount = getManualArticles().filter(a => a.source === 'twitter').length;
+            badge.textContent = twitterCount;
+        }
     }
 }
 
@@ -1179,8 +1364,15 @@ function attachPostClickHandlers() {
             const postUrl = card.dataset.url;
             const postTitle = card.dataset.title;
             const blogName = card.dataset.blog;
+            const isTwitterPost = card.classList.contains('twitter-post');
 
-            // Mark as cleared when opening article
+            // Twitter posts: open directly in new tab (no reader)
+            if (isTwitterPost) {
+                window.open(postUrl, '_blank', 'noopener,noreferrer');
+                return;
+            }
+
+            // Regular posts: mark as cleared and open in reader
             markAsCleared(postUrl);
             displayPosts(allPosts);
 
@@ -1284,6 +1476,8 @@ async function init(forceRefresh = false) {
         loading.style.display = 'block';
 
         // Load data from cloud
+        // Note: "Syncing data..." message is more visible on mobile due to higher network latency.
+        // On desktop with fast connections, cloud operations complete too quickly to notice.
         updateStatus('Syncing data...');
         await loadBlogsFromCloud();
         await loadPostStatusesFromCloud();
@@ -1297,8 +1491,8 @@ async function init(forceRefresh = false) {
         // Get blogs (from cache/localStorage)
         const blogs = getBlogs();
 
-        // Get manual articles
-        const manualArticles = getManualArticles();
+        // Get manual articles (excluding Twitter bookmarks - those are in separate section)
+        const manualArticles = getManualArticles().filter(a => a.source !== 'twitter');
 
         // Restore Date objects in manual articles (from localStorage)
         manualArticles.forEach(article => {

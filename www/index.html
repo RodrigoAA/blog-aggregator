@@ -47,6 +47,13 @@
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
                 </button>
+                <button class="header-icon-btn" onclick="openTwitterImportModal()" title="Import Twitter Bookmarks">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                </button>
                 <button class="header-icon-btn" onclick="openBlogManagement()" title="Settings">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"></circle>
@@ -76,6 +83,14 @@
                 </button>
                 <button class="filter-btn" data-filter="cleared" onclick="setFilter('cleared')">
                     Cleared
+                    <span class="count-badge">0</span>
+                </button>
+                <div class="filter-separator"></div>
+                <button class="filter-btn" data-filter="twitter" onclick="setFilter('twitter')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px;">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                    Twitter
                     <span class="count-badge">0</span>
                 </button>
             </div>
@@ -148,10 +163,106 @@
 
     <!-- Article Reader Modal (created dynamically by reader.js) -->
 
+    <!-- Twitter Import Modal -->
+    <div id="twitter-import-modal" class="twitter-import-modal">
+        <div class="twitter-import-overlay" onclick="closeTwitterImportModal()"></div>
+        <div class="twitter-import-content">
+            <div class="twitter-import-header">
+                <h2>Import Twitter/X Bookmarks</h2>
+                <button class="twitter-import-close" onclick="closeTwitterImportModal()">&times;</button>
+            </div>
+
+            <!-- Step 1: Instructions -->
+            <div class="twitter-import-step" data-step="1">
+                <div class="twitter-import-instructions">
+                    <h3>How to export your bookmarks</h3>
+                    <ol>
+                        <li>Install the <a href="https://chromewebstore.google.com/detail/x-bookmarks-exporter-expo/abgjpimjfnggkhnoehjndcociampccnm" target="_blank" rel="noopener">X Bookmarks Exporter</a> Chrome extension</li>
+                        <li>Visit your <a href="https://twitter.com/i/bookmarks" target="_blank" rel="noopener">Twitter/X bookmarks page</a></li>
+                        <li>Click the extension icon and select "Export as JSON"</li>
+                        <li>Save the file and upload it below</li>
+                    </ol>
+                </div>
+
+                <div class="twitter-import-upload">
+                    <input type="file" id="twitter-file-input" accept=".json" onchange="handleTwitterFileSelect(event)" />
+                    <label for="twitter-file-input" class="twitter-upload-label">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <span>Choose JSON file</span>
+                    </label>
+                    <p class="twitter-upload-hint">or drag and drop here</p>
+                </div>
+            </div>
+
+            <!-- Step 2: Preview -->
+            <div class="twitter-import-step" data-step="2" style="display: none;">
+                <div class="twitter-import-stats">
+                    <div class="twitter-stat">
+                        <span class="twitter-stat-value" id="twitter-total-count">0</span>
+                        <span class="twitter-stat-label">Total</span>
+                    </div>
+                    <div class="twitter-stat">
+                        <span class="twitter-stat-value" id="twitter-new-count">0</span>
+                        <span class="twitter-stat-label">New</span>
+                    </div>
+                    <div class="twitter-stat">
+                        <span class="twitter-stat-value" id="twitter-duplicate-count">0</span>
+                        <span class="twitter-stat-label">Duplicates</span>
+                    </div>
+                </div>
+
+                <div class="twitter-import-preview">
+                    <h4>Preview</h4>
+                    <div id="twitter-preview-list"></div>
+                </div>
+
+                <div class="twitter-import-options">
+                    <label class="twitter-option">
+                        <input type="checkbox" id="twitter-skip-duplicates" checked />
+                        <span>Skip duplicates</span>
+                    </label>
+                </div>
+
+                <div class="twitter-import-actions">
+                    <button class="twitter-btn-secondary" onclick="resetTwitterImport()">Back</button>
+                    <button class="twitter-btn-primary" onclick="startTwitterImport()">Import Bookmarks</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Progress -->
+            <div class="twitter-import-step" data-step="3" style="display: none;">
+                <div class="twitter-import-progress">
+                    <div class="twitter-progress-bar">
+                        <div class="twitter-progress-fill" id="twitter-progress-fill"></div>
+                    </div>
+                    <p class="twitter-progress-text" id="twitter-progress-text">Importing...</p>
+                </div>
+            </div>
+
+            <!-- Step 4: Complete -->
+            <div class="twitter-import-step" data-step="4" style="display: none;">
+                <div class="twitter-import-complete">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--terracotta)" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <h3>Import Complete!</h3>
+                    <p id="twitter-complete-message"></p>
+                    <button class="twitter-btn-primary" onclick="closeTwitterImportModal(); setFilter('twitter');">View Twitter Bookmarks</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/auth.js"></script>
     <script src="js/reader.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/twitter-import.js"></script>
 </body>
 </html>
