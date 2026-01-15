@@ -38,6 +38,7 @@ OPENAI_API_KEY=sk-...
    - `reader.js` - `ArticleReader` class: full-screen reading modal, AI summaries, text highlighting
    - `auth.js` - Supabase authentication with Google OAuth
    - `twitter-import.js` - Twitter bookmarks import, folder management, classification
+   - `tinder-mode.js` - `TinderMode` class: mobile swipe interface for inbox triage
    - `classify-tweets.js` - One-time script to auto-classify tweets into folders
 
 2. **Backend (backend/)** - Express API hosted on Render.com
@@ -99,6 +100,50 @@ Posts flow through four states:
 - Displayed in dedicated Highlights tab (after Favorites, before Cleared)
 - Each highlight links back to its source article
 - Click to open article, delete individual or clear all
+
+## Tinder Mode (Mobile)
+
+Swipe-based interface for triaging Inbox posts on mobile devices (<768px). Implemented in `www/js/tinder-mode.js`.
+
+### Activation
+- FAB (Floating Action Button) appears in bottom-right corner
+- Only visible on mobile (<768px) + Inbox filter + posts available
+- Controlled by `updateTinderTriggerVisibility()` in `app.js`
+
+### Gestures
+- **Swipe left** → Discard post (marked as `cleared`)
+- **Swipe right** → Save for later (marked as `pending`)
+- **Tap on card** → Open article in reader
+- **Tap X/clock buttons** → Alternative to swipe gestures
+
+### Card Content
+Each card displays:
+- Blog source name
+- Article title
+- **AI TL;DR summary** (fetched on-demand if not cached)
+- **Flame indicator** (1-3 flames based on recommendation score)
+- Publication date
+
+### Recommendation Flames
+Visual indicator based on AI `recommendation_score`:
+- 🔥🔥🔥 = `high` (highly relevant to user interests)
+- 🔥🔥 = `medium` (somewhat relevant)
+- 🔥 = `low` (low relevance)
+- (grayed out) = no recommendation data
+
+### Technical Details
+- Uses Pointer Events API for cross-platform gesture handling
+- Swipe threshold: 100px to confirm action
+- Cards stack with current card on top, next card preview behind
+- Summaries cached in `localStorage` under `summaryCache`
+
+### Files
+| File | Purpose |
+|------|---------|
+| `www/js/tinder-mode.js` | `TinderMode` class (~350 lines) |
+| `www/css/styles.css` | Styles (search for "TINDER MODE") |
+| `www/index.html` | FAB trigger button |
+| `www/js/app.js` | `updateTinderTriggerVisibility()` |
 
 ## Styling Guidelines
 
