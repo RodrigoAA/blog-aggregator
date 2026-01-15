@@ -21,12 +21,9 @@ let currentUser = null;
 // ============================================================
 
 async function initAuth() {
-    console.log('Initializing authentication...');
-
     try {
         // Check if we have OAuth tokens in the URL hash (mobile redirect fix)
         if (window.location.hash && window.location.hash.includes('access_token')) {
-            console.log('OAuth tokens detected in URL, processing...');
             // Give Supabase a moment to process the tokens
             await new Promise(resolve => setTimeout(resolve, 500));
         }
@@ -40,7 +37,6 @@ async function initAuth() {
 
         if (session) {
             currentUser = session.user;
-            console.log('Existing session found:', currentUser.email);
             // Clean up URL hash after successful auth
             if (window.location.hash && window.location.hash.includes('access_token')) {
                 window.history.replaceState(null, '', window.location.pathname);
@@ -52,7 +48,6 @@ async function initAuth() {
 
         // Listen for auth changes
         supabaseClient.auth.onAuthStateChange((event, session) => {
-            console.log('Auth state changed:', event);
             currentUser = session?.user || null;
             updateAuthUI();
 
@@ -62,8 +57,6 @@ async function initAuth() {
                 onSignOut();
             }
         });
-
-        console.log('Authentication initialized');
     } catch (error) {
         console.error('Auth initialization error:', error);
         // Still try to update UI even on error
@@ -76,8 +69,6 @@ async function initAuth() {
 // ============================================================
 
 async function signInWithGoogle() {
-    console.log('Initiating Google sign-in...');
-
     // Ensure supabase client is ready (fixes mobile timing issues)
     if (!supabaseClient || !supabaseClient.auth) {
         alert('Authentication not ready. Please try again.');
@@ -101,8 +92,6 @@ async function signInWithGoogle() {
 }
 
 async function signOut() {
-    console.log('Signing out...');
-
     try {
         await supabaseClient.auth.signOut();
     } catch (error) {
@@ -177,14 +166,12 @@ function updateAuthUI() {
 // ============================================================
 
 async function onSignIn() {
-    console.log('User signed in:', currentUser.email);
     if (typeof init === 'function') {
         init();
     }
 }
 
 function onSignOut() {
-    console.log('User signed out');
     if (typeof init === 'function') {
         init();
     }

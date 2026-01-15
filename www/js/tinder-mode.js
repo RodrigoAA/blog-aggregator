@@ -183,12 +183,7 @@ class TinderMode {
     }
 
     createCardHTML(post, extraClass = '') {
-        const escapeHtml = (text) => {
-            const div = document.createElement('div');
-            div.textContent = text || '';
-            return div.innerHTML;
-        };
-
+        // Uses global escapeHtml() from utils.js
         const formattedDate = typeof formatDate === 'function' ? formatDate(post.date) : '';
 
         return `
@@ -201,7 +196,7 @@ class TinderMode {
                     <h2 class="tinder-card-title">${escapeHtml(post.title)}</h2>
                     <div class="tinder-card-tldr">
                         <span class="tinder-tldr-label">TL;DR</span>
-                        <p class="tinder-tldr-text">Cargando resumen...</p>
+                        <p class="tinder-tldr-text"><span class="tinder-loading-dots"></span></p>
                     </div>
                     <div class="tinder-card-footer">
                         <span class="tinder-card-date">${formattedDate}</span>
@@ -228,42 +223,28 @@ class TinderMode {
         if (!tldrElement) return;
 
         try {
-            // Check local cache first
-            const cached = this.getCachedSummary(postUrl);
+            // Check local cache first (uses global function from utils.js)
+            const cached = getCachedSummary(postUrl);
             if (cached?.tldr) {
                 tldrElement.textContent = cached.tldr;
                 this.updateFlames(flamesElement, cached.recommendation?.score);
                 return;
             }
 
-            // Fetch from API
-            const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
+            // Fetch from API (uses global function from utils.js)
             const interests = typeof getUserInterests === 'function' ? getUserInterests() : '';
+            const data = await fetchSummary(postUrl, interests);
 
-            let apiUrl = `${API_BASE_URL}/api/summary?url=${encodeURIComponent(postUrl)}`;
-            if (interests) {
-                apiUrl += `&interests=${encodeURIComponent(interests)}`;
-            }
-
-            const response = await fetch(apiUrl);
-
-            if (!response.ok) {
+            if (!data || !data.tldr) {
                 tldrElement.textContent = 'Resumen no disponible';
                 tldrElement.classList.add('tinder-tldr-unavailable');
                 this.updateFlames(flamesElement, null);
                 return;
             }
 
-            const data = await response.json();
-
-            if (data.tldr) {
-                tldrElement.textContent = data.tldr;
-                // Cache locally
-                this.cacheSummary(postUrl, data);
-            } else {
-                tldrElement.textContent = 'Resumen no disponible';
-                tldrElement.classList.add('tinder-tldr-unavailable');
-            }
+            tldrElement.textContent = data.tldr;
+            // Cache locally (uses global function from utils.js)
+            cacheSummaryLocally(postUrl, data);
 
             // Update flames based on recommendation
             this.updateFlames(flamesElement, data.recommendation?.score);
@@ -292,30 +273,7 @@ class TinderMode {
         });
     }
 
-    getCachedSummary(url) {
-        try {
-            const cache = JSON.parse(localStorage.getItem('summaryCache') || '{}');
-            const cached = cache[url];
-            if (!cached) return null;
-
-            const age = Date.now() - cached.timestamp;
-            if (age > 30 * 24 * 60 * 60 * 1000) return null;
-
-            return cached.data;
-        } catch (e) {
-            return null;
-        }
-    }
-
-    cacheSummary(url, data) {
-        try {
-            let cache = JSON.parse(localStorage.getItem('summaryCache') || '{}');
-            cache[url] = { data, timestamp: Date.now() };
-            localStorage.setItem('summaryCache', JSON.stringify(cache));
-        } catch (e) {
-            console.error('Error caching summary:', e);
-        }
-    }
+    // getCachedSummary() and cacheSummaryLocally() moved to utils.js
 
     bindCardEvents(card) {
         card.addEventListener('pointerdown', (e) => this.onDragStart(e, card));
@@ -504,7 +462,6 @@ window.tinderMode = null;
 // Initialize when DOM is ready
 function initTinderMode() {
     window.tinderMode = new TinderMode();
-    console.log('TinderMode initialized');
 }
 
 if (document.readyState === 'loading') {

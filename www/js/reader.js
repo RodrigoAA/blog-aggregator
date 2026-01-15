@@ -101,7 +101,6 @@ class ArticleReader {
     const cached = this.getCachedArticle(postUrl);
 
     if (cached) {
-      console.log('Using cached article:', postTitle);
       article = cached;
     } else {
       try {
@@ -204,7 +203,6 @@ class ArticleReader {
     // Check cloud cache first (if authenticated)
     const cloudCached = await this.getCachedSummaryFromCloud(articleUrl);
     if (cloudCached) {
-      console.log('Using cloud-cached summary');
       // Also cache locally for offline access
       this.cacheSummaryLocally(articleUrl, cloudCached);
       return cloudCached;
@@ -213,7 +211,6 @@ class ArticleReader {
     // Check local cache
     const cached = this.getCachedSummary(articleUrl);
     if (cached) {
-      console.log('Using locally cached summary');
       return cached;
     }
 
@@ -232,7 +229,6 @@ class ArticleReader {
       const response = await fetch(apiUrl);
 
       if (!response.ok) {
-        console.log('Summary not available');
         return null;
       }
 
@@ -363,8 +359,6 @@ class ArticleReader {
 
       if (error) {
         console.error('Error saving summary to cloud:', error);
-      } else {
-        console.log('Summary saved to cloud');
       }
     } catch (e) {
       console.error('Failed to save summary to cloud:', e);
@@ -595,10 +589,9 @@ class ArticleReader {
     }
   }
 
+  // escapeHtml() - uses global function from utils.js
   escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    return escapeHtml(text);
   }
 
   // ============================================================
@@ -824,7 +817,6 @@ class ArticleReader {
       // Merge with local highlights (cloud wins on conflicts)
       this.highlights = { ...this.highlights, ...cloudHighlights };
       localStorage.setItem('articleHighlights', JSON.stringify(this.highlights));
-      console.log('Loaded highlights from cloud:', Object.keys(cloudHighlights).length, 'articles');
     } catch (e) {
       console.error('Failed to load highlights from cloud:', e);
     }
@@ -919,8 +911,6 @@ class ArticleReader {
 
       if (error) {
         console.error('Error deleting highlight from cloud:', error);
-      } else {
-        console.log('Highlight deleted from cloud:', text.substring(0, 30) + '...');
       }
     } catch (e) {
       console.error('Failed to delete highlight from cloud:', e);
@@ -935,7 +925,6 @@ window.articleReader = null;
 function initArticleReader() {
   try {
     window.articleReader = new ArticleReader();
-    console.log('ArticleReader initialized successfully');
   } catch (error) {
     console.error('Failed to initialize ArticleReader:', error);
   }

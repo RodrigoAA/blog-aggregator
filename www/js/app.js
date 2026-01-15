@@ -1140,11 +1140,7 @@ function displayPosts(posts) {
     updateTinderTriggerVisibility();
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
+// escapeHtml() moved to utils.js
 
 // ============================================================
 // FILTERS AND UI CONTROLS

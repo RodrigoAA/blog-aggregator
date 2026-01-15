@@ -2634,6 +2634,20 @@ body > footer {
   font-style: italic;
 }
 
+/* Loading dots animation */
+.tinder-loading-dots::after {
+  content: 'Cargando';
+  animation: loading-dots 1.5s infinite;
+}
+
+@keyframes loading-dots {
+  0% { content: 'Cargando'; }
+  25% { content: 'Cargando.'; }
+  50% { content: 'Cargando..'; }
+  75% { content: 'Cargando...'; }
+  100% { content: 'Cargando'; }
+}
+
 /* Card Overlays (Action Labels) */
 .tinder-card-overlay {
   position: absolute;
