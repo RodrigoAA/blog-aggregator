@@ -187,23 +187,24 @@ class TinderMode {
         const formattedDate = typeof formatDate === 'function' ? formatDate(post.date) : '';
 
         return `
-            <article class="tinder-card ${extraClass}" data-url="${escapeHtml(post.link)}">
+            <article class="tinder-card ${extraClass} tinder-card-loading" data-url="${escapeHtml(post.link)}">
+                <div class="tinder-card-loader">
+                    <span class="tinder-loading-atom">
+                        <span class="atom-nucleus"></span>
+                        <span class="atom-particle atom-particle-1"></span>
+                        <span class="atom-particle atom-particle-2"></span>
+                        <span class="atom-particle atom-particle-3"></span>
+                    </span>
+                </div>
                 <div class="tinder-card-content">
                     <div class="tinder-card-header">
                         <span class="tinder-card-source">${escapeHtml(post.blogName)}</span>
                         <span class="tinder-card-readtime"></span>
                     </div>
                     <h2 class="tinder-card-title">${escapeHtml(post.title)}</h2>
-                    <div class="tinder-card-tldr tinder-card-tldr-loading">
+                    <div class="tinder-card-tldr">
                         <span class="tinder-tldr-label">TL;DR</span>
-                        <p class="tinder-tldr-text">
-                            <span class="tinder-loading-atom">
-                                <span class="atom-nucleus"></span>
-                                <span class="atom-particle atom-particle-1"></span>
-                                <span class="atom-particle atom-particle-2"></span>
-                                <span class="atom-particle atom-particle-3"></span>
-                            </span>
-                        </p>
+                        <p class="tinder-tldr-text"></p>
                     </div>
                     <div class="tinder-card-footer">
                         <span class="tinder-card-date">${formattedDate}</span>
@@ -225,14 +226,13 @@ class TinderMode {
     }
 
     async loadSummaryForCard(card, postUrl) {
-        const tldrContainer = card.querySelector('.tinder-card-tldr');
         const tldrElement = card.querySelector('.tinder-tldr-text');
         const flamesElement = card.querySelector('.tinder-flames');
         const readtimeElement = card.querySelector('.tinder-card-readtime');
         if (!tldrElement) return;
 
         const showContent = () => {
-            tldrContainer?.classList.remove('tinder-card-tldr-loading');
+            card.classList.remove('tinder-card-loading');
         };
 
         try {
