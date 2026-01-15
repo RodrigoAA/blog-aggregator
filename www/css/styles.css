@@ -2564,10 +2564,30 @@ body > footer {
   margin-top: auto;
 }
 
+.tinder-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .tinder-card-date {
   font-family: var(--font-mono);
   font-size: 0.75rem;
   color: var(--text-muted);
+}
+
+.tinder-card-readtime {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tinder-card-readtime:not(:empty)::before {
+  content: '⏱';
+  font-size: 0.85em;
 }
 
 /* Flames Indicator */

@@ -446,12 +446,17 @@ Provide 3-5 key points. Be concise and informative.`;
 
     console.log(`Summary generated for: ${article.title}`);
 
+    // Calculate reading time (average 200 words per minute)
+    const wordCount = article.textContent.split(/\s+/).length;
+    const readingTime = Math.ceil(wordCount / 200);
+
     // Build result
     const result = {
       tldr: summary.tldr,
       keyPoints: summary.keyPoints,
       model: 'gpt-4o-mini',
-      articleTitle: article.title
+      articleTitle: article.title,
+      readingTime: readingTime
     };
 
     // Include recommendation if present

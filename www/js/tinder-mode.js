@@ -199,7 +199,10 @@ class TinderMode {
                         <p class="tinder-tldr-text"><span class="tinder-loading-dots"></span></p>
                     </div>
                     <div class="tinder-card-footer">
-                        <span class="tinder-card-date">${formattedDate}</span>
+                        <div class="tinder-card-meta">
+                            <span class="tinder-card-date">${formattedDate}</span>
+                            <span class="tinder-card-readtime"></span>
+                        </div>
                         <div class="tinder-flames" data-score="">
                             <span class="tinder-flame">🔥</span>
                             <span class="tinder-flame">🔥</span>
@@ -220,6 +223,7 @@ class TinderMode {
     async loadSummaryForCard(card, postUrl) {
         const tldrElement = card.querySelector('.tinder-tldr-text');
         const flamesElement = card.querySelector('.tinder-flames');
+        const readtimeElement = card.querySelector('.tinder-card-readtime');
         if (!tldrElement) return;
 
         try {
@@ -228,6 +232,7 @@ class TinderMode {
             if (cached?.tldr) {
                 tldrElement.textContent = cached.tldr;
                 this.updateFlames(flamesElement, cached.recommendation?.score);
+                this.updateReadingTime(readtimeElement, cached.readingTime);
                 return;
             }
 
@@ -248,6 +253,8 @@ class TinderMode {
 
             // Update flames based on recommendation
             this.updateFlames(flamesElement, data.recommendation?.score);
+            // Update reading time
+            this.updateReadingTime(readtimeElement, data.readingTime);
         } catch (error) {
             console.error('Failed to load summary:', error);
             tldrElement.textContent = 'Error al cargar resumen';
@@ -271,6 +278,13 @@ class TinderMode {
                 flame.classList.remove('active');
             }
         });
+    }
+
+    updateReadingTime(element, minutes) {
+        if (!element) return;
+        if (minutes) {
+            element.textContent = `${minutes} min`;
+        }
     }
 
     // getCachedSummary() and cacheSummaryLocally() moved to utils.js
