@@ -2564,6 +2564,36 @@ body > footer {
   margin-top: auto;
 }
 
+/* TL;DR Section */
+.tinder-card-tldr {
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  border-left: 3px solid var(--accent);
+}
+
+.tinder-tldr-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.tinder-tldr-text {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.tinder-tldr-text.tinder-tldr-unavailable {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 /* Card Overlays (Action Labels) */
 .tinder-card-overlay {
   position: absolute;

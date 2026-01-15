@@ -177,6 +177,8 @@ class TinderMode {
         const currentCard = stack.querySelector('.tinder-card-current');
         if (currentCard) {
             this.bindCardEvents(currentCard);
+            // Load AI summary for current card
+            this.loadSummaryForCard(currentCard, currentPost.link);
         }
     }
 
@@ -197,7 +199,10 @@ class TinderMode {
                         ${post.isManual ? '<span class="tinder-card-badge">Manual</span>' : ''}
                     </div>
                     <h2 class="tinder-card-title">${escapeHtml(post.title)}</h2>
-                    <p class="tinder-card-description">${escapeHtml(post.description)}</p>
+                    <div class="tinder-card-tldr">
+                        <span class="tinder-tldr-label">TL;DR</span>
+                        <p class="tinder-tldr-text">Cargando resumen...</p>
+                    </div>
                     <span class="tinder-card-date">${formattedDate}</span>
                 </div>
                 <div class="tinder-card-overlay tinder-overlay-left">
@@ -208,6 +213,77 @@ class TinderMode {
                 </div>
             </article>
         `;
+    }
+
+    async loadSummaryForCard(card, postUrl) {
+        const tldrElement = card.querySelector('.tinder-tldr-text');
+        if (!tldrElement) return;
+
+        try {
+            // Check local cache first
+            const cached = this.getCachedSummary(postUrl);
+            if (cached?.tldr) {
+                tldrElement.textContent = cached.tldr;
+                return;
+            }
+
+            // Fetch from API
+            const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
+            const interests = typeof getUserInterests === 'function' ? getUserInterests() : '';
+
+            let apiUrl = `${API_BASE_URL}/api/summary?url=${encodeURIComponent(postUrl)}`;
+            if (interests) {
+                apiUrl += `&interests=${encodeURIComponent(interests)}`;
+            }
+
+            const response = await fetch(apiUrl);
+
+            if (!response.ok) {
+                tldrElement.textContent = 'Resumen no disponible';
+                tldrElement.classList.add('tinder-tldr-unavailable');
+                return;
+            }
+
+            const data = await response.json();
+
+            if (data.tldr) {
+                tldrElement.textContent = data.tldr;
+                // Cache locally
+                this.cacheSummary(postUrl, data);
+            } else {
+                tldrElement.textContent = 'Resumen no disponible';
+                tldrElement.classList.add('tinder-tldr-unavailable');
+            }
+        } catch (error) {
+            console.error('Failed to load summary:', error);
+            tldrElement.textContent = 'Error al cargar resumen';
+            tldrElement.classList.add('tinder-tldr-unavailable');
+        }
+    }
+
+    getCachedSummary(url) {
+        try {
+            const cache = JSON.parse(localStorage.getItem('summaryCache') || '{}');
+            const cached = cache[url];
+            if (!cached) return null;
+
+            const age = Date.now() - cached.timestamp;
+            if (age > 30 * 24 * 60 * 60 * 1000) return null;
+
+            return cached.data;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    cacheSummary(url, data) {
+        try {
+            let cache = JSON.parse(localStorage.getItem('summaryCache') || '{}');
+            cache[url] = { data, timestamp: Date.now() };
+            localStorage.setItem('summaryCache', JSON.stringify(cache));
+        } catch (e) {
+            console.error('Error caching summary:', e);
+        }
     }
 
     bindCardEvents(card) {
