@@ -475,7 +475,7 @@ async function loadManualArticlesFromCloud() {
 
         const { data, error } = await supabase
             .from('manual_articles')
-            .select('url, title, description, date, site_name')
+            .select('url, title, description, date, site_name, source, author_name, author_handle, engagement_data')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
 
@@ -493,8 +493,12 @@ async function loadManualArticlesFromCloud() {
             date: new Date(item.date),
             description: item.description || '',
             blogName: item.site_name || 'Manual',
-            blogSlug: 'manual',
-            isManual: true
+            blogSlug: item.source === 'twitter' ? 'twitter' : 'manual',
+            isManual: true,
+            source: item.source || 'manual',
+            authorName: item.author_name || '',
+            authorHandle: item.author_handle || '',
+            engagementData: item.engagement_data || null
         }));
 
         console.log('Loaded manual articles from cloud:', articles.length);
@@ -1131,7 +1135,83 @@ function setFilter(filter) {
     document.querySelector(`[data-filter="${filter}"]`)?.classList.add('active');
 
     // Re-display posts with new filter
-    displayPosts(allPosts);
+    if (filter === 'twitter') {
+        displayTwitterPosts();
+    } else {
+        displayPosts(allPosts);
+    }
+}
+
+// Display Twitter bookmarks (separate from RSS posts)
+function displayTwitterPosts() {
+    const postsContainer = document.getElementById('posts');
+    const loadingIndicator = document.getElementById('loading');
+
+    loadingIndicator.style.display = 'none';
+
+    // Get Twitter bookmarks from manual articles
+    const twitterPosts = getManualArticles().filter(a => a.source === 'twitter');
+
+    // Update filter counts (for Twitter badge)
+    updateFilterCounts(allPosts);
+
+    if (twitterPosts.length === 0) {
+        postsContainer.innerHTML = `
+            <div class="empty-state">
+                <h2>No Twitter bookmarks</h2>
+                <p>Import your Twitter/X bookmarks using the import button in the header.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Sort by date (newest first)
+    twitterPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    // Create HTML for each tweet
+    postsContainer.innerHTML = twitterPosts.map(post => {
+        return `
+            <article class="post-card twitter-post"
+                     data-url="${escapeHtml(post.link)}"
+                     data-title="${escapeHtml(post.title)}"
+                     data-blog="${escapeHtml(post.blogName || 'Twitter')}"
+                     data-is-manual="true">
+                <div class="post-header">
+                    <span class="blog-source">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px; vertical-align: -2px;">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        ${escapeHtml(post.authorName || 'Twitter')}
+                    </span>
+                    ${post.authorHandle ? `<span class="twitter-handle">${escapeHtml(post.authorHandle)}</span>` : ''}
+                </div>
+                <h2 class="post-title">${escapeHtml(post.title)}</h2>
+                <div class="post-meta">
+                    <span class="post-date">${formatDate(new Date(post.date))}</span>
+                </div>
+                <p class="post-description">${escapeHtml(post.description || '')}</p>
+                <div class="post-actions">
+                    <button class="action-icon-btn favorite-btn" data-url="${escapeHtml(post.link)}" title="Add to Favorites">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                    </button>
+                    <button class="action-icon-btn delete-manual-btn" data-url="${escapeHtml(post.link)}" title="Delete bookmark">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                    </button>
+                </div>
+            </article>
+        `;
+    }).join('');
+
+    // Attach click handlers
+    attachPostClickHandlers();
+    attachActionButtonHandlers();
 }
 
 function updateFilterCounts(posts) {
@@ -1142,6 +1222,7 @@ function updateFilterCounts(posts) {
     const pendingBtn = document.querySelector('[data-filter="pending"]');
     const favoriteBtn = document.querySelector('[data-filter="favorite"]');
     const clearedBtn = document.querySelector('[data-filter="cleared"]');
+    const twitterBtn = document.querySelector('[data-filter="twitter"]');
 
     if (inboxBtn) {
         const badge = inboxBtn.querySelector('.count-badge');
@@ -1158,6 +1239,14 @@ function updateFilterCounts(posts) {
     if (clearedBtn) {
         const badge = clearedBtn.querySelector('.count-badge');
         if (badge) badge.textContent = counts.cleared;
+    }
+    if (twitterBtn) {
+        const badge = twitterBtn.querySelector('.count-badge');
+        if (badge) {
+            // Count Twitter bookmarks from manual articles
+            const twitterCount = getManualArticles().filter(a => a.source === 'twitter').length;
+            badge.textContent = twitterCount;
+        }
     }
 }
 
@@ -1284,6 +1373,8 @@ async function init(forceRefresh = false) {
         loading.style.display = 'block';
 
         // Load data from cloud
+        // Note: "Syncing data..." message is more visible on mobile due to higher network latency.
+        // On desktop with fast connections, cloud operations complete too quickly to notice.
         updateStatus('Syncing data...');
         await loadBlogsFromCloud();
         await loadPostStatusesFromCloud();
@@ -1297,8 +1388,8 @@ async function init(forceRefresh = false) {
         // Get blogs (from cache/localStorage)
         const blogs = getBlogs();
 
-        // Get manual articles
-        const manualArticles = getManualArticles();
+        // Get manual articles (excluding Twitter bookmarks - those are in separate section)
+        const manualArticles = getManualArticles().filter(a => a.source !== 'twitter');
 
         // Restore Date objects in manual articles (from localStorage)
         manualArticles.forEach(article => {
