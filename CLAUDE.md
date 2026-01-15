@@ -96,7 +96,7 @@ Posts flow through four states:
 
 **Highlights** are text passages saved while reading:
 - Stored in `highlights` table (keyed by `article_url`)
-- Browse all highlights in Settings modal (not a filter tab)
+- Displayed in dedicated Highlights tab (after Favorites, before Cleared)
 - Each highlight links back to its source article
 - Click to open article, delete individual or clear all
 

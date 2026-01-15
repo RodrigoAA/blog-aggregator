@@ -1159,6 +1159,8 @@ function setFilter(filter) {
     // Re-display posts with new filter
     if (filter === 'twitter') {
         displayTwitterPosts();
+    } else if (filter === 'highlights') {
+        displayHighlights();
     } else {
         displayPosts(allPosts);
     }
@@ -1347,6 +1349,15 @@ function updateFilterCounts(posts) {
             // Count Twitter bookmarks from manual articles
             const twitterCount = getManualArticles().filter(a => a.source === 'twitter').length;
             badge.textContent = twitterCount;
+        }
+    }
+
+    // Update highlights count
+    const highlightsBtn = document.querySelector('[data-filter="highlights"]');
+    if (highlightsBtn) {
+        const badge = highlightsBtn.querySelector('.count-badge');
+        if (badge) {
+            badge.textContent = getHighlightsCount();
         }
     }
 }
@@ -1561,6 +1572,8 @@ async function init(forceRefresh = false) {
         // Display posts based on current filter
         if (currentFilter === 'twitter') {
             displayTwitterPosts();
+        } else if (currentFilter === 'highlights') {
+            displayHighlights();
         } else {
             displayPosts(allPosts);
         }
@@ -1584,7 +1597,6 @@ function openBlogManagement() {
     const modal = document.getElementById('blog-management-modal');
     modal.classList.add('active');
     renderBlogList();
-    renderHighlightsInModal();
     loadUserInterests();
 }
 
@@ -2060,76 +2072,132 @@ function getArticleMetadata(articleUrl) {
 /**
  * Render highlights in the settings modal
  */
-function renderHighlightsInModal() {
-    const container = document.getElementById('highlights-list');
-    if (!container) return;
+/**
+ * Display highlights in the posts container
+ */
+function displayHighlights() {
+    const postsContainer = document.getElementById('posts');
+    const loadingIndicator = document.getElementById('loading');
+
+    loadingIndicator.style.display = 'none';
 
     const highlights = getAllHighlights();
 
+    // Update filter counts
+    updateFilterCounts(allPosts);
+
     if (highlights.length === 0) {
-        container.innerHTML = `
-            <p class="highlights-empty">No highlights yet. Select text while reading an article to save passages.</p>
+        postsContainer.innerHTML = `
+            <div class="empty-state">
+                <h2>No highlights yet</h2>
+                <p>Select text while reading an article and click "Highlight" to save passages for later.</p>
+            </div>
         `;
         return;
     }
 
-    // Render highlights list with clear all button
-    container.innerHTML = `
-        <div class="highlights-modal-header">
+    // Add section header with count
+    const headerHtml = `
+        <div class="highlights-section-header">
             <span class="highlights-count">${highlights.length} highlight${highlights.length !== 1 ? 's' : ''}</span>
-            <button class="highlights-clear-all-btn" onclick="clearAllHighlights(); renderHighlightsInModal();">
+            <button class="highlights-clear-all-btn" onclick="clearAllHighlights()">
                 Clear All
             </button>
         </div>
-        <div class="highlights-modal-list">
-            ${highlights.map(h => `
-                <div class="highlight-modal-item" data-url="${escapeHtml(h.articleUrl)}" data-position="${h.position}">
-                    <blockquote class="highlight-modal-text">"${escapeHtml(h.text)}"</blockquote>
-                    <div class="highlight-modal-meta">
-                        <span class="highlight-modal-source">${escapeHtml(h.blogName)}</span>
-                        <span class="highlight-modal-date">${formatDate(new Date(h.timestamp))}</span>
-                    </div>
-                    <div class="highlight-modal-actions">
-                        <button class="highlight-modal-open" onclick="openHighlightArticle('${escapeHtml(h.articleUrl)}', '${escapeHtml(h.articleTitle)}', '${escapeHtml(h.blogName)}')" title="Open article">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                <polyline points="15 3 21 3 21 9"></polyline>
-                                <line x1="10" y1="14" x2="21" y2="3"></line>
-                            </svg>
-                        </button>
-                        <button class="highlight-modal-delete" onclick="deleteHighlightFromModal('${escapeHtml(h.articleUrl)}', ${h.position})" title="Delete">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="3 6 5 6 21 6"></polyline>
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            `).join('')}
-        </div>
     `;
+
+    // Render highlights
+    postsContainer.innerHTML = headerHtml + highlights.map(h => `
+        <article class="post-card highlight-card"
+                 data-article-url="${escapeHtml(h.articleUrl)}"
+                 data-highlight-position="${h.position}">
+            <div class="post-header">
+                <span class="blog-source">${escapeHtml(h.blogName)}</span>
+                <span class="highlight-date">${formatDate(new Date(h.timestamp))}</span>
+            </div>
+
+            <blockquote class="highlight-text-display">
+                "${escapeHtml(h.text)}"
+            </blockquote>
+
+            <div class="highlight-article-link">
+                From: <span class="highlight-article-title">${escapeHtml(h.articleTitle)}</span>
+            </div>
+
+            <div class="post-actions">
+                <button class="action-icon-btn open-highlight-btn"
+                        data-url="${escapeHtml(h.articleUrl)}"
+                        data-title="${escapeHtml(h.articleTitle)}"
+                        data-blog="${escapeHtml(h.blogName)}"
+                        title="Open article">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </button>
+                <button class="action-icon-btn delete-highlight-btn"
+                        data-url="${escapeHtml(h.articleUrl)}"
+                        data-position="${h.position}"
+                        title="Delete highlight">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </div>
+        </article>
+    `).join('');
+
+    // Attach handlers
+    attachHighlightCardHandlers();
 }
 
 /**
- * Open article from highlight in modal
+ * Attach click handlers for highlight cards
  */
-function openHighlightArticle(url, title, blog) {
-    closeBlogManagement();
-    if (window.articleReader) {
-        window.articleReader.open(url, title, blog);
-    } else {
-        window.open(url, '_blank', 'noopener,noreferrer');
-    }
-}
+function attachHighlightCardHandlers() {
+    // Open article buttons
+    document.querySelectorAll('.open-highlight-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const url = btn.dataset.url;
+            const title = btn.dataset.title;
+            const blog = btn.dataset.blog;
 
-/**
- * Delete highlight from modal view
- */
-function deleteHighlightFromModal(articleUrl, position) {
-    if (confirm('Delete this highlight?')) {
-        deleteHighlightFromList(articleUrl, position);
-        renderHighlightsInModal();
-    }
+            if (window.articleReader) {
+                window.articleReader.open(url, title, blog);
+            } else {
+                window.open(url, '_blank', 'noopener,noreferrer');
+            }
+        });
+    });
+
+    // Delete buttons
+    document.querySelectorAll('.delete-highlight-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const url = btn.dataset.url;
+            const position = parseInt(btn.dataset.position, 10);
+
+            if (confirm('Delete this highlight?')) {
+                deleteHighlightFromList(url, position);
+                displayHighlights(); // Refresh the view
+            }
+        });
+    });
+
+    // Card click opens article
+    document.querySelectorAll('.highlight-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.post-actions')) return;
+
+            const openBtn = card.querySelector('.open-highlight-btn');
+            if (openBtn) {
+                openBtn.click();
+            }
+        });
+    });
 }
 
 
