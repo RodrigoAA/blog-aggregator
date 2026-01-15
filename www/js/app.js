@@ -355,8 +355,13 @@ function loadNewPosts() {
             article.isManual = true;
         });
 
-        // Display merged posts
-        displayPosts([...mergedPosts, ...manualArticles]);
+        // Update allPosts and display based on current filter
+        allPosts = [...mergedPosts, ...manualArticles];
+        if (currentFilter === 'twitter') {
+            displayTwitterPosts();
+        } else {
+            displayPosts(allPosts);
+        }
 
         pendingNewPosts = [];
     }
@@ -1550,11 +1555,15 @@ async function init(forceRefresh = false) {
         }
 
         // Combine RSS posts and manual articles
-        const allPosts = [...rssPost, ...manualArticles];
+        allPosts = [...rssPost, ...manualArticles];
         console.log(`Total posts (RSS + Manual): ${allPosts.length} (${rssPost.length} + ${manualArticles.length})`);
 
-        // Display the posts
-        displayPosts(allPosts);
+        // Display posts based on current filter
+        if (currentFilter === 'twitter') {
+            displayTwitterPosts();
+        } else {
+            displayPosts(allPosts);
+        }
 
     } catch (error) {
         console.error('Error initializing app:', error);
