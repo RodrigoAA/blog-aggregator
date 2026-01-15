@@ -1159,6 +1159,8 @@ function setFilter(filter) {
     // Re-display posts with new filter
     if (filter === 'twitter') {
         displayTwitterPosts();
+    } else if (filter === 'highlights') {
+        displayHighlights();
     } else {
         displayPosts(allPosts);
     }
@@ -1347,6 +1349,15 @@ function updateFilterCounts(posts) {
             // Count Twitter bookmarks from manual articles
             const twitterCount = getManualArticles().filter(a => a.source === 'twitter').length;
             badge.textContent = twitterCount;
+        }
+    }
+
+    // Update highlights count
+    const highlightsBtn = document.querySelector('[data-filter="highlights"]');
+    if (highlightsBtn) {
+        const badge = highlightsBtn.querySelector('.count-badge');
+        if (badge) {
+            badge.textContent = getHighlightsCount();
         }
     }
 }
@@ -1561,6 +1572,8 @@ async function init(forceRefresh = false) {
         // Display posts based on current filter
         if (currentFilter === 'twitter') {
             displayTwitterPosts();
+        } else if (currentFilter === 'highlights') {
+            displayHighlights();
         } else {
             displayPosts(allPosts);
         }
@@ -1976,6 +1989,282 @@ async function handleExtensionParams() {
     }
 
     return false;
+}
+
+// ============================================================
+// HIGHLIGHTS SECTION
+// ============================================================
+
+/**
+ * Get total highlights count
+ */
+function getHighlightsCount() {
+    if (!window.articleReader || !window.articleReader.highlights) {
+        return 0;
+    }
+
+    let count = 0;
+    for (const url in window.articleReader.highlights) {
+        count += window.articleReader.highlights[url].length;
+    }
+    return count;
+}
+
+/**
+ * Get all highlights from ArticleReader
+ */
+function getAllHighlights() {
+    if (!window.articleReader || !window.articleReader.highlights) {
+        return [];
+    }
+
+    const highlightsObj = window.articleReader.highlights;
+    const allHighlights = [];
+
+    for (const articleUrl in highlightsObj) {
+        const articleMeta = getArticleMetadata(articleUrl);
+        const articleHighlights = highlightsObj[articleUrl];
+
+        articleHighlights.forEach((highlight, index) => {
+            allHighlights.push({
+                articleUrl,
+                text: highlight.text,
+                position: highlight.position,
+                timestamp: highlight.timestamp,
+                articleTitle: articleMeta.title,
+                blogName: articleMeta.blogName,
+                index
+            });
+        });
+    }
+
+    // Sort by timestamp (newest first)
+    return allHighlights.sort((a, b) => b.timestamp - a.timestamp);
+}
+
+/**
+ * Get article metadata from caches
+ */
+function getArticleMetadata(articleUrl) {
+    // Check posts cache
+    try {
+        const cache = JSON.parse(localStorage.getItem('blogAggregator_postsCache') || '{}');
+        const post = (cache.posts || []).find(p => p.link === articleUrl);
+        if (post) return { title: post.title, blogName: post.blogName };
+    } catch (e) {}
+
+    // Check manual articles
+    try {
+        const manualArticles = JSON.parse(localStorage.getItem('blogAggregator_manualArticles') || '[]');
+        const manual = manualArticles.find(a => a.link === articleUrl);
+        if (manual) return { title: manual.title, blogName: manual.blogName || manual.siteName || 'Manual' };
+    } catch (e) {}
+
+    // Fallback: extract domain
+    try {
+        const url = new URL(articleUrl);
+        return { title: 'Unknown Article', blogName: url.hostname.replace('www.', '') };
+    } catch {
+        return { title: 'Unknown Article', blogName: 'Unknown Source' };
+    }
+}
+
+/**
+ * Display highlights in the posts container
+ */
+function displayHighlights() {
+    const postsContainer = document.getElementById('posts');
+    const loadingIndicator = document.getElementById('loading');
+
+    loadingIndicator.style.display = 'none';
+
+    const highlights = getAllHighlights();
+
+    // Update filter counts
+    updateFilterCounts(allPosts);
+
+    if (highlights.length === 0) {
+        postsContainer.innerHTML = `
+            <div class="empty-state">
+                <h2>No highlights yet</h2>
+                <p>Select text while reading an article and click "Highlight" to save passages for later.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Add section header with count
+    const headerHtml = `
+        <div class="highlights-section-header">
+            <span class="highlights-count">${highlights.length} highlight${highlights.length !== 1 ? 's' : ''}</span>
+            <button class="highlights-clear-all-btn" onclick="clearAllHighlights()">
+                Clear All
+            </button>
+        </div>
+    `;
+
+    // Render highlights
+    postsContainer.innerHTML = headerHtml + highlights.map((h, idx) => `
+        <article class="post-card highlight-card"
+                 data-article-url="${escapeHtml(h.articleUrl)}"
+                 data-highlight-position="${h.position}">
+            <div class="post-header">
+                <span class="blog-source">${escapeHtml(h.blogName)}</span>
+                <span class="highlight-date">${formatDate(new Date(h.timestamp))}</span>
+            </div>
+
+            <blockquote class="highlight-text-display">
+                "${escapeHtml(h.text)}"
+            </blockquote>
+
+            <div class="highlight-article-link">
+                From: <span class="highlight-article-title">${escapeHtml(h.articleTitle)}</span>
+            </div>
+
+            <div class="post-actions">
+                <button class="action-icon-btn open-highlight-btn"
+                        data-url="${escapeHtml(h.articleUrl)}"
+                        data-title="${escapeHtml(h.articleTitle)}"
+                        data-blog="${escapeHtml(h.blogName)}"
+                        title="Open article">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </button>
+                <button class="action-icon-btn delete-highlight-btn"
+                        data-url="${escapeHtml(h.articleUrl)}"
+                        data-position="${h.position}"
+                        title="Delete highlight">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </div>
+        </article>
+    `).join('');
+
+    // Attach handlers
+    attachHighlightCardHandlers();
+}
+
+/**
+ * Attach click handlers for highlight cards
+ */
+function attachHighlightCardHandlers() {
+    // Open article buttons
+    document.querySelectorAll('.open-highlight-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const url = btn.dataset.url;
+            const title = btn.dataset.title;
+            const blog = btn.dataset.blog;
+
+            if (window.articleReader) {
+                window.articleReader.open(url, title, blog);
+            } else {
+                window.open(url, '_blank', 'noopener,noreferrer');
+            }
+        });
+    });
+
+    // Delete buttons
+    document.querySelectorAll('.delete-highlight-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const url = btn.dataset.url;
+            const position = parseInt(btn.dataset.position, 10);
+
+            if (confirm('Delete this highlight?')) {
+                deleteHighlightFromList(url, position);
+            }
+        });
+    });
+
+    // Card click opens article
+    document.querySelectorAll('.highlight-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.post-actions')) return;
+
+            const openBtn = card.querySelector('.open-highlight-btn');
+            if (openBtn) {
+                openBtn.click();
+            }
+        });
+    });
+}
+
+/**
+ * Delete a highlight from the list
+ */
+function deleteHighlightFromList(articleUrl, position) {
+    if (!window.articleReader) return;
+
+    const highlights = window.articleReader.highlights;
+    if (highlights[articleUrl]) {
+        const highlight = highlights[articleUrl].find(h => h.position === position);
+        highlights[articleUrl] = highlights[articleUrl].filter(h => h.position !== position);
+
+        // Clean up empty arrays
+        if (highlights[articleUrl].length === 0) {
+            delete highlights[articleUrl];
+        }
+
+        // Save to storage
+        window.articleReader.saveHighlightsToStorage();
+
+        // Delete from cloud
+        if (highlight && typeof isAuthenticated === 'function' && isAuthenticated()) {
+            window.articleReader.deleteHighlightFromCloud(highlight.text, position);
+        }
+    }
+
+    // Refresh display
+    displayHighlights();
+}
+
+/**
+ * Clear all highlights (with confirmation)
+ */
+function clearAllHighlights() {
+    if (!confirm('Are you sure you want to delete ALL highlights? This cannot be undone.')) {
+        return;
+    }
+
+    if (window.articleReader) {
+        window.articleReader.highlights = {};
+        window.articleReader.saveHighlightsToStorage();
+
+        // Clear from cloud if authenticated
+        if (typeof isAuthenticated === 'function' && isAuthenticated()) {
+            clearAllHighlightsFromCloud();
+        }
+    }
+
+    displayHighlights();
+}
+
+/**
+ * Clear all highlights from Supabase
+ */
+async function clearAllHighlightsFromCloud() {
+    if (!isAuthenticated()) return;
+
+    try {
+        const supabase = getSupabaseClient();
+        const user = getUser();
+
+        await supabase
+            .from('highlights')
+            .delete()
+            .eq('user_id', user.id);
+
+        console.log('All highlights cleared from cloud');
+    } catch (e) {
+        console.error('Failed to clear highlights from cloud:', e);
+    }
 }
 
 // Start the app when page loads
