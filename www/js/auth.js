@@ -178,8 +178,6 @@ function updateAuthUI() {
 
 async function onSignIn() {
     console.log('User signed in:', currentUser.email);
-    // TODO Phase 2: Sync data from cloud
-    // For now, just refresh posts
     if (typeof init === 'function') {
         init();
     }
@@ -187,8 +185,6 @@ async function onSignIn() {
 
 function onSignOut() {
     console.log('User signed out');
-    // TODO Phase 2: Clear synced data, use localStorage only
-    // For now, just refresh posts
     if (typeof init === 'function') {
         init();
     }

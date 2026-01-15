@@ -37,6 +37,8 @@ OPENAI_API_KEY=sk-...
    - `app.js` - Main application: RSS fetching, post management, cloud sync, blog CRUD
    - `reader.js` - `ArticleReader` class: full-screen reading modal, AI summaries, text highlighting
    - `auth.js` - Supabase authentication with Google OAuth
+   - `twitter-import.js` - Twitter bookmarks import, folder management, classification
+   - `classify-tweets.js` - One-time script to auto-classify tweets into folders
 
 2. **Backend (backend/)** - Express API hosted on Render.com
    - `server.js` - Single file with all endpoints, uses Mozilla Readability for article extraction
@@ -74,8 +76,9 @@ Frontend (Cloudflare) ──> Backend (Render) ──> OpenAI (summaries)
 - `post_statuses` - Post state (inbox/pending/favorite/cleared)
 - `summaries` - Cached AI summaries per user
 - `highlights` - Text highlights per article
-- `manual_articles` - Manually added articles (not from RSS)
-- `user_settings` - User preferences (interests for recommendations)
+- `manual_articles` - Manually added articles and Twitter bookmarks
+  - Twitter-specific columns: `source`, `author_name`, `author_handle`, `profile_image`, `media`, `engagement_data`, `is_thread`, `folder`
+- `user_settings` - User preferences (interests, `twitter_folders`)
 
 ## Post Status Workflow
 
@@ -84,6 +87,12 @@ Posts flow through four states:
 - **pending** → Marked "read later"
 - **favorite** → Starred posts
 - **cleared** → Read or dismissed (archived)
+
+**Twitter bookmarks** are separate from the main workflow:
+- Stored with `source: 'twitter'` in `manual_articles`
+- Displayed in dedicated Twitter tab (not mixed with RSS)
+- Organized into folders (28 pre-configured + custom)
+- Open directly in Twitter (no reader mode)
 
 ## Styling Guidelines
 
