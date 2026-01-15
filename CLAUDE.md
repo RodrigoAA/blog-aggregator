@@ -94,6 +94,12 @@ Posts flow through four states:
 - Organized into custom folders (user-created)
 - Open directly in Twitter (no reader mode)
 
+**Highlights section** collects all text passages highlighted while reading:
+- Stored in `highlights` table (keyed by `article_url`)
+- Displayed in dedicated Highlights tab with chronological order
+- Each highlight links back to its source article
+- Click to open article, delete individual or clear all
+
 ## Styling Guidelines
 
 This project uses the **frontend-design skill** (`.claude/skills/frontend-design.md`). When making UI changes:
