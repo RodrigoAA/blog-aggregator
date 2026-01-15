@@ -203,7 +203,14 @@ class TinderMode {
                         <span class="tinder-tldr-label">TL;DR</span>
                         <p class="tinder-tldr-text">Cargando resumen...</p>
                     </div>
-                    <span class="tinder-card-date">${formattedDate}</span>
+                    <div class="tinder-card-footer">
+                        <span class="tinder-card-date">${formattedDate}</span>
+                        <div class="tinder-flames" data-score="">
+                            <span class="tinder-flame">🔥</span>
+                            <span class="tinder-flame">🔥</span>
+                            <span class="tinder-flame">🔥</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="tinder-card-overlay tinder-overlay-left">
                     <span>DESCARTAR</span>
@@ -217,6 +224,7 @@ class TinderMode {
 
     async loadSummaryForCard(card, postUrl) {
         const tldrElement = card.querySelector('.tinder-tldr-text');
+        const flamesElement = card.querySelector('.tinder-flames');
         if (!tldrElement) return;
 
         try {
@@ -224,6 +232,7 @@ class TinderMode {
             const cached = this.getCachedSummary(postUrl);
             if (cached?.tldr) {
                 tldrElement.textContent = cached.tldr;
+                this.updateFlames(flamesElement, cached.recommendation?.score);
                 return;
             }
 
@@ -241,6 +250,7 @@ class TinderMode {
             if (!response.ok) {
                 tldrElement.textContent = 'Resumen no disponible';
                 tldrElement.classList.add('tinder-tldr-unavailable');
+                this.updateFlames(flamesElement, null);
                 return;
             }
 
@@ -254,11 +264,32 @@ class TinderMode {
                 tldrElement.textContent = 'Resumen no disponible';
                 tldrElement.classList.add('tinder-tldr-unavailable');
             }
+
+            // Update flames based on recommendation
+            this.updateFlames(flamesElement, data.recommendation?.score);
         } catch (error) {
             console.error('Failed to load summary:', error);
             tldrElement.textContent = 'Error al cargar resumen';
             tldrElement.classList.add('tinder-tldr-unavailable');
+            this.updateFlames(flamesElement, null);
         }
+    }
+
+    updateFlames(flamesElement, score) {
+        if (!flamesElement) return;
+
+        // Map score to number of flames: high=3, medium=2, low=1, null=0
+        const flameCount = score === 'high' ? 3 : score === 'medium' ? 2 : score === 'low' ? 1 : 0;
+        flamesElement.setAttribute('data-score', score || 'none');
+
+        const flames = flamesElement.querySelectorAll('.tinder-flame');
+        flames.forEach((flame, index) => {
+            if (index < flameCount) {
+                flame.classList.add('active');
+            } else {
+                flame.classList.remove('active');
+            }
+        });
     }
 
     getCachedSummary(url) {
