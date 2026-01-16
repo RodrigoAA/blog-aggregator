@@ -2287,6 +2287,102 @@ async function clearAllHighlightsFromCloud() {
     }
 }
 
+// ============================================================
+// HIGHLIGHTS PAGE (Dedicated fullscreen view)
+// ============================================================
+
+function openHighlightsPage() {
+    const page = document.getElementById('highlights-page');
+    if (page) {
+        page.classList.add('open');
+        renderHighlightsPage();
+    }
+}
+
+function closeHighlightsPage() {
+    const page = document.getElementById('highlights-page');
+    if (page) {
+        page.classList.remove('open');
+    }
+}
+
+function renderHighlightsPage() {
+    const listContainer = document.getElementById('highlights-list');
+    const emptyState = document.getElementById('highlights-empty');
+
+    if (!listContainer || !emptyState) return;
+
+    const highlights = getAllHighlights();
+
+    if (highlights.length === 0) {
+        listContainer.innerHTML = '';
+        emptyState.style.display = 'flex';
+        return;
+    }
+
+    emptyState.style.display = 'none';
+
+    listContainer.innerHTML = highlights.map(h => `
+        <div class="highlight-card"
+             data-article-url="${escapeHtml(h.articleUrl)}"
+             data-article-title="${escapeHtml(h.articleTitle)}"
+             data-blog-name="${escapeHtml(h.blogName)}">
+            <div class="highlight-card-text">${escapeHtml(h.text)}</div>
+            <div class="highlight-card-meta">
+                <span class="highlight-card-source">${escapeHtml(h.blogName)}</span>
+                <span class="highlight-card-date">${formatDate(new Date(h.timestamp))}</span>
+                <button class="highlight-card-delete"
+                        data-url="${escapeHtml(h.articleUrl)}"
+                        data-position="${h.position}"
+                        title="Eliminar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    `).join('');
+
+    // Attach handlers
+    attachHighlightsPageHandlers();
+}
+
+function attachHighlightsPageHandlers() {
+    // Card click opens article
+    document.querySelectorAll('#highlights-list .highlight-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.highlight-card-delete')) return;
+
+            const url = card.dataset.articleUrl;
+            const title = card.dataset.articleTitle;
+            const blog = card.dataset.blogName;
+
+            closeHighlightsPage();
+
+            if (window.articleReader) {
+                window.articleReader.open(url, title, blog);
+            } else {
+                window.open(url, '_blank', 'noopener,noreferrer');
+            }
+        });
+    });
+
+    // Delete buttons
+    document.querySelectorAll('#highlights-list .highlight-card-delete').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const url = btn.dataset.url;
+            const position = parseInt(btn.dataset.position, 10);
+
+            if (confirm('Eliminar este highlight?')) {
+                deleteHighlightFromList(url, position);
+                renderHighlightsPage();
+            }
+        });
+    });
+}
+
 // Start the app when page loads
 document.addEventListener('DOMContentLoaded', async () => {
     // Create new posts banner
