@@ -122,44 +122,101 @@ async function signOut() {
 // ============================================================
 
 function updateAuthUI() {
-    const authBtn = document.getElementById('auth-btn');
-    const userInfo = document.getElementById('user-info');
+    const menuBtn = document.getElementById('user-menu-btn');
+    const dropdown = document.getElementById('user-dropdown');
+    const dropdownUserInfo = document.getElementById('dropdown-user-info');
 
-    if (!authBtn || !userInfo) {
+    if (!menuBtn || !dropdown) {
         console.warn('Auth UI elements not found');
         return;
     }
 
     if (currentUser) {
-        // User is signed in - show sign out icon
-        authBtn.innerHTML = `
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" y1="12" x2="9" y2="12"></line>
-            </svg>
-        `;
-        authBtn.title = 'Sign Out';
-        authBtn.onclick = signOut;
-
+        // User is signed in - show avatar
         const avatarUrl = currentUser.user_metadata?.avatar_url || '';
+        const userName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || 'Usuario';
+        const userEmail = currentUser.email || '';
 
-        userInfo.innerHTML = avatarUrl ? `<img src="${avatarUrl}" alt="Avatar" class="user-avatar">` : '';
-        userInfo.style.display = avatarUrl ? 'flex' : 'none';
+        if (avatarUrl) {
+            menuBtn.innerHTML = `<img src="${avatarUrl}" alt="Avatar" class="user-avatar-btn">`;
+        } else {
+            menuBtn.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            `;
+        }
+        menuBtn.title = 'Menu de usuario';
+
+        // Update dropdown user info
+        dropdownUserInfo.innerHTML = `
+            ${avatarUrl ? `<img src="${avatarUrl}" alt="Avatar" class="dropdown-avatar">` : ''}
+            <div class="dropdown-user-details">
+                <span class="dropdown-user-name">${userName}</span>
+                <span class="dropdown-user-email">${userEmail}</span>
+            </div>
+        `;
+
+        // Show dropdown elements
+        dropdown.style.display = 'block';
     } else {
         // User is signed out - show sign in icon
-        authBtn.innerHTML = `
+        menuBtn.innerHTML = `
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                 <circle cx="12" cy="7" r="4"></circle>
             </svg>
         `;
-        authBtn.title = 'Sign In';
-        authBtn.onclick = signInWithGoogle;
-        userInfo.innerHTML = '';
-        userInfo.style.display = 'none';
+        menuBtn.title = 'Iniciar sesion';
+
+        // Hide dropdown when not logged in
+        dropdown.style.display = 'none';
     }
 }
+
+// ============================================================
+// USER MENU FUNCTIONS
+// ============================================================
+
+function handleUserMenuClick() {
+    if (currentUser) {
+        toggleUserMenu();
+    } else {
+        signInWithGoogle();
+    }
+}
+
+function toggleUserMenu() {
+    const dropdown = document.getElementById('user-dropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('open');
+    }
+}
+
+function closeUserMenu() {
+    const dropdown = document.getElementById('user-dropdown');
+    if (dropdown) {
+        dropdown.classList.remove('open');
+    }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (event) => {
+    const container = document.getElementById('user-menu-container');
+    const dropdown = document.getElementById('user-dropdown');
+
+    if (container && dropdown && !container.contains(event.target)) {
+        dropdown.classList.remove('open');
+    }
+});
+
+// Close dropdown on Escape key
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+        closeUserMenu();
+    }
+});
 
 // ============================================================
 // AUTH EVENT HANDLERS
