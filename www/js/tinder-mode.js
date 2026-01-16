@@ -471,14 +471,31 @@ class TinderMode {
             // Listen for reader close to show Tinder Mode again
             const readerModal = document.getElementById('article-modal');
             if (readerModal) {
+                const restoreTinderMode = () => {
+                    this.container.style.display = 'flex';
+                };
+
+                // Listen to close button, overlay click, and ESC key
+                const closeBtn = readerModal.querySelector('.close-btn');
+                const overlay = readerModal.querySelector('.article-modal-overlay');
+
                 const onClose = () => {
-                    if (!readerModal.classList.contains('active')) {
-                        this.container.style.display = 'flex';
-                        observer.disconnect();
+                    restoreTinderMode();
+                    // Remove listeners
+                    closeBtn?.removeEventListener('click', onClose);
+                    overlay?.removeEventListener('click', onClose);
+                    document.removeEventListener('keydown', onEsc);
+                };
+
+                const onEsc = (e) => {
+                    if (e.key === 'Escape') {
+                        onClose();
                     }
                 };
-                const observer = new MutationObserver(onClose);
-                observer.observe(readerModal, { attributes: true, attributeFilter: ['class'] });
+
+                closeBtn?.addEventListener('click', onClose);
+                overlay?.addEventListener('click', onClose);
+                document.addEventListener('keydown', onEsc);
             }
 
             window.articleReader.open(url, post.title, post.blogName);
