@@ -166,17 +166,54 @@ Visual indicator based on AI `recommendation_score`:
 | `www/index.html` | FAB trigger button |
 | `www/js/app.js` | `updateTinderTriggerVisibility()` |
 
-### Discarded Features (2025-01-16)
-The following features were attempted and removed to simplify the UX:
+## Discarded Features
 
-**Swipe Up to Expand Card (removed)**
-- Attempted to add swipe up gesture to expand the card in-place showing the full article
-- Issues encountered:
-  - `touch-action: pan-y` blocked vertical swipe detection (fixed by changing to `touch-action: none`)
-  - Orange overlay ("LEER") stayed visible blocking expanded content
-  - Complex state management for expanded/collapsed states
-- Decision: Simplified to tap-to-open in reader modal instead
-- Reverted to commit `abe6243` and added simple tap detection
+Features que se desarrollaron pero se descartaron, junto con el motivo y como recuperarlas.
+
+### Swipe Up to Expand Card (Tinder Mode)
+
+**Fecha:** Enero 2026
+**Revert:** commit `abe6243`
+
+**Descripcion:** Gesto de swipe vertical para expandir la card in-place mostrando el articulo completo.
+
+**Motivo del descarte:**
+- `touch-action: pan-y` bloqueaba deteccion de swipe vertical
+- Overlay naranja ("LEER") quedaba visible bloqueando contenido
+- Estado complejo para expandido/colapsado
+
+**Decision:** Simplificado a tap-to-open en reader modal.
+
+---
+
+### Post de la Semana
+
+**Fecha:** Enero 2026
+**Commits:** `674a7bb`, `b39ab2c`
+**Revert:** `c8106dd`
+
+**Descripcion:** Banner hero en el Inbox mostrando automaticamente el post mas relevante de los ultimos 7 dias, basado en `recommendation_score='high'` del sistema de resumenes IA.
+
+**Caracteristicas:**
+- Ilustracion SVG decorativa (estilo Editorial Noir)
+- Titulo, blog, fecha y resumen TL;DR
+- Boton "Leer articulo" que abria el reader
+- Diseño responsive
+
+**Motivo del descarte:** El sistema solo podia recomendar articulos ya abiertos, porque el `recommendation_score` se genera al solicitar el resumen (al abrir en reader). Recomendaba contenido ya leido en lugar de descubrir nuevo.
+
+**Archivos modificados:**
+- `www/index.html` - Tab "Semanal"
+- `www/js/app.js` - `getWeeklyPost()`, `displayWeeklyPost()`, etc.
+- `www/css/styles.css` - `.weekly-banner-*` (~200 lineas)
+
+**Como recuperar:**
+```bash
+git show 674a7bb           # Ver codigo
+git cherry-pick 674a7bb    # Recuperar en main
+```
+
+**Posible futuro:** Resolver generando resumenes en background, criterio hibrido, o usar tags/categorias del RSS.
 
 ## Styling Guidelines
 
