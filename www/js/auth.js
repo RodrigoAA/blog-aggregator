@@ -189,25 +189,37 @@ function handleUserMenuClick() {
 
 function toggleUserMenu() {
     const dropdown = document.getElementById('user-dropdown');
+    const overlay = document.getElementById('user-dropdown-overlay');
     if (dropdown) {
-        dropdown.classList.toggle('open');
+        const isOpen = dropdown.classList.toggle('open');
+        if (overlay) {
+            overlay.classList.toggle('open', isOpen);
+        }
+        // Prevent body scroll on mobile when menu is open
+        document.body.style.overflow = isOpen ? 'hidden' : '';
     }
 }
 
 function closeUserMenu() {
     const dropdown = document.getElementById('user-dropdown');
+    const overlay = document.getElementById('user-dropdown-overlay');
     if (dropdown) {
         dropdown.classList.remove('open');
     }
+    if (overlay) {
+        overlay.classList.remove('open');
+    }
+    document.body.style.overflow = '';
 }
 
-// Close dropdown when clicking outside
+// Close dropdown when clicking outside (desktop)
 document.addEventListener('click', (event) => {
     const container = document.getElementById('user-menu-container');
     const dropdown = document.getElementById('user-dropdown');
+    const overlay = document.getElementById('user-dropdown-overlay');
 
-    if (container && dropdown && !container.contains(event.target)) {
-        dropdown.classList.remove('open');
+    if (container && dropdown && !container.contains(event.target) && event.target !== overlay) {
+        closeUserMenu();
     }
 });
 
