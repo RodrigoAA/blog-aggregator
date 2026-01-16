@@ -473,7 +473,7 @@ class TinderMode {
             if (readerModal) {
                 const onClose = () => {
                     if (!readerModal.classList.contains('active')) {
-                        this.container.style.display = '';
+                        this.container.style.display = 'flex';
                         observer.disconnect();
                     }
                 };
