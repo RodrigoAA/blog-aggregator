@@ -2611,32 +2611,61 @@ body > footer {
   opacity: 0.3;
 }
 
-/* Card loading state */
-.tinder-card-loader {
+/* Card loading state - only affects TL;DR section */
+.tinder-tldr-loader {
   display: none;
-  position: absolute;
-  inset: 0;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--bg-secondary);
-  z-index: 5;
+  padding: 24px 16px;
+  gap: 16px;
 }
 
-.tinder-card-loading .tinder-card-loader {
+.tinder-tldr-content {
+  display: block;
+  animation: tldr-reveal 0.4s ease-out;
+}
+
+@keyframes tldr-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tinder-card-loading .tinder-tldr-loader {
   display: flex;
 }
 
-.tinder-card .tinder-card-content {
+.tinder-card-loading .tinder-tldr-content {
+  display: none;
+}
+
+/* Hide flames until loaded */
+.tinder-card-loading .tinder-flames {
+  opacity: 0;
+}
+
+.tinder-flames {
   transition: opacity 0.3s ease;
 }
 
-.tinder-card-loading .tinder-card-content {
-  opacity: 0;
-  pointer-events: none;
+.tinder-loading-text {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  animation: loading-text-pulse 2s ease-in-out infinite;
 }
 
-.tinder-card-loading .tinder-loading-atom {
-  transform: scale(1.5);
+@keyframes loading-text-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 
 /* TL;DR Section */
@@ -2669,66 +2698,120 @@ body > footer {
   font-style: italic;
 }
 
-/* Atom loading animation */
+/* Atom loading animation - 3D orbital effect */
 .tinder-loading-atom {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 64px;
+  height: 64px;
   position: relative;
+  perspective: 200px;
+}
+
+/* Orbital paths (ellipses) */
+.atom-orbit {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  opacity: 0.15;
+}
+
+.atom-orbit-1 {
+  transform: rotateX(70deg) rotateZ(0deg);
+}
+
+.atom-orbit-2 {
+  transform: rotateX(70deg) rotateZ(60deg);
+}
+
+.atom-orbit-3 {
+  transform: rotateX(70deg) rotateZ(120deg);
 }
 
 .atom-nucleus {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   background: var(--accent);
   border-radius: 50%;
   position: absolute;
-  animation: nucleus-pulse 1.5s ease-in-out infinite;
+  animation: nucleus-glow 2s ease-in-out infinite;
+  box-shadow:
+    0 0 8px var(--accent),
+    0 0 16px var(--accent),
+    0 0 24px rgba(232, 93, 4, 0.4);
 }
 
 .atom-particle {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   background: var(--text-primary);
   border-radius: 50%;
   position: absolute;
-  opacity: 0.7;
+  box-shadow:
+    0 0 4px var(--text-primary),
+    -4px 0 6px var(--text-primary),
+    -8px 0 4px rgba(255, 255, 255, 0.3);
 }
 
 .atom-particle-1 {
-  animation: orbit-1 1.2s linear infinite;
+  animation: orbit-3d-1 1.8s linear infinite;
 }
 
 .atom-particle-2 {
-  animation: orbit-2 1.2s linear infinite;
-  animation-delay: -0.4s;
+  animation: orbit-3d-2 1.8s linear infinite;
+  animation-delay: -0.6s;
 }
 
 .atom-particle-3 {
-  animation: orbit-3 1.2s linear infinite;
-  animation-delay: -0.8s;
+  animation: orbit-3d-3 1.8s linear infinite;
+  animation-delay: -1.2s;
 }
 
-@keyframes nucleus-pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.2); opacity: 0.8; }
+@keyframes nucleus-glow {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 8px var(--accent),
+      0 0 16px var(--accent),
+      0 0 24px rgba(232, 93, 4, 0.4);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow:
+      0 0 12px var(--accent),
+      0 0 24px var(--accent),
+      0 0 36px rgba(232, 93, 4, 0.6);
+  }
 }
 
-@keyframes orbit-1 {
-  0% { transform: rotate(0deg) translateX(16px) rotate(0deg); }
-  100% { transform: rotate(360deg) translateX(16px) rotate(-360deg); }
+@keyframes orbit-3d-1 {
+  0% {
+    transform: rotateX(70deg) rotateZ(0deg) translateX(28px) rotateZ(0deg) rotateX(-70deg);
+  }
+  100% {
+    transform: rotateX(70deg) rotateZ(360deg) translateX(28px) rotateZ(-360deg) rotateX(-70deg);
+  }
 }
 
-@keyframes orbit-2 {
-  0% { transform: rotate(60deg) translateX(16px) rotate(-60deg); }
-  100% { transform: rotate(420deg) translateX(16px) rotate(-420deg); }
+@keyframes orbit-3d-2 {
+  0% {
+    transform: rotateX(70deg) rotateZ(60deg) translateX(28px) rotateZ(-60deg) rotateX(-70deg);
+  }
+  100% {
+    transform: rotateX(70deg) rotateZ(420deg) translateX(28px) rotateZ(-420deg) rotateX(-70deg);
+  }
 }
 
-@keyframes orbit-3 {
-  0% { transform: rotate(120deg) translateX(16px) rotate(-120deg); }
-  100% { transform: rotate(480deg) translateX(16px) rotate(-480deg); }
+@keyframes orbit-3d-3 {
+  0% {
+    transform: rotateX(70deg) rotateZ(120deg) translateX(28px) rotateZ(-120deg) rotateX(-70deg);
+  }
+  100% {
+    transform: rotateX(70deg) rotateZ(480deg) translateX(28px) rotateZ(-480deg) rotateX(-70deg);
+  }
 }
 
 /* Card Overlays (Action Labels) */
