@@ -465,6 +465,22 @@ class TinderMode {
     openArticle(url) {
         const post = this.posts.find(p => p.link === url);
         if (post && window.articleReader) {
+            // Hide Tinder Mode so reader is visible
+            this.container.style.display = 'none';
+
+            // Listen for reader close to show Tinder Mode again
+            const readerModal = document.getElementById('article-modal');
+            if (readerModal) {
+                const onClose = () => {
+                    if (!readerModal.classList.contains('active')) {
+                        this.container.style.display = '';
+                        observer.disconnect();
+                    }
+                };
+                const observer = new MutationObserver(onClose);
+                observer.observe(readerModal, { attributes: true, attributeFilter: ['class'] });
+            }
+
             window.articleReader.open(url, post.title, post.blogName);
         }
     }
