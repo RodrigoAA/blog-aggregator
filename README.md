@@ -19,6 +19,7 @@ A modern RSS reader with AI-powered summaries and cloud sync. Features an **Edit
 - **Cloud sync** (Google Sign-In) across devices
 - **Persistent cache** with new posts detection banner
 - **Mobile-friendly** - works on iOS and Android browsers
+- **Tinder Mode** - Swipe-based inbox triage on mobile with AI summaries and reading time
 
 ## Post Categories
 
@@ -71,7 +72,9 @@ A modern RSS reader with AI-powered summaries and cloud sync. Features an **Edit
 │       ├── app.js            # Main logic + cloud sync
 │       ├── reader.js         # Article reader + summaries
 │       ├── auth.js           # Supabase authentication
+│       ├── tinder-mode.js    # Mobile swipe interface for inbox triage
 │       ├── twitter-import.js # Twitter bookmarks import + folders
+│       ├── utils.js          # Shared utilities (escapeHtml, fetchSummary)
 │       └── classify-tweets.js # One-time tweet classification script
 │
 ├── extension/         # Chrome extension

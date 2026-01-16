@@ -121,9 +121,15 @@ Swipe-based interface for triaging Inbox posts on mobile devices (<768px). Imple
 Each card displays:
 - Blog source name
 - Article title
+- **Reading time estimate** (calculated from word count)
 - **AI TL;DR summary** (fetched on-demand if not cached)
 - **Flame indicator** (1-3 flames based on recommendation score)
 - Publication date
+
+### Loading State
+- Full-card loading state with centered **orbiting atom animation**
+- Atom animation: nucleus with three orbiting electrons
+- Displayed while fetching AI summary from backend
 
 ### Recommendation Flames
 Visual indicator based on AI `recommendation_score`:
