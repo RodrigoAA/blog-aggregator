@@ -188,6 +188,18 @@ class TinderMode {
 
         return `
             <article class="tinder-card ${extraClass} tinder-card-loading" data-url="${escapeHtml(post.link)}">
+                <div class="tinder-card-loader">
+                    <span class="tinder-loading-atom">
+                        <span class="atom-orbit atom-orbit-1"></span>
+                        <span class="atom-orbit atom-orbit-2"></span>
+                        <span class="atom-orbit atom-orbit-3"></span>
+                        <span class="atom-nucleus"></span>
+                        <span class="atom-particle atom-particle-1"></span>
+                        <span class="atom-particle atom-particle-2"></span>
+                        <span class="atom-particle atom-particle-3"></span>
+                    </span>
+                    <span class="tinder-loading-text">Analizando siguiente articulo</span>
+                </div>
                 <div class="tinder-card-content">
                     <div class="tinder-card-header">
                         <span class="tinder-card-source">${escapeHtml(post.blogName)}</span>
@@ -195,22 +207,8 @@ class TinderMode {
                     </div>
                     <h2 class="tinder-card-title">${escapeHtml(post.title)}</h2>
                     <div class="tinder-card-tldr">
-                        <div class="tinder-tldr-loader">
-                            <span class="tinder-loading-atom">
-                                <span class="atom-orbit atom-orbit-1"></span>
-                                <span class="atom-orbit atom-orbit-2"></span>
-                                <span class="atom-orbit atom-orbit-3"></span>
-                                <span class="atom-nucleus"></span>
-                                <span class="atom-particle atom-particle-1"></span>
-                                <span class="atom-particle atom-particle-2"></span>
-                                <span class="atom-particle atom-particle-3"></span>
-                            </span>
-                            <span class="tinder-loading-text">Analizando articulo...</span>
-                        </div>
-                        <div class="tinder-tldr-content">
-                            <span class="tinder-tldr-label">TL;DR</span>
-                            <p class="tinder-tldr-text"></p>
-                        </div>
+                        <span class="tinder-tldr-label">TL;DR</span>
+                        <p class="tinder-tldr-text"></p>
                     </div>
                     <div class="tinder-card-footer">
                         <span class="tinder-card-date">${formattedDate}</span>

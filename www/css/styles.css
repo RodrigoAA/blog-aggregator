@@ -2611,60 +2611,104 @@ body > footer {
   opacity: 0.3;
 }
 
-/* Card loading state - only affects TL;DR section */
-.tinder-tldr-loader {
+/* Card loading state - full card overlay */
+.tinder-card-loader {
   display: none;
+  position: absolute;
+  inset: 0;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 24px 16px;
-  gap: 16px;
+  background: var(--bg-secondary);
+  z-index: 5;
+  gap: 32px;
 }
 
-.tinder-tldr-content {
-  display: block;
-  animation: tldr-reveal 0.4s ease-out;
-}
-
-@keyframes tldr-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.tinder-card-loading .tinder-tldr-loader {
+.tinder-card-loading .tinder-card-loader {
   display: flex;
 }
 
-.tinder-card-loading .tinder-tldr-content {
-  display: none;
-}
-
-/* Hide flames until loaded */
-.tinder-card-loading .tinder-flames {
+.tinder-card-loading .tinder-card-content {
   opacity: 0;
+  pointer-events: none;
 }
 
-.tinder-flames {
-  transition: opacity 0.3s ease;
+.tinder-card-content {
+  transition: opacity 0.4s ease;
+  animation: content-reveal 0.5s ease-out;
+}
+
+@keyframes content-reveal {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Scale up atom in loading state */
+.tinder-card-loading .tinder-loading-atom {
+  width: 140px;
+  height: 140px;
+}
+
+.tinder-card-loading .atom-orbit {
+  width: 120px;
+  height: 120px;
+}
+
+.tinder-card-loading .atom-nucleus {
+  width: 18px;
+  height: 18px;
+}
+
+.tinder-card-loading .atom-particle {
+  width: 10px;
+  height: 10px;
+}
+
+.tinder-card-loading .atom-particle-1 {
+  animation: orbit-3d-1-large 1.8s linear infinite;
+}
+
+.tinder-card-loading .atom-particle-2 {
+  animation: orbit-3d-2-large 1.8s linear infinite;
+  animation-delay: -0.6s;
+}
+
+.tinder-card-loading .atom-particle-3 {
+  animation: orbit-3d-3-large 1.8s linear infinite;
+  animation-delay: -1.2s;
+}
+
+@keyframes orbit-3d-1-large {
+  0% { transform: rotateX(70deg) rotateZ(0deg) translateX(60px) rotateZ(0deg) rotateX(-70deg); }
+  100% { transform: rotateX(70deg) rotateZ(360deg) translateX(60px) rotateZ(-360deg) rotateX(-70deg); }
+}
+
+@keyframes orbit-3d-2-large {
+  0% { transform: rotateX(70deg) rotateZ(60deg) translateX(60px) rotateZ(-60deg) rotateX(-70deg); }
+  100% { transform: rotateX(70deg) rotateZ(420deg) translateX(60px) rotateZ(-420deg) rotateX(-70deg); }
+}
+
+@keyframes orbit-3d-3-large {
+  0% { transform: rotateX(70deg) rotateZ(120deg) translateX(60px) rotateZ(-120deg) rotateX(-70deg); }
+  100% { transform: rotateX(70deg) rotateZ(480deg) translateX(60px) rotateZ(-480deg) rotateX(-70deg); }
 }
 
 .tinder-loading-text {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
   animation: loading-text-pulse 2s ease-in-out infinite;
 }
 
 @keyframes loading-text-pulse {
-  0%, 100% { opacity: 0.5; }
+  0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }
 }
 
