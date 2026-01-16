@@ -98,9 +98,24 @@ Posts flow through four states:
 
 **Highlights** are text passages saved while reading:
 - Stored in `highlights` table (keyed by `article_url`)
-- Displayed in dedicated Highlights tab (after Favorites, before Cleared)
+- Accessed via dedicated icon button in header (pen icon)
+- Opens fullscreen page with all highlights
 - Each highlight links back to its source article
-- Click to open article, delete individual or clear all
+- Click card to open article in reader, delete individual highlights
+
+## UI Structure
+
+### Header
+- **Left:** Logo/title (click returns to Inbox)
+- **Right:** Highlights button (pen icon) + User menu button (avatar icon)
+
+### Filter Tabs
+Main content filters: Inbox, Pending, Favorites, Cleared, Twitter (X icon)
+
+### Fullscreen Pages
+- **User Menu** - Settings, refresh, import Twitter, logout
+- **Highlights Page** - Dedicated view for all saved highlights
+- **Article Reader** - Full article with AI summary and highlighting
 
 ## Tinder Mode (Mobile)
 
