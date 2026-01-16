@@ -1,42 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Partículas elementales</title>
-
-    <!-- Favicon - Terracotta accent -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Particulas elementales</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='16' fill='%230a0a0a'/><circle cx='50' cy='50' r='6' fill='%23e85d04'/><ellipse cx='50' cy='50' rx='32' ry='12' fill='none' stroke='%23f5f0e8' stroke-width='2' opacity='0.6'/><ellipse cx='50' cy='50' rx='12' ry='32' fill='none' stroke='%23f5f0e8' stroke-width='2' opacity='0.6'/><circle cx='26' cy='38' r='3' fill='%23e85d04'/><circle cx='74' cy='62' r='3' fill='%23e85d04'/><circle cx='74' cy='38' r='3' fill='%23f5f0e8' opacity='0.5'/><circle cx='26' cy='62' r='3' fill='%23f5f0e8' opacity='0.5'/></svg>">
-
-    <!-- Editorial Noir Styles -->
     <link rel="stylesheet" href="css/styles.css">
-
-    <!-- Meta tags for better sharing -->
-    <meta name="description" content="A distinctive blog aggregator with editorial noir design and AI-powered summaries">
-    <meta name="author" content="Rodrigo Aviles">
-
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Partículas elementales">
-    <meta property="og:description" content="Ideas fundamentales del universo digital">
-
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Partículas elementales">
-    <meta name="twitter:description" content="Ideas fundamentales del universo digital">
+    <meta name="description" content="Lector RSS con interfaz de swipe y resumenes IA">
 </head>
 <body>
-    <!-- Header -->
     <header>
         <div class="header-content">
             <div class="header-left">
-                <h1 onclick="setFilter('inbox')" style="cursor: pointer;">Partículas elementales</h1>
+                <h1 onclick="switchDeck('inbox')" style="cursor: pointer;">Particulas</h1>
             </div>
             <div class="header-right">
+                <button id="view-toggle-btn" class="header-icon-btn view-toggle-btn" onclick="toggleViewMode()" title="Cambiar vista">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                </button>
                 <div id="user-dropdown-overlay" class="user-dropdown-overlay" onclick="closeUserMenu()"></div>
                 <div id="user-menu-container" class="user-menu-container">
                     <button id="user-menu-btn" class="header-icon-btn" onclick="handleUserMenuClick()" title="Menu">
-                        <svg id="user-icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                             <circle cx="12" cy="7" r="4"></circle>
                         </svg>
@@ -82,129 +74,143 @@
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main>
-        <!-- Filters -->
-        <div class="filters">
-            <div class="filter-group">
-                <button class="filter-btn active" data-filter="inbox" onclick="setFilter('inbox')">
-                    Inbox
-                    <span class="count-badge">0</span>
-                </button>
-                <button class="filter-btn" data-filter="pending" onclick="setFilter('pending')">
-                    Pending
-                    <span class="count-badge">0</span>
-                </button>
-                <button class="filter-btn" data-filter="favorite" onclick="setFilter('favorite')">
-                    Favorites
-                    <span class="count-badge">0</span>
-                </button>
-                <button class="filter-btn" data-filter="highlights" onclick="setFilter('highlights')">
-                    Highlights
-                    <span class="count-badge">0</span>
-                </button>
-                <button class="filter-btn" data-filter="cleared" onclick="setFilter('cleared')">
-                    Cleared
-                    <span class="count-badge">0</span>
-                </button>
-                <div class="filter-separator"></div>
-                <button class="filter-btn" data-filter="twitter" onclick="setFilter('twitter')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    <main id="main-content" class="swipe-mode">
+        <nav class="deck-nav">
+            <button class="deck-tab active" data-deck="inbox" onclick="switchDeck('inbox')">
+                <span class="deck-label">Inbox</span>
+                <span class="deck-count" id="inbox-count">0</span>
+            </button>
+            <button class="deck-tab" data-deck="saved" onclick="switchDeck('saved')">
+                <span class="deck-label">Saved</span>
+                <span class="deck-count" id="saved-count">0</span>
+            </button>
+            <button class="deck-tab" data-deck="favorites" onclick="switchDeck('favorites')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                <span class="deck-count" id="favorites-count">0</span>
+            </button>
+            <button class="deck-tab" data-deck="twitter" onclick="switchDeck('twitter')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+                <span class="deck-count" id="twitter-count">0</span>
+            </button>
+            <button class="deck-tab" data-deck="highlights" onclick="switchDeck('highlights')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+                <span class="deck-count" id="highlights-count">0</span>
+            </button>
+        </nav>
+
+        <div id="swipe-view" class="swipe-view">
+            <div class="swipe-cards-stack" id="swipe-cards-stack"></div>
+            <div class="swipe-empty-state" id="swipe-empty-state" style="display: none;">
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                <h2 id="empty-title">Inbox vacio</h2>
+                <p id="empty-subtitle">Has revisado todos los posts.</p>
+                <button class="swipe-empty-btn" onclick="switchDeck('saved')">Ver guardados</button>
+            </div>
+            <div class="swipe-indicators">
+                <div class="swipe-indicator swipe-indicator-left">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
-                    <span class="count-badge">0</span>
+                    <span>Descartar</span>
+                </div>
+                <div class="swipe-indicator swipe-indicator-right">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span>Guardar</span>
+                </div>
+            </div>
+            <div class="swipe-action-buttons">
+                <button class="swipe-action-btn swipe-skip-btn" onclick="swipeAction('left')">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
                 </button>
+                <button class="swipe-action-btn swipe-save-btn" onclick="swipeAction('right')">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </button>
+            </div>
+            <div class="swipe-counter">
+                <span id="swipe-current">0</span> / <span id="swipe-total">0</span>
             </div>
         </div>
 
-        <!-- Loading indicator -->
-        <div id="loading" class="loading" style="display: none;"></div>
-
-        <!-- Posts container -->
-        <div id="posts" class="posts-grid">
-            <!-- Posts will be dynamically inserted here -->
+        <div id="list-view" class="list-view" style="display: none;">
+            <div id="loading" class="loading" style="display: none;"></div>
+            <div id="posts" class="posts-grid"></div>
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer>
-        <p>Built with HTML, CSS, and JavaScript • Powered by RSS feeds</p>
-    </footer>
-
-    <!-- Blog Management Modal -->
     <div id="blog-management-modal" class="blog-management-modal">
         <div class="blog-management-overlay" onclick="closeBlogManagement()"></div>
         <div class="blog-management-content">
             <div class="blog-management-header">
-                <h2>Manage Blogs</h2>
-                <button class="blog-management-close" onclick="closeBlogManagement()">×</button>
+                <h2>Configuracion</h2>
+                <button class="blog-management-close" onclick="closeBlogManagement()">&times;</button>
             </div>
-
-            <div class="blog-list" id="blog-list">
-                <!-- Blog items will be dynamically inserted here -->
-            </div>
-
+            <div class="blog-list" id="blog-list"></div>
             <div class="user-interests-section">
-                <h3>Your Interests</h3>
-                <p class="interests-description">Describe your interests to get personalized reading recommendations.</p>
-                <textarea id="user-interests" placeholder="e.g., AI, product design, startups, software engineering, Spanish tech scene..."></textarea>
-                <button class="save-interests-btn" onclick="saveUserInterests()">
-                    Save Interests
-                </button>
+                <h3>Tus intereses</h3>
+                <p class="interests-description">Describe tus intereses para recomendaciones personalizadas.</p>
+                <textarea id="user-interests" placeholder="ej: IA, diseno de producto, startups..."></textarea>
+                <button class="save-interests-btn" onclick="saveUserInterests()">Guardar</button>
             </div>
-
             <div class="add-article-section">
-                <h3>Add Individual Article</h3>
-                <p class="interests-description">Save a specific article you found on the web to your inbox.</p>
+                <h3>Agregar articulo</h3>
                 <div class="form-group">
-                    <label for="article-url">Article URL</label>
-                    <input type="url" id="article-url" placeholder="e.g., https://example.com/interesting-article" />
+                    <label for="article-url">URL</label>
+                    <input type="url" id="article-url" placeholder="https://ejemplo.com/articulo" />
                 </div>
-                <button class="add-article-btn" onclick="addManualArticle()">
-                    Add Article
-                </button>
+                <button class="add-article-btn" onclick="addManualArticle()">Agregar</button>
             </div>
-
             <div class="add-blog-section">
-                <h3>Add New Blog</h3>
+                <h3>Agregar blog</h3>
                 <div class="form-group">
-                    <label for="blog-name">Blog Name</label>
-                    <input type="text" id="blog-name" placeholder="e.g., My Favorite Blog" />
+                    <label for="blog-name">Nombre</label>
+                    <input type="text" id="blog-name" placeholder="Mi Blog" />
                 </div>
                 <div class="form-group">
-                    <label for="blog-url">Blog or RSS Feed URL</label>
-                    <input type="url" id="blog-url" placeholder="e.g., https://example.com or https://example.com/feed" />
+                    <label for="blog-url">URL</label>
+                    <input type="url" id="blog-url" placeholder="https://ejemplo.com" />
                 </div>
-                <button class="add-blog-btn" onclick="addNewBlog()">
-                    Add Blog
-                </button>
+                <button class="add-blog-btn" onclick="addNewBlog()">Agregar</button>
             </div>
         </div>
     </div>
 
-    <!-- Article Reader Modal (created dynamically by reader.js) -->
-
-    <!-- Twitter Import Modal -->
     <div id="twitter-import-modal" class="twitter-import-modal">
         <div class="twitter-import-overlay" onclick="closeTwitterImportModal()"></div>
         <div class="twitter-import-content">
             <div class="twitter-import-header">
-                <h2>Import Twitter/X Bookmarks</h2>
+                <h2>Importar Twitter/X</h2>
                 <button class="twitter-import-close" onclick="closeTwitterImportModal()">&times;</button>
             </div>
-
-            <!-- Step 1: Instructions -->
             <div class="twitter-import-step" data-step="1">
                 <div class="twitter-import-instructions">
-                    <h3>How to export your bookmarks</h3>
+                    <h3>Como exportar tus bookmarks</h3>
                     <ol>
-                        <li>Install the <a href="https://chromewebstore.google.com/detail/x-bookmarks-exporter-expo/abgjpimjfnggkhnoehjndcociampccnm" target="_blank" rel="noopener">X Bookmarks Exporter</a> Chrome extension</li>
-                        <li>Visit your <a href="https://twitter.com/i/bookmarks" target="_blank" rel="noopener">Twitter/X bookmarks page</a></li>
-                        <li>Click the extension icon and select "Export as JSON"</li>
-                        <li>Save the file and upload it below</li>
+                        <li>Instala <a href="https://chromewebstore.google.com/detail/x-bookmarks-exporter-expo/abgjpimjfnggkhnoehjndcociampccnm" target="_blank">X Bookmarks Exporter</a></li>
+                        <li>Ve a tus <a href="https://twitter.com/i/bookmarks" target="_blank">bookmarks</a></li>
+                        <li>Click en la extension y "Export as JSON"</li>
+                        <li>Sube el archivo aqui</li>
                     </ol>
                 </div>
-
                 <div class="twitter-import-upload">
                     <input type="file" id="twitter-file-input" accept=".json" onchange="handleTwitterFileSelect(event)" />
                     <label for="twitter-file-input" class="twitter-upload-label">
@@ -213,80 +219,43 @@
                             <polyline points="17 8 12 3 7 8"></polyline>
                             <line x1="12" y1="3" x2="12" y2="15"></line>
                         </svg>
-                        <span>Choose JSON file</span>
+                        <span>Elegir JSON</span>
                     </label>
-                    <p class="twitter-upload-hint">or drag and drop here</p>
                 </div>
             </div>
-
-            <!-- Step 2: Preview -->
             <div class="twitter-import-step" data-step="2" style="display: none;">
                 <div class="twitter-import-stats">
-                    <div class="twitter-stat">
-                        <span class="twitter-stat-value" id="twitter-total-count">0</span>
-                        <span class="twitter-stat-label">Total</span>
-                    </div>
-                    <div class="twitter-stat">
-                        <span class="twitter-stat-value" id="twitter-new-count">0</span>
-                        <span class="twitter-stat-label">New</span>
-                    </div>
-                    <div class="twitter-stat">
-                        <span class="twitter-stat-value" id="twitter-duplicate-count">0</span>
-                        <span class="twitter-stat-label">Duplicates</span>
-                    </div>
+                    <div class="twitter-stat"><span class="twitter-stat-value" id="twitter-total-count">0</span><span class="twitter-stat-label">Total</span></div>
+                    <div class="twitter-stat"><span class="twitter-stat-value" id="twitter-new-count">0</span><span class="twitter-stat-label">Nuevos</span></div>
+                    <div class="twitter-stat"><span class="twitter-stat-value" id="twitter-duplicate-count">0</span><span class="twitter-stat-label">Duplicados</span></div>
                 </div>
-
-                <div class="twitter-import-preview">
-                    <h4>Preview</h4>
-                    <div id="twitter-preview-list"></div>
-                </div>
-
-                <div class="twitter-import-options">
-                    <label class="twitter-option">
-                        <input type="checkbox" id="twitter-skip-duplicates" checked />
-                        <span>Skip duplicates</span>
-                    </label>
-                </div>
-
+                <div class="twitter-import-preview"><h4>Vista previa</h4><div id="twitter-preview-list"></div></div>
+                <div class="twitter-import-options"><label class="twitter-option"><input type="checkbox" id="twitter-skip-duplicates" checked /><span>Omitir duplicados</span></label></div>
                 <div class="twitter-import-actions">
-                    <button class="twitter-btn-secondary" onclick="resetTwitterImport()">Back</button>
-                    <button class="twitter-btn-primary" onclick="startTwitterImport()">Import Bookmarks</button>
+                    <button class="twitter-btn-secondary" onclick="resetTwitterImport()">Volver</button>
+                    <button class="twitter-btn-primary" onclick="startTwitterImport()">Importar</button>
                 </div>
             </div>
-
-            <!-- Step 3: Progress -->
             <div class="twitter-import-step" data-step="3" style="display: none;">
                 <div class="twitter-import-progress">
-                    <div class="twitter-progress-bar">
-                        <div class="twitter-progress-fill" id="twitter-progress-fill"></div>
-                    </div>
-                    <p class="twitter-progress-text" id="twitter-progress-text">Importing...</p>
+                    <div class="twitter-progress-bar"><div class="twitter-progress-fill" id="twitter-progress-fill"></div></div>
+                    <p class="twitter-progress-text" id="twitter-progress-text">Importando...</p>
                 </div>
             </div>
-
-            <!-- Step 4: Complete -->
             <div class="twitter-import-step" data-step="4" style="display: none;">
                 <div class="twitter-import-complete">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--terracotta)" stroke-width="2">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                         <polyline points="22 4 12 14.01 9 11.01"></polyline>
                     </svg>
-                    <h3>Import Complete!</h3>
+                    <h3>Listo!</h3>
                     <p id="twitter-complete-message"></p>
-                    <button class="twitter-btn-primary" onclick="closeTwitterImportModal(); setFilter('twitter');">View Twitter Bookmarks</button>
+                    <button class="twitter-btn-primary" onclick="closeTwitterImportModal(); switchDeck('twitter');">Ver Twitter</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Tinder Mode FAB Trigger -->
-    <button id="tinder-mode-trigger" class="tinder-mode-trigger" onclick="window.tinderMode?.activate()" title="Modo Tinder">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-        </svg>
-    </button>
-
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/utils.js"></script>
     <script src="js/auth.js"></script>
@@ -294,5 +263,6 @@
     <script src="js/app.js"></script>
     <script src="js/twitter-import.js"></script>
     <script src="js/tinder-mode.js"></script>
+    <script src="js/swipe-controller.js"></script>
 </body>
 </html>
