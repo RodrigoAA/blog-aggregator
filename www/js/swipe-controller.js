@@ -426,11 +426,8 @@ function toggleViewMode() {
     }
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => setTimeout(initSwipeController, 100));
-} else {
-    setTimeout(initSwipeController, 100);
-}
+// Initialization is now controlled by app.js after auth and data are ready
+// app.js calls initSwipeController() after init() completes
 
 window.addEventListener('postsUpdated', () => {
     if (swipeController) {

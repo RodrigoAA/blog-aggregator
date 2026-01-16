@@ -2300,6 +2300,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         await initAuth();
     }
 
+    // Initialize swipe controller (after auth is ready)
+    if (typeof initSwipeController === 'function') {
+        initSwipeController();
+    }
+
     // Handle extension parameters (after auth)
     await handleExtensionParams();
 
