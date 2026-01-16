@@ -185,3 +185,38 @@ This project uses the **frontend-design skill** (`.claude/skills/frontend-design
 - Use Playfair Display for display text
 - Avoid generic fonts like Inter, Arial, Roboto
 - CSS variables are defined in `www/css/styles.css`
+
+## Experimental Branches
+
+### feature/swipe-first-v2 (PAUSED - 2025-01-16)
+
+**Objetivo:** Promover el Tinder Mode a ser la interfaz principal de la app, no un overlay secundario.
+
+**Estado:** En pausa. La integracion con el flujo de autenticacion OAuth no funciona correctamente - despues del login, la app muestra el layout clasico en lugar de la interfaz swipe-first.
+
+**Archivos creados/modificados:**
+- `www/index.html` - Nueva estructura con navegacion por decks (Inbox, Saved, Favorites, Twitter, Highlights)
+- `www/js/swipe-controller.js` - Nuevo controlador que maneja vista swipe vs lista
+- `www/css/styles.css` - Estilos para deck-nav, swipe-cards, overlays (~475 lineas agregadas)
+- `www/js/app.js` - Agregado dispatch de evento `postsUpdated` e inicializacion de swipe-controller
+
+**Concepto de diseno:**
+- 5 "decks" en navegacion superior: Inbox, Saved, Favorites, Twitter, Highlights
+- Inbox y Saved usan vista swipe (cards apiladas, gestos de arrastre)
+- Favorites, Twitter, Highlights usan vista lista (layout clasico)
+- Reutiliza la estetica existente de Tinder Mode (densidad, animaciones, flames)
+
+**Bug pendiente:**
+El flujo OAuth recarga la pagina completamente. Hay un problema de sincronizacion entre:
+1. `initAuth()` - detecta sesion existente
+2. `initSwipeController()` - crea el controlador
+3. `init()` - carga posts desde cloud
+4. Evento `postsUpdated` - deberia refrescar el swipe-controller
+
+La vista swipe-first aparece brevemente y luego cambia al layout clasico, o nunca aparece despues del redirect de OAuth.
+
+**Para reanudar:**
+1. `git checkout feature/swipe-first-v2`
+2. Debuggear el flujo de inicializacion post-OAuth
+3. Verificar que el CSS `.swipe-mode` / `.list-mode` se aplica correctamente
+4. Posible solucion: usar eventos custom para coordinar auth + data + UI
