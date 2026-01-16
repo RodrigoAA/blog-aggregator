@@ -123,16 +123,15 @@ async function signOut() {
 
 function updateAuthUI() {
     const menuBtn = document.getElementById('user-menu-btn');
-    const dropdown = document.getElementById('user-dropdown');
-    const dropdownUserInfo = document.getElementById('dropdown-user-info');
+    const profileSection = document.getElementById('user-menu-profile');
 
-    if (!menuBtn || !dropdown) {
+    if (!menuBtn) {
         console.warn('Auth UI elements not found');
         return;
     }
 
     if (currentUser) {
-        // User is signed in - show avatar
+        // User is signed in - show avatar in header button
         const avatarUrl = currentUser.user_metadata?.avatar_url || '';
         const userName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || 'Usuario';
         const userEmail = currentUser.email || '';
@@ -149,17 +148,17 @@ function updateAuthUI() {
         }
         menuBtn.title = 'Menu de usuario';
 
-        // Update dropdown user info
-        dropdownUserInfo.innerHTML = `
-            ${avatarUrl ? `<img src="${avatarUrl}" alt="Avatar" class="dropdown-avatar">` : ''}
-            <div class="dropdown-user-details">
-                <span class="dropdown-user-name">${userName}</span>
-                <span class="dropdown-user-email">${userEmail}</span>
-            </div>
-        `;
-
-        // Show dropdown elements
-        dropdown.style.display = 'block';
+        // Update modal profile section
+        if (profileSection) {
+            profileSection.innerHTML = `
+                ${avatarUrl ? `<img src="${avatarUrl}" alt="Avatar" class="user-menu-avatar">` : ''}
+                <div class="user-menu-details">
+                    <p class="user-menu-name">${userName}</p>
+                    <p class="user-menu-email">${userEmail}</p>
+                </div>
+            `;
+            profileSection.style.display = 'flex';
+        }
     } else {
         // User is signed out - show sign in icon
         menuBtn.innerHTML = `
@@ -170,8 +169,10 @@ function updateAuthUI() {
         `;
         menuBtn.title = 'Iniciar sesion';
 
-        // Hide dropdown when not logged in
-        dropdown.style.display = 'none';
+        // Hide profile section when not logged in
+        if (profileSection) {
+            profileSection.style.display = 'none';
+        }
     }
 }
 
@@ -181,49 +182,29 @@ function updateAuthUI() {
 
 function handleUserMenuClick() {
     if (currentUser) {
-        toggleUserMenu();
+        openUserMenu();
     } else {
         signInWithGoogle();
     }
 }
 
-function toggleUserMenu() {
-    const dropdown = document.getElementById('user-dropdown');
-    const overlay = document.getElementById('user-dropdown-overlay');
-    if (dropdown) {
-        const isOpen = dropdown.classList.toggle('open');
-        if (overlay) {
-            overlay.classList.toggle('open', isOpen);
-        }
-        // Prevent body scroll on mobile when menu is open
-        document.body.style.overflow = isOpen ? 'hidden' : '';
+function openUserMenu() {
+    const modal = document.getElementById('user-menu-modal');
+    if (modal) {
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
     }
 }
 
 function closeUserMenu() {
-    const dropdown = document.getElementById('user-dropdown');
-    const overlay = document.getElementById('user-dropdown-overlay');
-    if (dropdown) {
-        dropdown.classList.remove('open');
+    const modal = document.getElementById('user-menu-modal');
+    if (modal) {
+        modal.classList.remove('open');
+        document.body.style.overflow = '';
     }
-    if (overlay) {
-        overlay.classList.remove('open');
-    }
-    document.body.style.overflow = '';
 }
 
-// Close dropdown when clicking outside (desktop)
-document.addEventListener('click', (event) => {
-    const container = document.getElementById('user-menu-container');
-    const dropdown = document.getElementById('user-dropdown');
-    const overlay = document.getElementById('user-dropdown-overlay');
-
-    if (container && dropdown && !container.contains(event.target) && event.target !== overlay) {
-        closeUserMenu();
-    }
-});
-
-// Close dropdown on Escape key
+// Close on Escape key
 document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
         closeUserMenu();
