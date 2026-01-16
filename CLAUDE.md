@@ -114,8 +114,22 @@ Swipe-based interface for triaging Inbox posts on mobile devices (<768px). Imple
 ### Gestures
 - **Swipe left** → Discard post (marked as `cleared`)
 - **Swipe right** → Save for later (marked as `pending`)
-- **Tap on card** → Open article in reader
+- **Tap on card** → Open article in reader (hides Tinder Mode, shows reader modal)
 - **Tap X/clock buttons** → Alternative to swipe gestures
+
+### PENDING BUG (2025-01-16)
+**Issue:** When tapping a card to open the article in reader, pressing X to close the reader returns to the main dashboard instead of Tinder Mode.
+
+**Current implementation:** `openArticle()` in `tinder-mode.js` hides the container and adds event listeners on the reader's close button, overlay, and ESC key to restore Tinder Mode. The listeners are not triggering correctly.
+
+**Attempted solutions:**
+1. MutationObserver watching for `active` class removal on `#article-modal` - didn't work
+2. Direct event listeners on `.close-btn`, `.article-modal-overlay`, and ESC key - didn't work
+
+**Next steps to try:**
+- Debug why the event listeners aren't firing (check if elements exist, timing issues)
+- Consider modifying `reader.js` to emit a custom event on close
+- Or add a "return to Tinder Mode" button in the reader when opened from Tinder Mode
 
 ### Card Content
 Each card displays:
@@ -147,10 +161,22 @@ Visual indicator based on AI `recommendation_score`:
 ### Files
 | File | Purpose |
 |------|---------|
-| `www/js/tinder-mode.js` | `TinderMode` class (~350 lines) |
+| `www/js/tinder-mode.js` | `TinderMode` class (~500 lines) |
 | `www/css/styles.css` | Styles (search for "TINDER MODE") |
 | `www/index.html` | FAB trigger button |
 | `www/js/app.js` | `updateTinderTriggerVisibility()` |
+
+### Discarded Features (2025-01-16)
+The following features were attempted and removed to simplify the UX:
+
+**Swipe Up to Expand Card (removed)**
+- Attempted to add swipe up gesture to expand the card in-place showing the full article
+- Issues encountered:
+  - `touch-action: pan-y` blocked vertical swipe detection (fixed by changing to `touch-action: none`)
+  - Orange overlay ("LEER") stayed visible blocking expanded content
+  - Complex state management for expanded/collapsed states
+- Decision: Simplified to tap-to-open in reader modal instead
+- Reverted to commit `abe6243` and added simple tap detection
 
 ## Styling Guidelines
 
