@@ -1596,6 +1596,9 @@ async function init(forceRefresh = false) {
             displayPosts(allPosts);
         }
 
+        // Notify swipe controller that posts are ready
+        window.dispatchEvent(new CustomEvent('postsUpdated'));
+
     } catch (error) {
         console.error('Error initializing app:', error);
         document.getElementById('loading').innerHTML = `

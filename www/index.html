@@ -114,7 +114,8 @@
                 </svg>
                 <h2 id="empty-title">Inbox vacio</h2>
                 <p id="empty-subtitle">Has revisado todos los posts.</p>
-                <button class="swipe-empty-btn" onclick="switchDeck('saved')">Ver guardados</button>
+                <button class="swipe-empty-btn" id="empty-action-btn" onclick="switchDeck('saved')">Ver guardados</button>
+                <button class="swipe-signin-btn" id="signin-btn" onclick="signInWithGoogle()" style="display: none;">Iniciar sesion con Google</button>
             </div>
             <div class="swipe-indicators">
                 <div class="swipe-indicator swipe-indicator-left">

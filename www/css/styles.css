@@ -3714,6 +3714,50 @@ body > footer {
   display: none !important;
 }
 
+/* Empty State Buttons */
+.swipe-empty-btn,
+.swipe-signin-btn {
+  margin-top: 16px;
+  padding: 12px 32px;
+  background: var(--accent);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.swipe-empty-btn:hover,
+.swipe-signin-btn:hover {
+  background: var(--accent-light);
+}
+
+/* Loading State */
+.swipe-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 40px;
+}
+
+.swipe-loading-state .tinder-loading-atom {
+  width: 80px;
+  height: 80px;
+}
+
+.swipe-loading-state .tinder-loading-text {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
 /* Mobile optimizations */
 @media (max-width: 768px) {
   .deck-tab {

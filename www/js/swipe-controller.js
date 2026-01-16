@@ -60,9 +60,23 @@ class SwipeController {
     }
 
     loadSwipeData(deckName) {
+        // Check authentication
+        if (typeof isAuthenticated === 'function' && !isAuthenticated()) {
+            this.posts = [];
+            this.showSignInState();
+            return;
+        }
+
         if (typeof allPosts === 'undefined' || typeof filterPostsByStatus === 'undefined') {
             this.posts = [];
             this.showEmptyState();
+            return;
+        }
+
+        // Check if allPosts is populated
+        if (!allPosts || allPosts.length === 0) {
+            this.posts = [];
+            this.showLoadingState();
             return;
         }
 
@@ -77,6 +91,46 @@ class SwipeController {
             this.renderCards();
             this.updateCounter();
         }
+    }
+
+    showSignInState() {
+        if (this.cardsStack) this.cardsStack.style.display = 'none';
+        if (this.emptyState) {
+            this.emptyState.style.display = 'flex';
+            const title = document.getElementById('empty-title');
+            const sub = document.getElementById('empty-subtitle');
+            const actionBtn = document.getElementById('empty-action-btn');
+            const signInBtn = document.getElementById('signin-btn');
+            if (title) title.textContent = 'Bienvenido';
+            if (sub) sub.textContent = 'Inicia sesion para sincronizar tus feeds.';
+            if (actionBtn) actionBtn.style.display = 'none';
+            if (signInBtn) signInBtn.style.display = 'inline-block';
+        }
+        const btns = document.querySelector('.swipe-action-buttons');
+        if (btns) btns.style.display = 'none';
+    }
+
+    showLoadingState() {
+        if (this.cardsStack) {
+            this.cardsStack.style.display = 'flex';
+            this.cardsStack.innerHTML = `
+                <div class="swipe-loading-state">
+                    <span class="tinder-loading-atom">
+                        <span class="atom-orbit atom-orbit-1"></span>
+                        <span class="atom-orbit atom-orbit-2"></span>
+                        <span class="atom-orbit atom-orbit-3"></span>
+                        <span class="atom-nucleus"></span>
+                        <span class="atom-particle atom-particle-1"></span>
+                        <span class="atom-particle atom-particle-2"></span>
+                        <span class="atom-particle atom-particle-3"></span>
+                    </span>
+                    <span class="tinder-loading-text">Cargando posts</span>
+                </div>
+            `;
+        }
+        if (this.emptyState) this.emptyState.style.display = 'none';
+        const btns = document.querySelector('.swipe-action-buttons');
+        if (btns) btns.style.display = 'none';
     }
 
     loadListData(deckName) {
@@ -317,6 +371,8 @@ class SwipeController {
             this.emptyState.style.display = 'flex';
             const title = document.getElementById('empty-title');
             const sub = document.getElementById('empty-subtitle');
+            const actionBtn = document.getElementById('empty-action-btn');
+            const signInBtn = document.getElementById('signin-btn');
             if (this.currentDeck === 'inbox') {
                 if (title) title.textContent = 'Inbox vacio';
                 if (sub) sub.textContent = 'Has revisado todos los posts.';
@@ -324,6 +380,8 @@ class SwipeController {
                 if (title) title.textContent = 'Nada guardado';
                 if (sub) sub.textContent = 'Guarda posts desde el Inbox.';
             }
+            if (actionBtn) actionBtn.style.display = 'inline-block';
+            if (signInBtn) signInBtn.style.display = 'none';
         }
         const btns = document.querySelector('.swipe-action-buttons');
         if (btns) btns.style.display = 'none';
