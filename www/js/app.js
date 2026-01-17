@@ -2406,13 +2406,16 @@ function showPullIndicator(distance) {
 
     // Show indicator proportionally to pull distance
     const progress = Math.min(distance / PULL_THRESHOLD, 1);
-    indicator.classList.add('visible');
-    indicator.style.transform = `translateY(${-100 + (progress * 100)}%)`;
 
-    // Update text based on progress
-    const span = indicator.querySelector('span');
-    if (span) {
-        span.textContent = progress >= 1 ? 'Suelta para refrescar' : 'Arrastra para refrescar';
+    // Move indicator down as user pulls (Twitter-style)
+    indicator.style.transform = `translateY(${-60 + (progress * 60)}px)`;
+
+    // Update arc progress (stroke-dashoffset: 62.83 = empty, 0 = full)
+    const arc = indicator.querySelector('.pull-spinner-arc');
+    if (arc) {
+        const circumference = 62.83;
+        const offset = circumference * (1 - progress);
+        arc.style.strokeDashoffset = offset;
     }
 }
 
@@ -2420,21 +2423,22 @@ function hidePullIndicator() {
     const indicator = document.getElementById('pull-indicator');
     if (!indicator) return;
 
-    indicator.classList.remove('visible', 'loading');
-    indicator.style.transform = 'translateY(-100%)';
+    indicator.classList.remove('loading');
+    indicator.style.transform = 'translateY(-60px)';
+
+    // Reset arc
+    const arc = indicator.querySelector('.pull-spinner-arc');
+    if (arc) {
+        arc.style.strokeDashoffset = 62.83;
+    }
 }
 
 function showPullIndicatorLoading() {
     const indicator = document.getElementById('pull-indicator');
     if (!indicator) return;
 
-    indicator.classList.add('visible', 'loading');
+    indicator.classList.add('loading');
     indicator.style.transform = 'translateY(0)';
-
-    const span = indicator.querySelector('span');
-    if (span) {
-        span.textContent = 'Actualizando...';
-    }
 }
 
 function initPullToRefresh() {
