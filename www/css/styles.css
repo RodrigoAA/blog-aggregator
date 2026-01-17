@@ -1744,6 +1744,8 @@ body > footer {
   background: var(--bg-primary);
   z-index: 150;
   pointer-events: none;
+  transform: translateY(-60px);
+  transition: transform 0.2s var(--ease-out);
 }
 
 .pull-spinner {
