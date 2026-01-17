@@ -1918,20 +1918,25 @@ function deleteBlog(index) {
 // Refresh posts - checks for new posts without losing current view
 function refreshPosts() {
     const refreshBtn = document.getElementById('refresh-btn');
-    if (!refreshBtn) return;
 
-    // Add spinning animation
-    refreshBtn.style.animation = 'spin 1s linear infinite';
+    // Add spinning animation to button if it exists
+    if (refreshBtn) {
+        refreshBtn.style.animation = 'spin 1s linear infinite';
+    }
 
     console.log('Checking for new posts...');
     checkForNewPosts().then(() => {
         // Remove animation when done
         setTimeout(() => {
-            refreshBtn.style.animation = '';
+            if (refreshBtn) {
+                refreshBtn.style.animation = '';
+            }
         }, 500);
     }).catch((error) => {
         console.error('Error checking for new posts:', error);
-        refreshBtn.style.animation = '';
+        if (refreshBtn) {
+            refreshBtn.style.animation = '';
+        }
     });
 }
 
@@ -2383,10 +2388,93 @@ function attachHighlightsPageHandlers() {
     });
 }
 
+// ============================================================
+// PULL-TO-REFRESH (Mobile)
+// ============================================================
+
+let pullStartY = 0;
+let isPulling = false;
+const PULL_THRESHOLD = 80;
+
+function showPullIndicator(distance) {
+    const indicator = document.getElementById('pull-indicator');
+    if (!indicator) return;
+
+    // Show indicator proportionally to pull distance
+    const progress = Math.min(distance / PULL_THRESHOLD, 1);
+    indicator.classList.add('visible');
+    indicator.style.transform = `translateY(${-100 + (progress * 100)}%)`;
+
+    // Update text based on progress
+    const span = indicator.querySelector('span');
+    if (span) {
+        span.textContent = progress >= 1 ? 'Suelta para refrescar' : 'Arrastra para refrescar';
+    }
+}
+
+function hidePullIndicator() {
+    const indicator = document.getElementById('pull-indicator');
+    if (!indicator) return;
+
+    indicator.classList.remove('visible');
+    indicator.style.transform = 'translateY(-100%)';
+}
+
+function initPullToRefresh() {
+    // Only on mobile
+    if (window.innerWidth > 768) return;
+
+    const postsContainer = document.getElementById('posts');
+    if (!postsContainer) return;
+
+    postsContainer.addEventListener('touchstart', (e) => {
+        // Only activate when scrolled to top
+        if (window.scrollY === 0) {
+            pullStartY = e.touches[0].clientY;
+            isPulling = true;
+        }
+    }, { passive: true });
+
+    postsContainer.addEventListener('touchmove', (e) => {
+        if (!isPulling) return;
+
+        const pullDistance = e.touches[0].clientY - pullStartY;
+
+        // Only show indicator when pulling down at the top
+        if (pullDistance > 0 && window.scrollY === 0) {
+            showPullIndicator(pullDistance);
+        }
+    }, { passive: true });
+
+    postsContainer.addEventListener('touchend', (e) => {
+        if (!isPulling) return;
+        isPulling = false;
+
+        const pullDistance = e.changedTouches[0].clientY - pullStartY;
+        hidePullIndicator();
+
+        // Trigger refresh if pulled past threshold
+        if (pullDistance > PULL_THRESHOLD && window.scrollY === 0) {
+            refreshPosts();
+        }
+    });
+
+    // Also listen on document for when touch ends outside container
+    document.addEventListener('touchend', () => {
+        if (isPulling) {
+            isPulling = false;
+            hidePullIndicator();
+        }
+    });
+}
+
 // Start the app when page loads
 document.addEventListener('DOMContentLoaded', async () => {
     // Create new posts banner
     createNewPostsBanner();
+
+    // Initialize pull-to-refresh for mobile
+    initPullToRefresh();
 
     // Initialize authentication first
     if (typeof initAuth === 'function') {

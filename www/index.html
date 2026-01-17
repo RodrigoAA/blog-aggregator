@@ -26,6 +26,12 @@
     <meta name="twitter:description" content="Ideas fundamentales del universo digital">
 </head>
 <body>
+    <!-- Pull-to-Refresh Indicator (Mobile) -->
+    <div id="pull-indicator" class="pull-indicator">
+        <div class="pull-spinner"></div>
+        <span>Suelta para refrescar</span>
+    </div>
+
     <!-- Header -->
     <header>
         <div class="header-content">
@@ -33,6 +39,13 @@
                 <h1 onclick="setFilter('inbox')" style="cursor: pointer;">Partículas elementales</h1>
             </div>
             <div class="header-right">
+                <button id="refresh-btn" class="header-icon-btn" onclick="refreshPosts()" title="Refrescar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                </button>
                 <button id="highlights-btn" class="header-icon-btn" onclick="openHighlightsPage()" title="Highlights">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 20h9"></path>
