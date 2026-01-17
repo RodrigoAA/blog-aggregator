@@ -3643,7 +3643,7 @@ body > footer {
 .empty-state-illustration {
   width: 120px;
   height: 120px;
-  margin-bottom: var(--space-lg);
+  margin: 0 auto var(--space-lg);
   opacity: 0.8;
 }
 
