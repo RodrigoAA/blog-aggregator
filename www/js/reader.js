@@ -33,11 +33,17 @@ class ArticleReader {
           <p class="loading-text">Loading article and generating summary...</p>
         </div>
         <div class="article-error" style="display: none;">
-          <h2>Could not load article</h2>
+          <h2>No se pudo cargar el articulo</h2>
           <p class="error-message"></p>
           <div class="error-actions">
-            <button class="open-original-btn">Open Original Link</button>
-            <button class="close-error-btn">Close</button>
+            <button class="retry-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+              Reintentar
+            </button>
+            <button class="open-original-btn">Abrir Original</button>
           </div>
         </div>
       </div>
@@ -479,6 +485,43 @@ class ArticleReader {
     const errorEl = this.modal.querySelector('.article-error');
     errorEl.style.display = 'flex';
     errorEl.querySelector('.error-message').textContent = message;
+
+    // Retry button
+    const retryBtn = errorEl.querySelector('.retry-btn');
+    retryBtn.onclick = async () => {
+      retryBtn.classList.add('loading');
+      errorEl.style.display = 'none';
+      this.modal.querySelector('.article-loading').style.display = 'flex';
+
+      // Re-attempt to load the article
+      try {
+        const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
+        const response = await fetch(
+          `${API_BASE_URL}/api/article?url=${encodeURIComponent(this.currentUrl)}`
+        );
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to load article');
+        }
+
+        const article = await response.json();
+        this.cacheArticle(this.currentUrl, article);
+
+        // Try to get summary
+        let summaryData = null;
+        try {
+          summaryData = await this.fetchSummaryData(this.currentUrl);
+        } catch (e) {
+          // Continue without summary
+        }
+
+        this.displayArticle(article, article.title, article.siteName || '', summaryData);
+      } catch (error) {
+        retryBtn.classList.remove('loading');
+        this.showError(error.message || 'No se pudo cargar el articulo.');
+      }
+    };
 
     // Open original button
     const openBtn = errorEl.querySelector('.open-original-btn');

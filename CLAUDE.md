@@ -173,13 +173,72 @@ Visual indicator based on AI `recommendation_score`:
 - Cards stack with current card on top, next card preview behind
 - Summaries cached in `localStorage` under `summaryCache`
 
+### Undo Feature
+After swiping, a toast appears for 5 seconds with "Deshacer" button:
+- Stores last action in `this.lastAction` object
+- `undoLastAction()` restores previous post status
+- Auto-hides after timeout, manual dismiss on undo
+
+### Onboarding Hint
+First-time users see a hint explaining swipe gestures:
+- Stored in `localStorage` as `tinderOnboardingSeen`
+- Shows "Descartar" (left) and "Leer despues" (right) with icons
+- Auto-dismisses after 5 seconds or on user click
+
 ### Files
 | File | Purpose |
 |------|---------|
-| `www/js/tinder-mode.js` | `TinderMode` class (~500 lines) |
+| `www/js/tinder-mode.js` | `TinderMode` class (~600 lines) |
 | `www/css/styles.css` | Styles (search for "TINDER MODE") |
-| `www/index.html` | FAB trigger button |
+| `www/index.html` | FAB trigger button, undo toast |
 | `www/js/app.js` | `updateTinderTriggerVisibility()` |
+
+## UX Features
+
+### Offline Detection
+Banner appears when network is disconnected:
+- Listens to `online`/`offline` events
+- Shows "Sin conexion. Mostrando contenido guardado."
+- Implemented in `initOfflineDetection()` in `app.js`
+
+### Pull-to-Refresh (Mobile)
+Twitter-style pull indicator with progress arc:
+- Threshold: 80px to trigger refresh
+- Shows "Soltar para refrescar" text when ready
+- Spinner animates while loading
+
+### Article Reader Retry
+Error state includes retry button:
+- Retries article fetch with loading spinner
+- Falls back to "Abrir Original" button
+- Implemented in `showError()` in `reader.js`
+
+### Empty States
+All empty states have SVG illustrations and contextual messages:
+| Filter | Title | Icon |
+|--------|-------|------|
+| Inbox | "Bandeja al dia" | Envelope with checkmark |
+| Pending | "Nada pendiente" | Clock |
+| Favorites | "Sin favoritos" | Heart |
+| Cleared | "Nada archivado" | Document |
+| Twitter | "Sin bookmarks" | Envelope with X |
+| Highlights | "Sin highlights" | Pen with ink |
+| Welcome | "Bienvenido..." | Animated book with particles |
+
+### CSS Design System
+Variables defined in `:root` (`www/css/styles.css`):
+```css
+/* Spacing */
+--space-xs: 4px;
+--space-sm: 8px;
+--space-md: 16px;
+--space-lg: 24px;
+--space-xl: 32px;
+--space-2xl: 48px;
+
+/* Secondary accent (for non-CTA elements) */
+--accent-secondary: #d4a574;
+```
 
 ## Discarded Features
 

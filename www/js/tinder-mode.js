@@ -15,6 +15,9 @@ class TinderMode {
         this.startY = 0;
         this.currentX = 0;
         this.hasMoved = false;
+        this.lastAction = null; // For undo functionality
+        this.undoTimeout = null;
+        this.hasSeenOnboarding = localStorage.getItem('tinderOnboardingSeen') === 'true';
 
         this.init();
     }
@@ -121,6 +124,11 @@ class TinderMode {
         this.renderCards();
         this.updateCounter();
         this.showEmptyState(false);
+
+        // Show onboarding hint if first time
+        if (!this.hasSeenOnboarding) {
+            this.showOnboarding();
+        }
     }
 
     deactivate() {
@@ -420,6 +428,8 @@ class TinderMode {
 
     completeSwipe(card, direction) {
         const postUrl = card.dataset.url;
+        const post = this.posts.find(p => p.link === postUrl);
+        const previousStatus = typeof getPostStatus === 'function' ? getPostStatus(postUrl) : 'inbox';
 
         // Animate card off screen
         const targetX = direction === 'left' ? -window.innerWidth * 1.5 : window.innerWidth * 1.5;
@@ -438,6 +448,18 @@ class TinderMode {
                 markAsPending(postUrl);
             }
         }
+
+        // Save for undo
+        this.lastAction = {
+            postUrl,
+            previousStatus,
+            direction,
+            postTitle: post?.title || 'Articulo'
+        };
+
+        // Show undo toast
+        const actionText = direction === 'left' ? 'Descartado' : 'Guardado para despues';
+        this.showUndoToast(actionText);
 
         // Move to next card after animation
         setTimeout(() => {
@@ -517,6 +539,116 @@ class TinderMode {
                 badge.textContent = counts.inbox;
             }
         }
+    }
+
+    // Onboarding hint for first-time users
+    showOnboarding() {
+        const stack = this.container.querySelector('.tinder-cards-stack');
+        if (!stack) return;
+
+        const hint = document.createElement('div');
+        hint.className = 'tinder-onboarding';
+        hint.innerHTML = `
+            <div class="tinder-onboarding-item">
+                <span class="tinder-onboarding-icon left">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </span>
+                <span>Descartar</span>
+            </div>
+            <div class="tinder-onboarding-item">
+                <span class="tinder-onboarding-icon right">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </span>
+                <span>Leer despues</span>
+            </div>
+            <button class="tinder-onboarding-dismiss" aria-label="Cerrar">×</button>
+        `;
+
+        stack.appendChild(hint);
+
+        hint.querySelector('.tinder-onboarding-dismiss').addEventListener('click', () => {
+            this.dismissOnboarding();
+        });
+
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (hint.parentNode) {
+                this.dismissOnboarding();
+            }
+        }, 5000);
+    }
+
+    dismissOnboarding() {
+        const hint = this.container.querySelector('.tinder-onboarding');
+        if (hint) {
+            hint.style.opacity = '0';
+            hint.style.transform = 'translateX(-50%) translateY(20px)';
+            setTimeout(() => hint.remove(), 300);
+        }
+        this.hasSeenOnboarding = true;
+        localStorage.setItem('tinderOnboardingSeen', 'true');
+    }
+
+    // Undo functionality
+    showUndoToast(message) {
+        const toast = document.getElementById('undo-toast');
+        if (!toast) return;
+
+        const textEl = toast.querySelector('.undo-toast-text');
+        if (textEl) {
+            textEl.textContent = message;
+        }
+
+        toast.classList.add('visible');
+
+        // Clear previous timeout
+        if (this.undoTimeout) {
+            clearTimeout(this.undoTimeout);
+        }
+
+        // Auto-hide after 5 seconds
+        this.undoTimeout = setTimeout(() => {
+            this.hideUndoToast();
+        }, 5000);
+    }
+
+    hideUndoToast() {
+        const toast = document.getElementById('undo-toast');
+        if (toast) {
+            toast.classList.remove('visible');
+        }
+        this.lastAction = null;
+    }
+
+    undoLastAction() {
+        if (!this.lastAction) return;
+
+        const { postUrl, previousStatus, direction } = this.lastAction;
+
+        // Restore previous status
+        if (previousStatus === 'inbox' && typeof markAsInbox === 'function') {
+            markAsInbox(postUrl);
+        } else if (previousStatus === 'pending' && typeof markAsPending === 'function') {
+            markAsPending(postUrl);
+        } else if (previousStatus === 'favorite' && typeof markAsFavorite === 'function') {
+            markAsFavorite(postUrl);
+        }
+
+        // Move back to previous card
+        if (this.currentIndex > 0) {
+            this.currentIndex--;
+            this.renderCards();
+            this.updateCounter();
+            this.updateInboxBadge();
+        }
+
+        this.hideUndoToast();
     }
 }
 

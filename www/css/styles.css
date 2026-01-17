@@ -29,6 +29,10 @@
   --accent-dark: #c2410c;
   --accent-glow: rgba(232, 93, 4, 0.15);
 
+  /* Accent - Secondary (for non-CTA elements) */
+  --accent-secondary: #d4a574;
+  --accent-secondary-light: #e0b88d;
+
   /* Semantic */
   --border: rgba(245, 240, 232, 0.08);
   --border-hover: rgba(245, 240, 232, 0.15);
@@ -36,6 +40,14 @@
   --success: #22c55e;
   --warning: #f59e0b;
   --danger: #ef4444;
+
+  /* Spacing System */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
 
   /* Typography */
   --font-display: 'Playfair Display', Georgia, serif;
@@ -322,8 +334,14 @@ header {
   text-align: left;
 }
 
+.user-menu-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+}
+
 .user-menu-btn:active {
-  transform: scale(0.98);
+  transform: scale(0.98) translateY(0);
   background: var(--bg-elevated);
 }
 
@@ -653,7 +671,9 @@ body > footer {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.95);
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   cursor: pointer;
   animation: fadeIn 0.3s var(--ease-out);
 }
@@ -702,7 +722,7 @@ body > footer {
   position: sticky;
   top: 0;
   background: var(--bg-primary);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px solid var(--border);
   padding: 16px 32px;
   display: flex;
   justify-content: space-between;
@@ -710,7 +730,8 @@ body > footer {
   z-index: 10;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  background: rgba(10, 10, 10, 0.9);
+  background: rgba(10, 10, 10, 0.95);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .close-btn {
@@ -1300,6 +1321,8 @@ body > footer {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   cursor: pointer;
   animation: fadeIn 0.3s var(--ease-out);
 }
@@ -1867,8 +1890,9 @@ body > footer {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .twitter-import-content {
@@ -2122,7 +2146,8 @@ body > footer {
 
 .twitter-btn-primary:hover {
   background: var(--accent-light);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px var(--accent-glow);
 }
 
 .twitter-btn-secondary {
@@ -3141,6 +3166,7 @@ body > footer {
 
 .tinder-skip-btn:hover {
   background: rgba(239, 68, 68, 0.1);
+  transform: scale(1.05) translateY(-2px);
 }
 
 .tinder-save-btn {
@@ -3150,6 +3176,7 @@ body > footer {
 
 .tinder-save-btn:hover {
   background: rgba(34, 197, 94, 0.1);
+  transform: scale(1.05) translateY(-2px);
 }
 
 /* Empty State */
@@ -3389,4 +3416,267 @@ body > footer {
 .highlight-card-delete:hover {
   color: #ef4444;
   background: rgba(239, 68, 68, 0.1);
+}
+
+/* ============================================================
+   OFFLINE BANNER
+   ============================================================ */
+.offline-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  z-index: 9000;
+  animation: slideDown 0.3s var(--ease-out);
+}
+
+.offline-banner.visible {
+  display: flex;
+}
+
+.offline-banner svg {
+  color: var(--warning);
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   UNDO TOAST (Tinder Mode)
+   ============================================================ */
+.undo-toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 3000;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s var(--ease-spring);
+}
+
+.undo-toast.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.undo-toast-text {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.undo-toast-btn {
+  background: var(--accent);
+  color: var(--bg-primary);
+  border: none;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+}
+
+.undo-toast-btn:hover {
+  background: var(--accent-light);
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   PULL-TO-REFRESH IMPROVEMENTS
+   ============================================================ */
+.pull-text {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: var(--space-sm);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.pull-indicator.ready .pull-text {
+  opacity: 1;
+}
+
+.pull-indicator.loading .pull-text {
+  display: none;
+}
+
+/* ============================================================
+   TINDER MODE ONBOARDING HINT
+   ============================================================ */
+.tinder-onboarding {
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  z-index: 5;
+  animation: fadeInUp 0.5s var(--ease-out);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.tinder-onboarding-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.tinder-onboarding-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tinder-onboarding-icon.left {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger);
+}
+
+.tinder-onboarding-icon.right {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--success);
+}
+
+.tinder-onboarding-dismiss {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.tinder-onboarding-dismiss:hover {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: white;
+}
+
+/* ============================================================
+   RETRY BUTTON IN ERROR STATE
+   ============================================================ */
+.retry-btn {
+  background: var(--accent);
+  border: none;
+  color: var(--bg-primary);
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  transition: all 0.2s var(--ease-out);
+}
+
+.retry-btn:hover {
+  background: var(--accent-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+.retry-btn svg {
+  animation: none;
+}
+
+.retry-btn.loading svg {
+  animation: spin 0.8s linear infinite;
+}
+
+/* ============================================================
+   EMPTY STATES - SVG Illustrations
+   ============================================================ */
+.empty-state-illustration {
+  width: 120px;
+  height: 120px;
+  margin-bottom: var(--space-lg);
+  opacity: 0.8;
+}
+
+.empty-state-illustration svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Inbox empty - book with particles */
+.empty-state-inbox .empty-state-illustration svg {
+  color: var(--accent);
+}
+
+/* Pending empty */
+.empty-state-pending .empty-state-illustration svg {
+  color: var(--accent-secondary);
+}
+
+/* Favorites empty */
+.empty-state-favorites .empty-state-illustration svg {
+  color: var(--highlight);
+}
+
+/* Tinder complete - orbital checkmark */
+.tinder-empty-state svg {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px var(--accent-glow));
+  }
+  50% {
+    filter: drop-shadow(0 0 20px var(--accent));
+  }
 }

@@ -973,9 +973,16 @@ function displayPosts(posts) {
 
     if (posts.length === 0) {
         postsContainer.innerHTML = `
-            <div class="empty-state">
-                <h2>No posts found</h2>
-                <p>Unable to load posts from your RSS feeds. Please check your internet connection and try again.</p>
+            <div class="empty-state empty-state-error">
+                <div class="empty-state-illustration">
+                    <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="60" cy="60" r="50" stroke-dasharray="8 4"/>
+                        <path d="M45 70 L60 55 L75 70" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="60" cy="45" r="3" fill="currentColor"/>
+                    </svg>
+                </div>
+                <h2>No se pudieron cargar los posts</h2>
+                <p>Verifica tu conexion a internet e intenta de nuevo.</p>
             </div>
         `;
         return;
@@ -992,16 +999,51 @@ function displayPosts(posts) {
 
     // Show empty state if no posts in current filter
     if (filteredPosts.length === 0) {
-        const filterNames = {
-            inbox: 'Inbox',
-            pending: 'Pending',
-            favorite: 'Favorites',
-            cleared: 'Cleared'
+        const emptyStates = {
+            inbox: {
+                icon: `<svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="25" y="35" width="70" height="50" rx="4"/>
+                    <path d="M25 50 L60 70 L95 50"/>
+                    <circle cx="85" cy="35" r="12" fill="var(--accent)" stroke="none"/>
+                    <path d="M80 35 L84 39 L92 31" stroke="var(--bg-primary)" stroke-width="2"/>
+                </svg>`,
+                title: 'Bandeja al dia',
+                message: 'No tienes posts nuevos. Refresca para buscar actualizaciones.'
+            },
+            pending: {
+                icon: `<svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="60" cy="60" r="40"/>
+                    <path d="M60 35 L60 60 L80 70"/>
+                    <circle cx="60" cy="60" r="5" fill="currentColor"/>
+                </svg>`,
+                title: 'Nada pendiente',
+                message: 'Los articulos que guardes para leer despues apareceran aqui.'
+            },
+            favorite: {
+                icon: `<svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M60 95 L30 65 C15 50 25 25 60 45 C95 25 105 50 90 65 Z"/>
+                    <path d="M45 55 L55 65 L75 45" stroke-width="2"/>
+                </svg>`,
+                title: 'Sin favoritos',
+                message: 'Marca articulos con la estrella para guardarlos en favoritos.'
+            },
+            cleared: {
+                icon: `<svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="30" y="25" width="60" height="70" rx="4"/>
+                    <path d="M45 50 L55 60 L75 40" stroke-width="2"/>
+                    <line x1="45" y1="75" x2="75" y2="75"/>
+                    <line x1="45" y1="85" x2="65" y2="85"/>
+                </svg>`,
+                title: 'Nada archivado',
+                message: 'Los articulos que leas o descartes apareceran aqui.'
+            }
         };
+        const state = emptyStates[currentFilter] || emptyStates.inbox;
         postsContainer.innerHTML = `
-            <div class="empty-state">
-                <h2>No posts in ${filterNames[currentFilter]}</h2>
-                <p>Try selecting a different filter above.</p>
+            <div class="empty-state empty-state-${currentFilter}">
+                <div class="empty-state-illustration">${state.icon}</div>
+                <h2>${state.title}</h2>
+                <p>${state.message}</p>
             </div>
         `;
         return;
@@ -1199,9 +1241,18 @@ function displayTwitterPosts() {
 
     if (twitterPosts.length === 0) {
         postsContainer.innerHTML = `
-            <div class="empty-state">
-                <h2>No Twitter bookmarks</h2>
-                <p>Import your Twitter/X bookmarks using the import button in the header.</p>
+            <div class="empty-state empty-state-twitter">
+                <div class="empty-state-illustration">
+                    <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M25 35 L50 55 L25 75"/>
+                        <rect x="35" y="40" width="60" height="40" rx="4"/>
+                        <path d="M50 55 L65 65 L95 45"/>
+                        <circle cx="85" cy="35" r="15" fill="none" stroke-dasharray="4 2"/>
+                        <path d="M82 30 L88 36 M88 30 L82 36" stroke-width="2"/>
+                    </svg>
+                </div>
+                <h2>Sin bookmarks de Twitter</h2>
+                <p>Importa tus bookmarks desde el menu de usuario.</p>
             </div>
         `;
         return;
@@ -1496,9 +1547,28 @@ async function init(forceRefresh = false) {
         if (!isAuthenticated()) {
             loading.style.display = 'none';
             postsContainer.innerHTML = `
-                <div class="empty-state">
-                    <h2>Welcome to Partículas elementales</h2>
-                    <p>Sign in with Google to sync your RSS feeds, saved articles, and reading progress across devices.</p>
+                <div class="empty-state empty-state-welcome">
+                    <div class="empty-state-illustration">
+                        <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <!-- Book -->
+                            <path d="M30 25 L30 95 Q60 85 60 85 Q60 85 90 95 L90 25 Q60 35 60 35 Q60 35 30 25Z"/>
+                            <path d="M60 35 L60 85"/>
+                            <!-- Floating particles -->
+                            <circle cx="45" cy="15" r="4" fill="var(--accent)" stroke="none">
+                                <animate attributeName="cy" values="15;10;15" dur="2s" repeatCount="indefinite"/>
+                            </circle>
+                            <circle cx="75" cy="20" r="3" fill="var(--accent)" stroke="none">
+                                <animate attributeName="cy" values="20;14;20" dur="2.5s" repeatCount="indefinite"/>
+                            </circle>
+                            <circle cx="85" cy="10" r="2" fill="var(--text-muted)" stroke="none">
+                                <animate attributeName="cy" values="10;6;10" dur="1.8s" repeatCount="indefinite"/>
+                            </circle>
+                            <!-- Orbital lines -->
+                            <ellipse cx="60" cy="60" rx="50" ry="15" stroke-dasharray="4 6" opacity="0.3"/>
+                        </svg>
+                    </div>
+                    <h2>Bienvenido a Particulas elementales</h2>
+                    <p>Inicia sesion con Google para sincronizar tus feeds RSS, articulos guardados y progreso de lectura.</p>
                 </div>
             `;
             return;
@@ -2115,9 +2185,22 @@ function displayHighlights() {
 
     if (highlights.length === 0) {
         postsContainer.innerHTML = `
-            <div class="empty-state">
-                <h2>No highlights yet</h2>
-                <p>Select text while reading an article and click "Highlight" to save passages for later.</p>
+            <div class="empty-state empty-state-highlights">
+                <div class="empty-state-illustration">
+                    <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <!-- Pen -->
+                        <path d="M75 25 L95 45 L45 95 L25 95 L25 75 Z"/>
+                        <path d="M70 30 L90 50"/>
+                        <!-- Ink drops -->
+                        <circle cx="35" cy="105" r="5" fill="var(--highlight)" stroke="none" opacity="0.6"/>
+                        <circle cx="50" cy="110" r="3" fill="var(--highlight)" stroke="none" opacity="0.4"/>
+                        <!-- Lines representing text -->
+                        <line x1="55" y1="55" x2="95" y2="55" opacity="0.3"/>
+                        <line x1="55" y1="65" x2="85" y2="65" opacity="0.3"/>
+                    </svg>
+                </div>
+                <h2>Sin highlights guardados</h2>
+                <p>Selecciona texto mientras lees un articulo y haz clic en "Highlight" para guardarlo.</p>
             </div>
         `;
         return;
@@ -2417,13 +2500,20 @@ function showPullIndicator(distance) {
         const offset = circumference * (1 - progress);
         arc.style.strokeDashoffset = offset;
     }
+
+    // Show "ready" state when threshold is reached
+    if (progress >= 1) {
+        indicator.classList.add('ready');
+    } else {
+        indicator.classList.remove('ready');
+    }
 }
 
 function hidePullIndicator() {
     const indicator = document.getElementById('pull-indicator');
     if (!indicator) return;
 
-    indicator.classList.remove('loading');
+    indicator.classList.remove('loading', 'ready');
     indicator.style.transform = 'translateY(-60px)';
 
     // Reset arc
@@ -2491,6 +2581,26 @@ function initPullToRefresh() {
     });
 }
 
+// Offline detection
+function initOfflineDetection() {
+    const banner = document.getElementById('offline-banner');
+    if (!banner) return;
+
+    function updateOnlineStatus() {
+        if (!navigator.onLine) {
+            banner.classList.add('visible');
+        } else {
+            banner.classList.remove('visible');
+        }
+    }
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+
+    // Check initial status
+    updateOnlineStatus();
+}
+
 // Start the app when page loads
 document.addEventListener('DOMContentLoaded', async () => {
     // Create new posts banner
@@ -2498,6 +2608,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Initialize pull-to-refresh for mobile
     initPullToRefresh();
+
+    // Initialize offline detection
+    initOfflineDetection();
 
     // Initialize authentication first
     if (typeof initAuth === 'function') {
