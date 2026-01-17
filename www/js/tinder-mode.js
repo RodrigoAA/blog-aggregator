@@ -552,8 +552,8 @@ class TinderMode {
             <div class="tinder-onboarding-item">
                 <span class="tinder-onboarding-icon left">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
                 </span>
                 <span>Descartar</span>
@@ -561,11 +561,11 @@ class TinderMode {
             <div class="tinder-onboarding-item">
                 <span class="tinder-onboarding-icon right">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 16 14"></polyline>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
                     </svg>
                 </span>
-                <span>Leer después</span>
+                <span>Guardar</span>
             </div>
             <button class="tinder-onboarding-dismiss" aria-label="Cerrar">×</button>
         `;
