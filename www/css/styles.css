@@ -65,6 +65,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* Disable native pull-to-refresh on mobile to use custom implementation */
+  overscroll-behavior-y: contain;
 }
 
 body {
