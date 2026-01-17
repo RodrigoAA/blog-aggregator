@@ -88,6 +88,9 @@ class ArticleReader {
     // Reset scroll position
     this.modal.querySelector('.article-modal-content').scrollTop = 0;
 
+    // Clear previous article data from header
+    this.modal.querySelector('.article-meta').innerHTML = '';
+
     // Hide error, show loading
     this.modal.querySelector('.article-error').style.display = 'none';
     this.modal.querySelector('.article-loading').style.display = 'flex';
