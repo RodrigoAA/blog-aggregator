@@ -77,7 +77,10 @@
 
 html {
   scroll-behavior: smooth;
-  /* Disable native pull-to-refresh on mobile to use custom implementation */
+}
+
+/* Disable native pull-to-refresh when logged in (added via JS) */
+html.pull-refresh-custom {
   overscroll-behavior-y: contain;
 }
 
