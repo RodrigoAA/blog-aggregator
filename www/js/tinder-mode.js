@@ -65,7 +65,7 @@ class TinderMode {
                         <circle cx="12" cy="12" r="10"></circle>
                         <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
-                    <span>Leer despues</span>
+                    <span>Leer después</span>
                 </div>
             </div>
             <div class="tinder-action-buttons">
@@ -565,7 +565,7 @@ class TinderMode {
                         <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
                 </span>
-                <span>Leer despues</span>
+                <span>Leer después</span>
             </div>
             <button class="tinder-onboarding-dismiss" aria-label="Cerrar">×</button>
         `;
