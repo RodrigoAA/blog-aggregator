@@ -1931,12 +1931,16 @@ function refreshPosts() {
             if (refreshBtn) {
                 refreshBtn.style.animation = '';
             }
+            // Hide pull indicator (mobile)
+            hidePullIndicator();
         }, 500);
     }).catch((error) => {
         console.error('Error checking for new posts:', error);
         if (refreshBtn) {
             refreshBtn.style.animation = '';
         }
+        // Hide pull indicator on error too
+        hidePullIndicator();
     });
 }
 
@@ -2416,8 +2420,21 @@ function hidePullIndicator() {
     const indicator = document.getElementById('pull-indicator');
     if (!indicator) return;
 
-    indicator.classList.remove('visible');
+    indicator.classList.remove('visible', 'loading');
     indicator.style.transform = 'translateY(-100%)';
+}
+
+function showPullIndicatorLoading() {
+    const indicator = document.getElementById('pull-indicator');
+    if (!indicator) return;
+
+    indicator.classList.add('visible', 'loading');
+    indicator.style.transform = 'translateY(0)';
+
+    const span = indicator.querySelector('span');
+    if (span) {
+        span.textContent = 'Actualizando...';
+    }
 }
 
 function initPullToRefresh() {
@@ -2451,11 +2468,13 @@ function initPullToRefresh() {
         isPulling = false;
 
         const pullDistance = e.changedTouches[0].clientY - pullStartY;
-        hidePullIndicator();
 
         // Trigger refresh if pulled past threshold
         if (pullDistance > PULL_THRESHOLD && window.scrollY === 0) {
+            showPullIndicatorLoading();
             refreshPosts();
+        } else {
+            hidePullIndicator();
         }
     });
 
