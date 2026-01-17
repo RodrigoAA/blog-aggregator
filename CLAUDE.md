@@ -173,24 +173,12 @@ Visual indicator based on AI `recommendation_score`:
 - Cards stack with current card on top, next card preview behind
 - Summaries cached in `localStorage` under `summaryCache`
 
-### Undo Feature
-After swiping, a toast appears for 5 seconds with "Deshacer" button:
-- Stores last action in `this.lastAction` object
-- `undoLastAction()` restores previous post status
-- Auto-hides after timeout, manual dismiss on undo
-
-### Onboarding Hint
-First-time users see a hint explaining swipe gestures:
-- Stored in `localStorage` as `tinderOnboardingSeen`
-- Shows "Descartar" (left) and "Leer despues" (right) with icons
-- Auto-dismisses after 5 seconds or on user click
-
 ### Files
 | File | Purpose |
 |------|---------|
-| `www/js/tinder-mode.js` | `TinderMode` class (~600 lines) |
+| `www/js/tinder-mode.js` | `TinderMode` class (~500 lines) |
 | `www/css/styles.css` | Styles (search for "TINDER MODE") |
-| `www/index.html` | FAB trigger button, undo toast |
+| `www/index.html` | FAB trigger button |
 | `www/js/app.js` | `updateTinderTriggerVisibility()` |
 
 ## UX Features
