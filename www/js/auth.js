@@ -222,6 +222,10 @@ async function onSignIn() {
 }
 
 function onSignOut() {
+    // Clear user data before reinitializing
+    if (typeof clearUserData === 'function') {
+        clearUserData();
+    }
     if (typeof init === 'function') {
         init();
     }

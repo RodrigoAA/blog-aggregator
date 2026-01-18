@@ -267,6 +267,28 @@ function clearPostsCache() {
     console.log('Posts cache cleared');
 }
 
+/**
+ * Clear all user data on logout.
+ * Removes localStorage items and resets in-memory caches.
+ */
+function clearUserData() {
+    // Clear localStorage
+    localStorage.removeItem('blogAggregator_blogs');
+    localStorage.removeItem('blogAggregator_postsCache');
+    localStorage.removeItem('blogAggregator_manualArticles');
+    localStorage.removeItem('blogAggregator_postStatuses');
+    localStorage.removeItem('summaryCache');
+
+    // Reset in-memory caches
+    blogsCache = [];
+    manualArticlesCache = null;
+    postStatusesCache = {};
+    allPosts = [];
+    lastKnownPostLinks.clear();
+
+    console.log('User data cleared');
+}
+
 // ============================================================
 // NEW POSTS INDICATOR
 // ============================================================
