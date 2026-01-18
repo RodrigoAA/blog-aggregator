@@ -198,6 +198,9 @@ async function fetchFeed(blog) {
 // POSTS CACHE MANAGEMENT
 // ============================================================
 
+// Cache expires after 5 minutes (300000 ms)
+const POSTS_CACHE_TTL = 5 * 60 * 1000;
+
 function getPostsCache() {
     try {
         const cached = localStorage.getItem('blogAggregator_postsCache');
@@ -205,7 +208,13 @@ function getPostsCache() {
 
         const cache = JSON.parse(cached);
 
-        // Check if blogs have changed (compare URLs) - this is the only invalidation
+        // Check if cache has expired (5 minutes)
+        if (cache.timestamp && Date.now() - cache.timestamp > POSTS_CACHE_TTL) {
+            console.log('Posts cache expired, invalidating');
+            return null;
+        }
+
+        // Check if blogs have changed (compare URLs)
         const currentBlogs = getBlogs();
         const currentBlogUrls = currentBlogs.map(b => b.url).sort().join(',');
         const cachedBlogUrls = (cache.blogs || []).map(b => b.url).sort().join(',');
