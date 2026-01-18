@@ -17,7 +17,7 @@ class TextToSpeech {
     this.currentChunk = 0;
     this.onEnd = null;
     this.onError = null;
-    this.voice = 'echo'; // OpenAI voices: alloy, echo, fable, onyx, nova, shimmer
+    this.voice = 'onyx'; // OpenAI voices: alloy, echo, fable, onyx, nova, shimmer
     this.audioCache = new Map();
     this.isLoading = false;
     this.abortController = null;
@@ -249,6 +249,7 @@ class ArticleReader {
                 <rect x="6" y="4" width="4" height="16" fill="currentColor"/>
                 <rect x="14" y="4" width="4" height="16" fill="currentColor"/>
               </svg>
+              <span class="tts-spinner" style="display:none"></span>
             </button>
             <div class="tts-speed-menu">
               <button data-rate="0.75">0.75x</button>
@@ -394,22 +395,25 @@ class ArticleReader {
 
     const playIcon = btn.querySelector('.tts-icon-play');
     const pauseIcon = btn.querySelector('.tts-icon-pause');
+    const spinner = btn.querySelector('.tts-spinner');
 
     btn.classList.remove('playing', 'paused', 'loading');
 
+    // Hide all icons first
+    playIcon.style.display = 'none';
+    pauseIcon.style.display = 'none';
+    spinner.style.display = 'none';
+
     if (state === 'loading') {
       btn.classList.add('loading');
-      playIcon.style.display = 'none';
-      pauseIcon.style.display = 'none';
+      spinner.style.display = 'block';
       btn.title = 'Cargando audio...';
     } else if (state === 'playing') {
       btn.classList.add('playing');
-      playIcon.style.display = 'none';
       pauseIcon.style.display = 'block';
       btn.title = 'Pausar';
     } else {
       playIcon.style.display = 'block';
-      pauseIcon.style.display = 'none';
       if (state === 'paused') {
         btn.classList.add('paused');
         btn.title = 'Continuar';

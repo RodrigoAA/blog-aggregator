@@ -793,12 +793,8 @@ body > footer {
 }
 
 .tts-btn {
-  width: 40px !important;
-  height: 40px !important;
-  min-width: 40px;
-  min-height: 40px;
-  max-width: 40px;
-  max-height: 40px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: transparent;
   border: 1px solid var(--border);
@@ -807,10 +803,8 @@ body > footer {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s var(--ease-out), border-color 0.2s var(--ease-out), color 0.2s var(--ease-out);
-  position: relative;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
   flex-shrink: 0;
-  box-sizing: border-box;
 }
 
 .tts-btn:hover {
@@ -835,13 +829,7 @@ body > footer {
   pointer-events: none;
 }
 
-.tts-btn.loading svg {
-  display: none;
-}
-
-.tts-btn.loading::after {
-  content: '';
-  position: absolute;
+.tts-spinner {
   width: 18px;
   height: 18px;
   border: 2px solid var(--accent);
@@ -1790,12 +1778,8 @@ body > footer {
   }
 
   .tts-btn {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px;
-    min-height: 36px;
-    max-width: 36px;
-    max-height: 36px;
+    width: 36px;
+    height: 36px;
   }
 
   .tts-controls {
