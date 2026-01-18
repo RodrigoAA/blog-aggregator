@@ -246,6 +246,8 @@ class TinderMode {
                 showContent();
                 this.updateFlames(flamesElement, cached.recommendation?.score);
                 this.updateReadingTime(readtimeElement, cached.readingTime);
+                // Pre-fetch next article in background
+                this.prefetchNextSummary();
                 return;
             }
 
@@ -258,6 +260,8 @@ class TinderMode {
                 tldrElement.classList.add('tinder-tldr-unavailable');
                 showContent();
                 this.updateFlames(flamesElement, null);
+                // Pre-fetch next article in background
+                this.prefetchNextSummary();
                 return;
             }
 
@@ -270,13 +274,53 @@ class TinderMode {
             this.updateFlames(flamesElement, data.recommendation?.score);
             // Update reading time
             this.updateReadingTime(readtimeElement, data.readingTime);
+
+            // Pre-fetch next article in background
+            this.prefetchNextSummary();
         } catch (error) {
             console.error('Failed to load summary:', error);
             tldrElement.textContent = 'Error al cargar resumen';
             tldrElement.classList.add('tinder-tldr-unavailable');
             showContent();
             this.updateFlames(flamesElement, null);
+            // Pre-fetch next article in background
+            this.prefetchNextSummary();
         }
+    }
+
+    /**
+     * Pre-fetch summary for next article in background.
+     * Only fetches if not already cached.
+     */
+    prefetchNextSummary() {
+        const nextIndex = this.currentIndex + 1;
+        if (nextIndex >= this.posts.length) return;
+
+        const nextPost = this.posts[nextIndex];
+        if (!nextPost?.link) return;
+
+        // Skip if already cached
+        const cached = getCachedSummary(nextPost.link);
+        if (cached?.tldr) {
+            console.log('Next article already cached, skipping prefetch');
+            return;
+        }
+
+        // Fetch in background (don't await)
+        const interests = typeof getUserInterests === 'function' ? getUserInterests() : '';
+        console.log('Pre-fetching summary for next article:', nextPost.title);
+
+        fetchSummary(nextPost.link, interests)
+            .then(data => {
+                if (data?.tldr) {
+                    cacheSummaryLocally(nextPost.link, data);
+                    console.log('Pre-fetched and cached summary for:', nextPost.title);
+                }
+            })
+            .catch(err => {
+                // Silent fail - prefetch is best-effort
+                console.log('Prefetch failed (non-critical):', err.message);
+            });
     }
 
     updateFlames(flamesElement, score) {
