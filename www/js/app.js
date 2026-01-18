@@ -1589,9 +1589,7 @@ async function init(forceRefresh = false) {
         loading.style.display = 'block';
 
         // Load data from cloud
-        // Note: "Syncing data..." message is more visible on mobile due to higher network latency.
-        // On desktop with fast connections, cloud operations complete too quickly to notice.
-        updateStatus('Syncing data...');
+        updateStatus('Actualizando...');
         await loadBlogsFromCloud();
         await loadPostStatusesFromCloud();
         await loadManualArticlesFromCloud();
@@ -1641,13 +1639,9 @@ async function init(forceRefresh = false) {
 
             // Cache miss or force refresh - fetch from network
             if (rssPost.length === 0) {
-                updateStatus('Fetching feeds...');
-
                 // Fetch all feeds in parallel
                 const feedPromises = blogs.map(blog => fetchFeed(blog));
                 const feedResults = await Promise.all(feedPromises);
-
-                updateStatus('Parsing posts...');
 
                 // Parse all feeds and combine posts
                 rssPost = feedResults.flatMap(result => parseFeed(result));
