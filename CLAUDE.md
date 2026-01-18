@@ -35,7 +35,7 @@ OPENAI_API_KEY=sk-...
 
 1. **Frontend (www/)** - Vanilla JS static site hosted on Cloudflare Pages
    - `app.js` - Main application: RSS fetching, post management, cloud sync, blog CRUD
-   - `reader.js` - `ArticleReader` class: full-screen reading modal, AI summaries, text highlighting
+   - `reader.js` - `ArticleReader` class: full-screen reading modal, AI summaries, text highlighting, text-to-speech
    - `auth.js` - Supabase authentication with Google OAuth
    - `twitter-import.js` - Twitter bookmarks import, folder management, classification
    - `tinder-mode.js` - `TinderMode` class: mobile swipe interface for inbox triage
@@ -116,6 +116,33 @@ Main content filters: Inbox, Pending, Favorites, Cleared, Twitter (X icon)
 - **User Menu** - Settings, refresh, import Twitter, logout
 - **Highlights Page** - Dedicated view for all saved highlights
 - **Article Reader** - Full article with AI summary and highlighting
+
+## Text-to-Speech (Article Reader)
+
+Listen to articles using the browser's Web Speech API. Implemented in `www/js/reader.js`.
+
+### Controls
+- **Play button** (header, next to Favorite) - Start/pause narration
+- **Right-click** on button - Open speed menu
+- **Speed options**: 0.75x, 1x, 1.25x, 1.5x, 2x
+
+### Technical Details
+- Uses `SpeechSynthesisUtterance` with Spanish (`es-ES`) locale
+- Text split into chunks (max 5000 chars) for long articles
+- Automatically stops when closing reader or opening new article
+- Gracefully hidden on unsupported browsers (`.tts-controls.unsupported`)
+
+### Classes
+| Class | Purpose |
+|-------|---------|
+| `TextToSpeech` | Core TTS controller with play/pause/rate control |
+| `ArticleReader.toggleTTS()` | Toggle play/pause state |
+| `ArticleReader.setTTSRate()` | Change playback speed |
+
+### Button States
+- **Default**: Transparent with border, play icon
+- **Playing**: Filled accent color, pause icon
+- **Paused**: Accent border, play icon
 
 ## Tinder Mode (Mobile)
 

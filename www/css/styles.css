@@ -761,7 +761,6 @@ body > footer {
   cursor: pointer;
   color: var(--text-secondary);
   font-family: var(--font-body);
-  margin-left: auto;
   margin-right: 16px;
   border-radius: var(--radius-md);
   transition: all 0.2s var(--ease-out);
@@ -776,6 +775,93 @@ body > footer {
 .save-article-btn.saved {
   background: var(--highlight);
   border-color: var(--highlight);
+  color: var(--bg-primary);
+}
+
+/* TTS Controls */
+.tts-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+  margin-left: auto;
+  margin-right: 12px;
+}
+
+.tts-controls.unsupported {
+  display: none;
+}
+
+.tts-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s var(--ease-out);
+}
+
+.tts-btn:hover {
+  background: var(--bg-elevated);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tts-btn.playing {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg-primary);
+}
+
+.tts-btn.paused {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Speed menu */
+.tts-speed-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  display: none;
+  gap: 2px;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.tts-speed-menu.show {
+  display: flex;
+}
+
+.tts-speed-menu button {
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-family: var(--font-body);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tts-speed-menu button:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.tts-speed-menu button.active {
+  background: var(--accent);
   color: var(--bg-primary);
 }
 
@@ -1670,6 +1756,19 @@ body > footer {
 
   .article-header {
     padding: 14px 16px;
+  }
+
+  .tts-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .tts-controls {
+    margin-right: 8px;
+  }
+
+  .tts-speed-menu {
+    right: -40px;
   }
 
   .article-body {

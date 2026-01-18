@@ -3,6 +3,111 @@
  * Kindle-inspired full-screen reading experience
  */
 
+/**
+ * Text-to-Speech Controller
+ * Uses Web Speech API for article narration
+ */
+class TextToSpeech {
+  constructor() {
+    this.synthesis = window.speechSynthesis;
+    this.utterance = null;
+    this.isPlaying = false;
+    this.isPaused = false;
+    this.rate = 1.0;
+    this.chunks = [];
+    this.currentChunk = 0;
+    this.onEnd = null;
+    this.onError = null;
+  }
+
+  speak(text) {
+    this.cancel();
+    this.chunks = this.splitText(text);
+    this.currentChunk = 0;
+    this.speakNextChunk();
+  }
+
+  splitText(text) {
+    // Split by paragraphs, max 5000 chars per chunk
+    const paragraphs = text.split(/\n\n+/);
+    const chunks = [];
+    let current = '';
+
+    for (const p of paragraphs) {
+      if ((current + p).length > 5000) {
+        if (current) chunks.push(current.trim());
+        current = p;
+      } else {
+        current += '\n\n' + p;
+      }
+    }
+    if (current) chunks.push(current.trim());
+    return chunks;
+  }
+
+  speakNextChunk() {
+    if (this.currentChunk >= this.chunks.length) {
+      this.isPlaying = false;
+      this.isPaused = false;
+      this.onEnd?.();
+      return;
+    }
+
+    this.utterance = new SpeechSynthesisUtterance(this.chunks[this.currentChunk]);
+    this.utterance.rate = this.rate;
+    this.utterance.lang = 'es-ES';
+
+    this.utterance.onend = () => {
+      this.currentChunk++;
+      this.speakNextChunk();
+    };
+
+    this.utterance.onerror = (e) => {
+      if (e.error !== 'interrupted') {
+        this.onError?.(e);
+      }
+    };
+
+    this.synthesis.speak(this.utterance);
+    this.isPlaying = true;
+    this.isPaused = false;
+  }
+
+  pause() {
+    this.synthesis.pause();
+    this.isPaused = true;
+    this.isPlaying = false;
+  }
+
+  resume() {
+    this.synthesis.resume();
+    this.isPaused = false;
+    this.isPlaying = true;
+  }
+
+  cancel() {
+    this.synthesis.cancel();
+    this.isPlaying = false;
+    this.isPaused = false;
+    this.currentChunk = 0;
+  }
+
+  setRate(rate) {
+    this.rate = rate;
+    // If playing, restart current chunk with new rate
+    if (this.isPlaying || this.isPaused) {
+      const wasPlaying = this.isPlaying;
+      this.synthesis.cancel();
+      this.speakNextChunk();
+      if (!wasPlaying) this.pause();
+    }
+  }
+
+  isSupported() {
+    return 'speechSynthesis' in window;
+  }
+}
+
 class ArticleReader {
   constructor() {
     this.modal = this.createModal();
@@ -10,9 +115,23 @@ class ArticleReader {
     this.cache = this.loadCache();
     this.highlights = this.loadHighlights();
     this.highlightBtn = null;
+    this.ttsText = '';
     document.body.appendChild(this.modal);
     this.addKeyboardShortcuts();
     this.createHighlightButton();
+    this.initTTS();
+  }
+
+  initTTS() {
+    this.tts = new TextToSpeech();
+    this.tts.onEnd = () => this.updateTTSButton('stopped');
+    this.tts.onError = () => this.updateTTSButton('stopped');
+
+    // Hide TTS controls if not supported
+    if (!this.tts.isSupported()) {
+      const ttsControls = this.modal.querySelector('.tts-controls');
+      if (ttsControls) ttsControls.classList.add('unsupported');
+    }
   }
 
   createModal() {
@@ -24,8 +143,26 @@ class ArticleReader {
         <div class="reading-progress"></div>
         <div class="article-header">
           <button class="close-btn" aria-label="Close article" title="Close (ESC)">×</button>
-          <button class="save-article-btn" aria-label="Save article" title="Save for later">★ Save</button>
           <div class="article-meta"></div>
+          <div class="tts-controls">
+            <button class="tts-btn" aria-label="Escuchar articulo" title="Escuchar articulo">
+              <svg class="tts-icon-play" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>
+              </svg>
+              <svg class="tts-icon-pause" width="18" height="18" viewBox="0 0 24 24" fill="none" style="display:none">
+                <rect x="6" y="4" width="4" height="16" fill="currentColor"/>
+                <rect x="14" y="4" width="4" height="16" fill="currentColor"/>
+              </svg>
+            </button>
+            <div class="tts-speed-menu">
+              <button data-rate="0.75">0.75x</button>
+              <button data-rate="1" class="active">1x</button>
+              <button data-rate="1.25">1.25x</button>
+              <button data-rate="1.5">1.5x</button>
+              <button data-rate="2">2x</button>
+            </div>
+          </div>
+          <button class="save-article-btn" aria-label="Save article" title="Favorito">★ Favorite</button>
         </div>
         <div class="article-body"></div>
         <div class="article-loading">
@@ -57,6 +194,36 @@ class ArticleReader {
     // Save button handler
     modal.querySelector('.save-article-btn').addEventListener('click', () => this.toggleSave());
 
+    // TTS button handler
+    const ttsBtn = modal.querySelector('.tts-btn');
+    ttsBtn.addEventListener('click', () => this.toggleTTS());
+
+    // TTS speed menu toggle (long press or second click while playing)
+    const ttsControls = modal.querySelector('.tts-controls');
+    const speedMenu = modal.querySelector('.tts-speed-menu');
+
+    ttsBtn.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      speedMenu.classList.toggle('show');
+    });
+
+    // Speed button handlers
+    speedMenu.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const rate = parseFloat(btn.dataset.rate);
+        this.setTTSRate(rate);
+        speedMenu.classList.remove('show');
+      });
+    });
+
+    // Close speed menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!ttsControls.contains(e.target)) {
+        speedMenu.classList.remove('show');
+      }
+    });
+
     // Progress indicator
     const contentEl = modal.querySelector('.article-modal-content');
     contentEl.addEventListener('scroll', this.updateProgress.bind(this));
@@ -86,10 +253,72 @@ class ArticleReader {
     }
   }
 
+  // ============================================================
+  // TEXT-TO-SPEECH CONTROLS
+  // ============================================================
+
+  toggleTTS() {
+    if (!this.tts.isSupported()) {
+      return;
+    }
+
+    if (this.tts.isPlaying) {
+      this.tts.pause();
+      this.updateTTSButton('paused');
+    } else if (this.tts.isPaused) {
+      this.tts.resume();
+      this.updateTTSButton('playing');
+    } else {
+      if (this.ttsText) {
+        this.tts.speak(this.ttsText);
+        this.updateTTSButton('playing');
+      }
+    }
+  }
+
+  updateTTSButton(state) {
+    const btn = this.modal.querySelector('.tts-btn');
+    if (!btn) return;
+
+    const playIcon = btn.querySelector('.tts-icon-play');
+    const pauseIcon = btn.querySelector('.tts-icon-pause');
+
+    btn.classList.remove('playing', 'paused');
+
+    if (state === 'playing') {
+      btn.classList.add('playing');
+      playIcon.style.display = 'none';
+      pauseIcon.style.display = 'block';
+      btn.title = 'Pausar';
+    } else {
+      playIcon.style.display = 'block';
+      pauseIcon.style.display = 'none';
+      if (state === 'paused') {
+        btn.classList.add('paused');
+        btn.title = 'Continuar';
+      } else {
+        btn.title = 'Escuchar articulo';
+      }
+    }
+  }
+
+  setTTSRate(rate) {
+    this.tts.setRate(rate);
+    // Update active button in speed menu
+    this.modal.querySelectorAll('.tts-speed-menu button').forEach(btn => {
+      btn.classList.toggle('active', parseFloat(btn.dataset.rate) === rate);
+    });
+  }
+
   async open(postUrl, postTitle, blogName) {
     this.currentUrl = postUrl;
     this.modal.classList.add('active');
     document.body.style.overflow = 'hidden';
+
+    // Reset TTS state for new article
+    this.tts?.cancel();
+    this.ttsText = '';
+    this.updateTTSButton('stopped');
 
     // Reset scroll position
     this.modal.querySelector('.article-modal-content').scrollTop = 0;
@@ -198,6 +427,13 @@ class ArticleReader {
     // Insert summary if available (already loaded)
     if (summaryData) {
       this.insertSummarySection(summaryData.tldr, summaryData.keyPoints, summaryData.recommendation);
+    }
+
+    // Prepare text for TTS
+    const titleEl = bodyEl.querySelector('.article-title');
+    const contentEl = bodyEl.querySelector('.article-content');
+    if (titleEl && contentEl) {
+      this.ttsText = titleEl.innerText + '\n\n' + contentEl.innerText;
     }
 
     // Update save button state
@@ -531,6 +767,10 @@ class ArticleReader {
   }
 
   close() {
+    // Stop TTS when closing
+    this.tts?.cancel();
+    this.updateTTSButton('stopped');
+
     this.modal.classList.remove('active');
     document.body.style.overflow = '';
     this.currentUrl = null;
