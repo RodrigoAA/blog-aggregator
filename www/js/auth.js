@@ -130,13 +130,6 @@ function updateAuthUI() {
         return;
     }
 
-    // Enable custom pull-to-refresh only when logged in
-    if (currentUser) {
-        document.documentElement.classList.add('pull-refresh-custom');
-    } else {
-        document.documentElement.classList.remove('pull-refresh-custom');
-    }
-
     if (currentUser) {
         // User is signed in - show avatar in header button
         const avatarUrl = currentUser.user_metadata?.avatar_url || '';

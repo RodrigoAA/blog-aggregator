@@ -1021,8 +1021,8 @@ function displayPosts(posts) {
             },
             favorite: {
                 icon: `<svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M60 95 L30 65 C15 50 25 25 60 45 C95 25 105 50 90 65 Z"/>
-                    <path d="M45 55 L55 65 L75 45" stroke-width="2"/>
+                    <path d="M60 35 C50 25 30 25 30 45 C30 65 60 85 60 85 C60 85 90 65 90 45 C90 25 70 25 60 35"/>
+                    <circle cx="45" cy="45" r="4" fill="currentColor" opacity="0.3"/>
                 </svg>`,
                 title: 'Sin favoritos',
                 message: 'Marca articulos con la estrella para guardarlos en favoritos.'
@@ -1987,30 +1987,9 @@ function deleteBlog(index) {
 
 // Refresh posts - checks for new posts without losing current view
 function refreshPosts() {
-    const refreshBtn = document.getElementById('refresh-btn');
-
-    // Add spinning animation to button if it exists
-    if (refreshBtn) {
-        refreshBtn.style.animation = 'spin 1s linear infinite';
-    }
-
     console.log('Checking for new posts...');
-    checkForNewPosts().then(() => {
-        // Remove animation when done
-        setTimeout(() => {
-            if (refreshBtn) {
-                refreshBtn.style.animation = '';
-            }
-            // Hide pull indicator (mobile)
-            hidePullIndicator();
-        }, 500);
-    }).catch((error) => {
+    checkForNewPosts().catch((error) => {
         console.error('Error checking for new posts:', error);
-        if (refreshBtn) {
-            refreshBtn.style.animation = '';
-        }
-        // Hide pull indicator on error too
-        hidePullIndicator();
     });
 }
 
@@ -2475,112 +2454,6 @@ function attachHighlightsPageHandlers() {
     });
 }
 
-// ============================================================
-// PULL-TO-REFRESH (Mobile)
-// ============================================================
-
-let pullStartY = 0;
-let isPulling = false;
-const PULL_THRESHOLD = 80;
-
-function showPullIndicator(distance) {
-    const indicator = document.getElementById('pull-indicator');
-    if (!indicator) return;
-
-    // Show indicator proportionally to pull distance
-    const progress = Math.min(distance / PULL_THRESHOLD, 1);
-
-    // Move indicator down as user pulls (Twitter-style)
-    indicator.style.transform = `translateY(${-60 + (progress * 60)}px)`;
-
-    // Update arc progress (stroke-dashoffset: 62.83 = empty, 0 = full)
-    const arc = indicator.querySelector('.pull-spinner-arc');
-    if (arc) {
-        const circumference = 62.83;
-        const offset = circumference * (1 - progress);
-        arc.style.strokeDashoffset = offset;
-    }
-
-    // Show "ready" state when threshold is reached
-    if (progress >= 1) {
-        indicator.classList.add('ready');
-    } else {
-        indicator.classList.remove('ready');
-    }
-}
-
-function hidePullIndicator() {
-    const indicator = document.getElementById('pull-indicator');
-    if (!indicator) return;
-
-    indicator.classList.remove('loading', 'ready');
-    indicator.style.transform = 'translateY(-60px)';
-
-    // Reset arc
-    const arc = indicator.querySelector('.pull-spinner-arc');
-    if (arc) {
-        arc.style.strokeDashoffset = 62.83;
-    }
-}
-
-function showPullIndicatorLoading() {
-    const indicator = document.getElementById('pull-indicator');
-    if (!indicator) return;
-
-    indicator.classList.add('loading');
-    indicator.style.transform = 'translateY(0)';
-}
-
-function initPullToRefresh() {
-    // Only on mobile
-    if (window.innerWidth > 768) return;
-
-    const postsContainer = document.getElementById('posts');
-    if (!postsContainer) return;
-
-    postsContainer.addEventListener('touchstart', (e) => {
-        // Only activate when scrolled to top
-        if (window.scrollY === 0) {
-            pullStartY = e.touches[0].clientY;
-            isPulling = true;
-        }
-    }, { passive: true });
-
-    postsContainer.addEventListener('touchmove', (e) => {
-        if (!isPulling) return;
-
-        const pullDistance = e.touches[0].clientY - pullStartY;
-
-        // Only show indicator when pulling down at the top
-        if (pullDistance > 0 && window.scrollY === 0) {
-            showPullIndicator(pullDistance);
-        }
-    }, { passive: true });
-
-    postsContainer.addEventListener('touchend', (e) => {
-        if (!isPulling) return;
-        isPulling = false;
-
-        const pullDistance = e.changedTouches[0].clientY - pullStartY;
-
-        // Trigger refresh if pulled past threshold
-        if (pullDistance > PULL_THRESHOLD && window.scrollY === 0) {
-            showPullIndicatorLoading();
-            refreshPosts();
-        } else {
-            hidePullIndicator();
-        }
-    });
-
-    // Also listen on document for when touch ends outside container
-    document.addEventListener('touchend', () => {
-        if (isPulling) {
-            isPulling = false;
-            hidePullIndicator();
-        }
-    });
-}
-
 // Offline detection
 function initOfflineDetection() {
     const banner = document.getElementById('offline-banner');
@@ -2605,9 +2478,6 @@ function initOfflineDetection() {
 document.addEventListener('DOMContentLoaded', async () => {
     // Create new posts banner
     createNewPostsBanner();
-
-    // Initialize pull-to-refresh for mobile
-    initPullToRefresh();
 
     // Initialize offline detection
     initOfflineDetection();

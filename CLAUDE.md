@@ -189,12 +189,6 @@ Banner appears when network is disconnected:
 - Shows "Sin conexion. Mostrando contenido guardado."
 - Implemented in `initOfflineDetection()` in `app.js`
 
-### Pull-to-Refresh (Mobile)
-Twitter-style pull indicator with progress arc:
-- Threshold: 80px to trigger refresh
-- Shows "Soltar para refrescar" text when ready
-- Spinner animates while loading
-
 ### Article Reader Retry
 Error state includes retry button:
 - Retries article fetch with loading spinner
