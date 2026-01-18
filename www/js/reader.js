@@ -261,7 +261,7 @@ class ArticleReader {
         <div class="article-body"></div>
         <div class="article-loading">
           <div class="loading-spinner"></div>
-          <p class="loading-text">Loading article and generating summary...</p>
+          <p class="loading-text">Cargando articulo...</p>
         </div>
         <div class="article-error" style="display: none;">
           <h2>No se pudo cargar el articulo</h2>
@@ -469,8 +469,7 @@ class ArticleReader {
       }
     }
 
-    // Wait for summary to complete (article is ready, now wait for AI)
-    this.updateLoadingText('Generating AI summary...');
+    // Wait for summary to complete
     let summaryData = null;
     try {
       summaryData = await summaryPromise;
@@ -481,13 +480,6 @@ class ArticleReader {
 
     // Now display everything together
     this.displayArticle(article, postTitle, blogName, summaryData);
-  }
-
-  updateLoadingText(text) {
-    const loadingText = this.modal.querySelector('.loading-text');
-    if (loadingText) {
-      loadingText.textContent = text;
-    }
   }
 
   displayArticle(article, postTitle, blogName, summaryData) {
