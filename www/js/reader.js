@@ -137,11 +137,13 @@ class TextToSpeech {
 
     } catch (error) {
       this.isLoading = false;
+      this.isPlaying = false;
       if (error.name === 'AbortError') {
         return; // Cancelled, ignore
       }
       console.error('TTS error:', error);
       this.onError?.(error);
+      throw error; // Re-throw so caller can handle it
     }
   }
 
@@ -370,9 +372,17 @@ class ArticleReader {
     } else {
       if (this.ttsText) {
         this.updateTTSButton('loading');
-        await this.tts.speak(this.ttsText);
-        if (this.tts.isPlaying) {
-          this.updateTTSButton('playing');
+        try {
+          await this.tts.speak(this.ttsText);
+          if (this.tts.isPlaying) {
+            this.updateTTSButton('playing');
+          } else {
+            // Audio failed to play
+            this.updateTTSButton('stopped');
+          }
+        } catch (error) {
+          console.error('TTS failed:', error);
+          this.updateTTSButton('stopped');
         }
       }
     }
