@@ -225,8 +225,8 @@ class ArticleReader {
 
     // Hide TTS controls if not supported
     if (!this.tts.isSupported()) {
-      const ttsControls = this.modal.querySelector('.tts-controls');
-      if (ttsControls) ttsControls.classList.add('unsupported');
+      const ttsFab = this.modal.querySelector('.tts-fab');
+      if (ttsFab) ttsFab.classList.add('unsupported');
     }
   }
 
@@ -240,26 +240,26 @@ class ArticleReader {
         <div class="article-header">
           <button class="close-btn" aria-label="Close article" title="Close (ESC)">×</button>
           <div class="article-meta"></div>
-          <div class="tts-controls">
-            <button class="tts-btn" aria-label="Escuchar articulo" title="Escuchar articulo">
-              <svg class="tts-icon-play" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>
-              </svg>
-              <svg class="tts-icon-pause" width="18" height="18" viewBox="0 0 24 24" fill="none" style="display:none">
-                <rect x="6" y="4" width="4" height="16" fill="currentColor"/>
-                <rect x="14" y="4" width="4" height="16" fill="currentColor"/>
-              </svg>
-              <span class="tts-spinner" style="display:none"></span>
-            </button>
-            <div class="tts-speed-menu">
-              <button data-rate="0.75">0.75x</button>
-              <button data-rate="1" class="active">1x</button>
-              <button data-rate="1.25">1.25x</button>
-              <button data-rate="1.5">1.5x</button>
-              <button data-rate="2">2x</button>
-            </div>
-          </div>
           <button class="save-article-btn" aria-label="Save article" title="Favorito">★ Favorite</button>
+        </div>
+        <div class="tts-fab">
+          <button class="tts-btn" aria-label="Escuchar articulo" title="Escuchar articulo">
+            <svg class="tts-icon-play" width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>
+            </svg>
+            <svg class="tts-icon-pause" width="20" height="20" viewBox="0 0 24 24" fill="none" style="display:none">
+              <rect x="6" y="4" width="4" height="16" fill="currentColor"/>
+              <rect x="14" y="4" width="4" height="16" fill="currentColor"/>
+            </svg>
+            <span class="tts-spinner" style="display:none"></span>
+          </button>
+          <div class="tts-speed-menu">
+            <button data-rate="0.75">0.75x</button>
+            <button data-rate="1" class="active">1x</button>
+            <button data-rate="1.25">1.25x</button>
+            <button data-rate="1.5">1.5x</button>
+            <button data-rate="2">2x</button>
+          </div>
         </div>
         <div class="article-body"></div>
         <div class="article-loading">
@@ -296,7 +296,7 @@ class ArticleReader {
     ttsBtn.addEventListener('click', () => this.toggleTTS());
 
     // TTS speed menu toggle (long press or second click while playing)
-    const ttsControls = modal.querySelector('.tts-controls');
+    const ttsFab = modal.querySelector('.tts-fab');
     const speedMenu = modal.querySelector('.tts-speed-menu');
 
     ttsBtn.addEventListener('contextmenu', (e) => {
@@ -316,7 +316,7 @@ class ArticleReader {
 
     // Close speed menu when clicking outside
     document.addEventListener('click', (e) => {
-      if (!ttsControls.contains(e.target)) {
+      if (!ttsFab.contains(e.target)) {
         speedMenu.classList.remove('show');
       }
     });
