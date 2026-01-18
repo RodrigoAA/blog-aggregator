@@ -17,7 +17,7 @@ class TextToSpeech {
     this.currentChunk = 0;
     this.onEnd = null;
     this.onError = null;
-    this.voice = 'alloy'; // OpenAI voices: alloy, echo, fable, onyx, nova, shimmer
+    this.voice = 'fable'; // OpenAI voices: alloy, echo, fable, onyx, nova, shimmer
     this.audioCache = new Map();
     this.isLoading = false;
     this.abortController = null;
