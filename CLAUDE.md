@@ -62,6 +62,7 @@ Frontend (Cloudflare) ──> Backend (Render) ──> OpenAI (summaries)
 - **Offline-first**: All data cached in localStorage, cloud sync happens when online
 - **Cloud sync resilience**: If Supabase sync fails, local data is preserved (no data loss)
 - **Skip-load flags**: After local saves, `skipNextCloudLoad` prevents race conditions with cloud
+- **Posts cache TTL**: RSS posts cached for 5 minutes (`POSTS_CACHE_TTL`), enabling pull-to-refresh to fetch new posts
 
 ### API Endpoints (backend)
 
