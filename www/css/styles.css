@@ -795,6 +795,8 @@ body > footer {
 .tts-btn {
   width: 40px;
   height: 40px;
+  min-width: 40px;
+  min-height: 40px;
   border-radius: 50%;
   background: transparent;
   border: 1px solid var(--border);
@@ -803,7 +805,10 @@ body > footer {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s var(--ease-out);
+  transition: background 0.2s var(--ease-out), border-color 0.2s var(--ease-out), color 0.2s var(--ease-out);
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
 .tts-btn:hover {
@@ -825,19 +830,18 @@ body > footer {
 
 .tts-btn.loading {
   border-color: var(--accent);
-  color: var(--accent);
   pointer-events: none;
-  position: relative;
+}
+
+.tts-btn.loading svg {
+  display: none;
 }
 
 .tts-btn.loading::after {
   content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;
   width: 18px;
   height: 18px;
-  margin: -9px 0 0 -9px;
   border: 2px solid var(--accent);
   border-top-color: transparent;
   border-radius: 50%;
