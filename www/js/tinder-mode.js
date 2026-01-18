@@ -289,38 +289,42 @@ class TinderMode {
     }
 
     /**
-     * Pre-fetch summary for next article in background.
+     * Pre-fetch summaries for next 2 articles in background.
      * Only fetches if not already cached.
      */
     prefetchNextSummary() {
-        const nextIndex = this.currentIndex + 1;
-        if (nextIndex >= this.posts.length) return;
-
-        const nextPost = this.posts[nextIndex];
-        if (!nextPost?.link) return;
-
-        // Skip if already cached
-        const cached = getCachedSummary(nextPost.link);
-        if (cached?.tldr) {
-            console.log('Next article already cached, skipping prefetch');
-            return;
-        }
-
-        // Fetch in background (don't await)
         const interests = typeof getUserInterests === 'function' ? getUserInterests() : '';
-        console.log('Pre-fetching summary for next article:', nextPost.title);
 
-        fetchSummary(nextPost.link, interests)
-            .then(data => {
-                if (data?.tldr) {
-                    cacheSummaryLocally(nextPost.link, data);
-                    console.log('Pre-fetched and cached summary for:', nextPost.title);
-                }
-            })
-            .catch(err => {
-                // Silent fail - prefetch is best-effort
-                console.log('Prefetch failed (non-critical):', err.message);
-            });
+        // Pre-fetch next 2 articles
+        for (let offset = 1; offset <= 2; offset++) {
+            const index = this.currentIndex + offset;
+            if (index >= this.posts.length) continue;
+
+            const post = this.posts[index];
+            if (!post?.link) continue;
+
+            // Skip if already cached
+            const cached = getCachedSummary(post.link);
+            if (cached?.tldr) {
+                console.log(`Article +${offset} already cached, skipping prefetch`);
+                continue;
+            }
+
+            // Fetch in background (don't await)
+            console.log(`Pre-fetching summary for article +${offset}:`, post.title);
+
+            fetchSummary(post.link, interests)
+                .then(data => {
+                    if (data?.tldr) {
+                        cacheSummaryLocally(post.link, data);
+                        console.log('Pre-fetched and cached summary for:', post.title);
+                    }
+                })
+                .catch(err => {
+                    // Silent fail - prefetch is best-effort
+                    console.log('Prefetch failed (non-critical):', err.message);
+                });
+        }
     }
 
     updateFlames(flamesElement, score) {
