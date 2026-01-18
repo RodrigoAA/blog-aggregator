@@ -748,6 +748,159 @@ function confirmDeleteFolder(slug, name) {
     }
 }
 
+// ============================================================
+// AUTO-CLASSIFICATION WITH AI
+// ============================================================
+
+/**
+ * Chunk array into smaller batches
+ */
+function chunkArray(arr, size) {
+    const chunks = [];
+    for (let i = 0; i < arr.length; i += size) {
+        chunks.push(arr.slice(i, i + size));
+    }
+    return chunks;
+}
+
+/**
+ * Show toast notification
+ */
+function showClassifyToast(message, duration = 3000) {
+    // Remove existing toast
+    const existingToast = document.querySelector('.classify-toast');
+    if (existingToast) existingToast.remove();
+
+    const toast = document.createElement('div');
+    toast.className = 'classify-toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    requestAnimationFrame(() => {
+        toast.classList.add('visible');
+    });
+
+    // Auto-remove
+    setTimeout(() => {
+        toast.classList.remove('visible');
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+/**
+ * Auto-classify uncategorized Twitter bookmarks using AI
+ */
+async function classifyTwitterBookmarks() {
+    const btn = document.getElementById('classify-tweets-btn');
+    if (!btn || btn.classList.contains('loading')) return;
+
+    // Get uncategorized tweets
+    const allTweets = getTwitterBookmarks();
+    const uncategorized = allTweets.filter(t => !t.folder);
+
+    if (uncategorized.length === 0) {
+        showClassifyToast('No hay tweets sin clasificar');
+        return;
+    }
+
+    // Get folders
+    const folders = getTwitterFolders();
+    if (folders.length === 0) {
+        showClassifyToast('Primero crea carpetas para clasificar');
+        return;
+    }
+
+    // Limit to 100 tweets max
+    const tweetsToClassify = uncategorized.slice(0, 100);
+    const folderSlugs = folders.map(f => f.slug);
+    const interests = typeof getUserInterests === 'function' ? getUserInterests() : '';
+
+    // Update button to loading state
+    btn.classList.add('loading');
+    const textSpan = btn.querySelector('.classify-text');
+    const originalText = textSpan.textContent;
+
+    // Process in batches
+    const batches = chunkArray(tweetsToClassify, 10);
+    let classified = 0;
+    let errors = 0;
+
+    try {
+        for (let i = 0; i < batches.length; i++) {
+            const batch = batches[i];
+
+            // Update progress
+            const progress = Math.min(classified + batch.length, tweetsToClassify.length);
+            textSpan.textContent = `Clasificando... ${progress}/${tweetsToClassify.length}`;
+
+            // Prepare request data
+            const requestTweets = batch.map(t => ({
+                url: t.link,
+                text: t.description || t.title || '',
+                author_handle: (t.authorHandle || '').replace('@', '')
+            }));
+
+            try {
+                const response = await fetch(`${window.API_BASE_URL}/api/classify-tweets`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tweets: requestTweets,
+                        folders: folderSlugs,
+                        interests: interests
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Classification API error:', errorData);
+                    errors++;
+                    continue;
+                }
+
+                const data = await response.json();
+
+                // Apply classifications
+                for (const c of data.classifications) {
+                    if (c.folder && folderSlugs.includes(c.folder)) {
+                        setTweetFolder(c.url, c.folder);
+                        classified++;
+                    }
+                }
+            } catch (fetchError) {
+                console.error('Fetch error:', fetchError);
+                errors++;
+            }
+
+            // Small delay between batches to avoid rate limiting
+            if (i < batches.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+
+        // Show result
+        if (classified > 0) {
+            showClassifyToast(`Clasificados ${classified} tweets`, 4000);
+        } else if (errors > 0) {
+            showClassifyToast('Error al clasificar. Intenta de nuevo.', 4000);
+        } else {
+            showClassifyToast('Ningun tweet fue clasificado', 3000);
+        }
+
+        // Refresh view
+        displayTwitterPosts();
+
+    } catch (error) {
+        console.error('Classification error:', error);
+        showClassifyToast('Error al clasificar tweets', 4000);
+    } finally {
+        // Reset button
+        btn.classList.remove('loading');
+        textSpan.textContent = originalText;
+    }
+}
+
 // Initialize Twitter count on page load
 document.addEventListener('DOMContentLoaded', () => {
     // Small delay to ensure manual articles are loaded

@@ -71,6 +71,7 @@ Frontend (Cloudflare) ──> Backend (Render) ──> OpenAI (summaries)
 | `GET /api/article?url=` | Extract article content via Readability |
 | `GET /api/discover-feed?url=` | Auto-discover RSS feed for a website |
 | `GET /api/summary?url=&interests=` | Generate AI summary with OpenAI |
+| `POST /api/classify-tweets` | Auto-classify tweets into folders with AI |
 
 ### Supabase Tables
 
@@ -95,6 +96,64 @@ Posts flow through four states:
 - Displayed in dedicated Twitter tab (not mixed with RSS)
 - Organized into custom folders (user-created)
 - Open directly in Twitter (no reader mode)
+- Can be auto-classified into folders using AI (see below)
+
+## Twitter Auto-Classification
+
+AI-powered feature to automatically classify uncategorized Twitter bookmarks into existing folders.
+
+### User Flow
+1. User clicks "Auto-clasificar" button in Twitter section header
+2. Button shows progress: "Clasificando... 10/50"
+3. AI processes tweets in batches of 10
+4. Classifications are applied automatically to local + cloud
+5. Toast notification shows result: "Clasificados 45 tweets"
+
+### Visibility Conditions
+The "Auto-clasificar" button only appears when:
+- There are **uncategorized tweets** (tweets without a folder)
+- At least **one folder exists**
+
+### Technical Implementation
+
+**Backend endpoint:** `POST /api/classify-tweets`
+
+Request:
+```javascript
+{
+  tweets: [{ url, text, author_handle }],  // max 10 per batch
+  folders: ["strategy", "product", ...],    // existing folder slugs
+  interests: "AI, startups..."              // optional, from user settings
+}
+```
+
+Response:
+```javascript
+{
+  classifications: [
+    { url, folder, confidence: "high|medium|low", reason: "brief reason" }
+  ]
+}
+```
+
+**Frontend function:** `classifyTwitterBookmarks()` in `twitter-import.js`
+- Processes in batches of 10, max 100 tweets per execution
+- Uses `setTweetFolder()` to apply each classification
+- Shows progress in button text during processing
+- Displays toast notification on completion
+
+### Files
+| File | Changes |
+|------|---------|
+| `backend/server.js` | `POST /api/classify-tweets` endpoint (lines 493-598) |
+| `www/js/twitter-import.js` | `classifyTwitterBookmarks()`, `showClassifyToast()`, `chunkArray()` |
+| `www/js/app.js` | Button HTML in `displayTwitterPosts()` header |
+| `www/css/styles.css` | `.twitter-classify-btn`, `.classify-toast` styles |
+
+### Cost Estimate
+- Model: gpt-4o-mini
+- ~$0.0002 per batch of 10 tweets
+- 100 tweets = ~$0.002 (0.2 cents)
 
 **Highlights** are text passages saved while reading:
 - Stored in `highlights` table (keyed by `article_url`)

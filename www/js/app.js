@@ -1274,7 +1274,8 @@ function displayTwitterPosts() {
     // Count posts per folder
     const uncategorizedCount = twitterPosts.filter(p => !p.folder).length;
 
-    // Add header with folders and delete all button
+    // Add header with folders, auto-classify button, and delete all button
+    const showClassifyBtn = uncategorizedCount > 0 && folders.length > 0;
     const headerHtml = `
         <div class="twitter-section-header">
             <div class="twitter-folders">
@@ -1297,9 +1298,19 @@ function displayTwitterPosts() {
                     </svg>
                 </button>
             </div>
-            <button class="twitter-delete-all-btn" onclick="deleteAllTwitterBookmarks()">
-                Delete All
-            </button>
+            <div class="twitter-header-actions">
+                ${showClassifyBtn ? `
+                <button id="classify-tweets-btn" class="twitter-classify-btn" onclick="classifyTwitterBookmarks()" title="Auto-clasificar tweets sin carpeta">
+                    <svg class="classify-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8L19 13M17.8 6.2L19 5M3 21l9-9M12.2 6.2L11 5"/>
+                    </svg>
+                    <span class="classify-text">Auto-clasificar</span>
+                </button>
+                ` : ''}
+                <button class="twitter-delete-all-btn" onclick="deleteAllTwitterBookmarks()">
+                    Delete All
+                </button>
+            </div>
         </div>
     `;
 

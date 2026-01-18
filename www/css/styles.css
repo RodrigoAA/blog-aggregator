@@ -2401,6 +2401,76 @@ body > footer {
   color: white;
 }
 
+/* Twitter header actions (classify + delete) */
+.twitter-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Auto-classify button */
+.twitter-classify-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 6px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.twitter-classify-btn:hover {
+  background: var(--accent);
+  color: var(--bg-primary);
+}
+
+.twitter-classify-btn .classify-icon {
+  flex-shrink: 0;
+}
+
+.twitter-classify-btn.loading {
+  pointer-events: none;
+  opacity: 0.9;
+  background: var(--accent);
+  color: var(--bg-primary);
+}
+
+.twitter-classify-btn.loading .classify-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Classify toast notification */
+.classify-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  font-size: 0.95rem;
+  z-index: 10000;
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.classify-toast.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
 /* Twitter folders */
 .twitter-section-header {
   flex-wrap: wrap;

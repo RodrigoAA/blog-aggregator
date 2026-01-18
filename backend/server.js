@@ -490,6 +490,113 @@ Provide 3-5 key points. Be concise and informative.`;
   }
 });
 
+// Twitter bookmarks classification endpoint (AI-powered)
+app.post('/api/classify-tweets', async (req, res) => {
+  const { tweets, folders, interests } = req.body;
+
+  // Validation
+  if (!tweets || !Array.isArray(tweets) || tweets.length === 0) {
+    return res.status(400).json({
+      error: 'Missing parameter',
+      message: 'tweets array is required'
+    });
+  }
+
+  if (!folders || !Array.isArray(folders) || folders.length === 0) {
+    return res.status(400).json({
+      error: 'Missing parameter',
+      message: 'folders array is required'
+    });
+  }
+
+  // Limit batch size
+  if (tweets.length > 10) {
+    return res.status(400).json({
+      error: 'Batch too large',
+      message: 'Maximum 10 tweets per request'
+    });
+  }
+
+  try {
+    console.log(`Classifying ${tweets.length} tweets into ${folders.length} folders`);
+
+    // Build the tweet list for the prompt
+    const tweetList = tweets.map((t, i) =>
+      `[${i + 1}] @${t.author_handle || 'unknown'}: ${(t.text || '').substring(0, 300)}`
+    ).join('\n\n');
+
+    const folderList = folders.join(', ');
+
+    const systemPrompt = `You are a tweet classifier. Classify each tweet into ONE of the provided folders based on its topic and content.
+
+Available folders: ${folderList}
+
+Rules:
+- Only use folders from the list above
+- If a tweet doesn't fit any folder well, use null
+- Provide a confidence level: "high" (clearly fits), "medium" (probably fits), "low" (weak match)
+- Keep reasons brief (<50 characters)
+${interests ? `- The user is interested in: ${interests}. Consider this when classifying ambiguous tweets.` : ''}
+
+Respond with JSON array:
+[
+  { "index": 1, "folder": "folder-slug-or-null", "confidence": "high|medium|low", "reason": "brief reason" }
+]`;
+
+    const userPrompt = `Classify these tweets:\n\n${tweetList}`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      response_format: { type: 'json_object' },
+      max_tokens: 1000,
+      temperature: 0.3
+    });
+
+    const result = JSON.parse(completion.choices[0].message.content);
+
+    // Handle both array response and object with classifications property
+    const classifications = Array.isArray(result) ? result : (result.classifications || []);
+
+    // Map back to tweet URLs
+    const mappedClassifications = classifications.map(c => ({
+      url: tweets[c.index - 1]?.url || null,
+      folder: c.folder,
+      confidence: c.confidence,
+      reason: c.reason
+    })).filter(c => c.url);
+
+    console.log(`Classified ${mappedClassifications.length} tweets`);
+
+    res.json({ classifications: mappedClassifications });
+
+  } catch (error) {
+    console.error('Tweet classification error:', error.message);
+
+    if (error.response?.status === 401) {
+      return res.status(500).json({
+        error: 'API error',
+        message: 'OpenAI API key is invalid or missing'
+      });
+    }
+
+    if (error.response?.status === 429) {
+      return res.status(429).json({
+        error: 'Rate limited',
+        message: 'Too many requests. Please try again later.'
+      });
+    }
+
+    res.status(500).json({
+      error: 'Classification failed',
+      message: error.message
+    });
+  }
+});
+
 // Catch-all for 404
 app.use((req, res) => {
   res.status(404).json({
@@ -514,5 +621,6 @@ app.listen(PORT, () => {
   console.log(`  GET /api/article?url=<article-url> - Extract article content`);
   console.log(`  GET /api/discover-feed?url=<website-url> - Discover RSS feed`);
   console.log(`  GET /api/summary?url=<article-url> - Generate AI summary`);
+  console.log(`  POST /api/classify-tweets - Classify tweets into folders`);
   console.log(`===========================================`);
 });
