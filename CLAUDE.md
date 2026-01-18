@@ -72,6 +72,7 @@ Frontend (Cloudflare) ──> Backend (Render) ──> OpenAI (summaries)
 | `GET /api/article?url=` | Extract article content via Readability |
 | `GET /api/discover-feed?url=` | Auto-discover RSS feed for a website |
 | `GET /api/summary?url=&interests=` | Generate AI summary with OpenAI |
+| `POST /api/tts` | Text-to-speech via OpenAI TTS API |
 
 ### Supabase Tables
 
@@ -120,7 +121,7 @@ Main content filters: Inbox, Pending, Favorites, Cleared, Twitter (X icon)
 
 ## Text-to-Speech (Article Reader)
 
-Listen to articles using the browser's Web Speech API. Implemented in `www/js/reader.js`.
+Listen to articles using OpenAI's TTS API for natural-sounding narration. Implemented in `www/js/reader.js` (frontend) and `backend/server.js` (API).
 
 ### Controls
 - **Play button** (header, next to Favorite) - Start/pause narration
@@ -128,20 +129,31 @@ Listen to articles using the browser's Web Speech API. Implemented in `www/js/re
 - **Speed options**: 0.75x, 1x, 1.25x, 1.5x, 2x
 
 ### Technical Details
-- Uses `SpeechSynthesisUtterance` with Spanish (`es-ES`) locale
-- Text split into chunks (max 5000 chars) for long articles
-- Automatically stops when closing reader or opening new article
-- Gracefully hidden on unsupported browsers (`.tts-controls.unsupported`)
+- Uses OpenAI TTS API (`tts-1` model) via backend endpoint `POST /api/tts`
+- Default voice: `nova` (natural Spanish-friendly voice)
+- Text split into chunks (max 3800 chars to stay under API limit)
+- Audio cached in memory (`Map`) to avoid re-fetching
+- Pre-fetches next chunk in background for seamless playback
+- Cost: ~$0.015 per 1000 characters
+
+### API Endpoint
+```
+POST /api/tts
+Body: { text: string, voice?: string }
+Response: audio/mpeg
+```
+Available voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`
 
 ### Classes
 | Class | Purpose |
 |-------|---------|
-| `TextToSpeech` | Core TTS controller with play/pause/rate control |
+| `TextToSpeech` | Core TTS controller with OpenAI integration |
 | `ArticleReader.toggleTTS()` | Toggle play/pause state |
 | `ArticleReader.setTTSRate()` | Change playback speed |
 
 ### Button States
 - **Default**: Transparent with border, play icon
+- **Loading**: Spinning loader, fetching audio from API
 - **Playing**: Filled accent color, pause icon
 - **Paused**: Accent border, play icon
 
@@ -159,20 +171,6 @@ Swipe-based interface for triaging Inbox posts on mobile devices (<768px). Imple
 - **Swipe right** → Save for later (marked as `pending`)
 - **Tap on card** → Open article in reader (hides Tinder Mode, shows reader modal)
 - **Tap X/clock buttons** → Alternative to swipe gestures
-
-### PENDING BUG (2025-01-16)
-**Issue:** When tapping a card to open the article in reader, pressing X to close the reader returns to the main dashboard instead of Tinder Mode.
-
-**Current implementation:** `openArticle()` in `tinder-mode.js` hides the container and adds event listeners on the reader's close button, overlay, and ESC key to restore Tinder Mode. The listeners are not triggering correctly.
-
-**Attempted solutions:**
-1. MutationObserver watching for `active` class removal on `#article-modal` - didn't work
-2. Direct event listeners on `.close-btn`, `.article-modal-overlay`, and ESC key - didn't work
-
-**Next steps to try:**
-- Debug why the event listeners aren't firing (check if elements exist, timing issues)
-- Consider modifying `reader.js` to emit a custom event on close
-- Or add a "return to Tinder Mode" button in the reader when opened from Tinder Mode
 
 ### Card Content
 Each card displays:

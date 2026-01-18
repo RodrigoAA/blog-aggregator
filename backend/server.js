@@ -490,6 +490,74 @@ Provide 3-5 key points. Be concise and informative.`;
   }
 });
 
+// Text-to-Speech endpoint (OpenAI TTS)
+app.post('/api/tts', async (req, res) => {
+  const { text, voice = 'nova' } = req.body;
+
+  if (!text) {
+    return res.status(400).json({
+      error: 'Missing parameter',
+      message: 'Text parameter required'
+    });
+  }
+
+  // OpenAI TTS has a 4096 character limit
+  if (text.length > 4096) {
+    return res.status(400).json({
+      error: 'Text too long',
+      message: 'Text must be under 4096 characters. Split into chunks on the client.'
+    });
+  }
+
+  // Validate voice
+  const validVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+  if (!validVoices.includes(voice)) {
+    return res.status(400).json({
+      error: 'Invalid voice',
+      message: `Voice must be one of: ${validVoices.join(', ')}`
+    });
+  }
+
+  try {
+    console.log(`Generating TTS audio (${text.length} chars, voice: ${voice})`);
+
+    const mp3Response = await openai.audio.speech.create({
+      model: 'tts-1',
+      voice: voice,
+      input: text,
+      response_format: 'mp3'
+    });
+
+    // Get the audio as a buffer
+    const buffer = Buffer.from(await mp3Response.arrayBuffer());
+
+    console.log(`TTS audio generated: ${buffer.length} bytes`);
+
+    // Return as audio file
+    res.set({
+      'Content-Type': 'audio/mpeg',
+      'Content-Length': buffer.length,
+      'Cache-Control': 'public, max-age=86400' // Cache for 24 hours
+    });
+    res.send(buffer);
+
+  } catch (error) {
+    console.error('TTS generation error:', error.message);
+
+    if (error.response?.status === 401) {
+      return res.status(500).json({
+        error: 'API error',
+        message: 'OpenAI API key is invalid or missing'
+      });
+    }
+
+    res.status(500).json({
+      error: 'TTS failed',
+      message: error.message
+    });
+  }
+});
+
 // Catch-all for 404
 app.use((req, res) => {
   res.status(404).json({
@@ -509,10 +577,11 @@ app.listen(PORT, () => {
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`===========================================`);
   console.log(`Available endpoints:`);
-  console.log(`  GET /health - Health check`);
-  console.log(`  GET /api/feed?url=<feed-url> - Fetch RSS feed`);
-  console.log(`  GET /api/article?url=<article-url> - Extract article content`);
-  console.log(`  GET /api/discover-feed?url=<website-url> - Discover RSS feed`);
-  console.log(`  GET /api/summary?url=<article-url> - Generate AI summary`);
+  console.log(`  GET  /health - Health check`);
+  console.log(`  GET  /api/feed?url=<feed-url> - Fetch RSS feed`);
+  console.log(`  GET  /api/article?url=<article-url> - Extract article content`);
+  console.log(`  GET  /api/discover-feed?url=<website-url> - Discover RSS feed`);
+  console.log(`  GET  /api/summary?url=<article-url> - Generate AI summary`);
+  console.log(`  POST /api/tts - Text-to-speech (OpenAI)`);
   console.log(`===========================================`);
 });

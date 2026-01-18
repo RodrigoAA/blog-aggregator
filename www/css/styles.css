@@ -823,6 +823,26 @@ body > footer {
   color: var(--accent);
 }
 
+.tts-btn.loading {
+  border-color: var(--accent);
+  color: var(--accent);
+  pointer-events: none;
+}
+
+.tts-btn.loading::after {
+  content: '';
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--accent);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: tts-spin 0.8s linear infinite;
+}
+
+@keyframes tts-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Speed menu */
 .tts-speed-menu {
   position: absolute;

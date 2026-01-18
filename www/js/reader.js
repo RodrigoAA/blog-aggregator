@@ -5,12 +5,11 @@
 
 /**
  * Text-to-Speech Controller
- * Uses Web Speech API for article narration
+ * Uses OpenAI TTS API for natural-sounding narration
  */
 class TextToSpeech {
   constructor() {
-    this.synthesis = window.speechSynthesis;
-    this.utterance = null;
+    this.audio = new Audio();
     this.isPlaying = false;
     this.isPaused = false;
     this.rate = 1.0;
@@ -18,93 +17,188 @@ class TextToSpeech {
     this.currentChunk = 0;
     this.onEnd = null;
     this.onError = null;
+    this.voice = 'nova'; // OpenAI voices: alloy, echo, fable, onyx, nova, shimmer
+    this.audioCache = new Map();
+    this.isLoading = false;
+    this.abortController = null;
+
+    // Audio event handlers
+    this.audio.onended = () => {
+      this.currentChunk++;
+      this.playNextChunk();
+    };
+
+    this.audio.onerror = (e) => {
+      console.error('Audio playback error:', e);
+      this.isPlaying = false;
+      this.isLoading = false;
+      this.onError?.(e);
+    };
   }
 
-  speak(text) {
+  async speak(text) {
     this.cancel();
     this.chunks = this.splitText(text);
     this.currentChunk = 0;
-    this.speakNextChunk();
+    await this.playNextChunk();
   }
 
   splitText(text) {
-    // Split by paragraphs, max 5000 chars per chunk
+    // OpenAI TTS limit is 4096 chars, use 3800 to be safe
+    const maxChars = 3800;
     const paragraphs = text.split(/\n\n+/);
     const chunks = [];
     let current = '';
 
     for (const p of paragraphs) {
-      if ((current + p).length > 5000) {
+      const trimmedP = p.trim();
+      if (!trimmedP) continue;
+
+      if ((current + '\n\n' + trimmedP).length > maxChars) {
         if (current) chunks.push(current.trim());
-        current = p;
+        // If single paragraph is too long, split by sentences
+        if (trimmedP.length > maxChars) {
+          const sentences = trimmedP.match(/[^.!?]+[.!?]+/g) || [trimmedP];
+          let sentenceChunk = '';
+          for (const s of sentences) {
+            if ((sentenceChunk + s).length > maxChars) {
+              if (sentenceChunk) chunks.push(sentenceChunk.trim());
+              sentenceChunk = s;
+            } else {
+              sentenceChunk += s;
+            }
+          }
+          current = sentenceChunk;
+        } else {
+          current = trimmedP;
+        }
       } else {
-        current += '\n\n' + p;
+        current += (current ? '\n\n' : '') + trimmedP;
       }
     }
-    if (current) chunks.push(current.trim());
+    if (current.trim()) chunks.push(current.trim());
     return chunks;
   }
 
-  speakNextChunk() {
+  async playNextChunk() {
     if (this.currentChunk >= this.chunks.length) {
       this.isPlaying = false;
       this.isPaused = false;
+      this.isLoading = false;
       this.onEnd?.();
       return;
     }
 
-    this.utterance = new SpeechSynthesisUtterance(this.chunks[this.currentChunk]);
-    this.utterance.rate = this.rate;
-    this.utterance.lang = 'es-ES';
-
-    this.utterance.onend = () => {
+    const text = this.chunks[this.currentChunk];
+    if (!text || text.trim().length === 0) {
       this.currentChunk++;
-      this.speakNextChunk();
-    };
+      return this.playNextChunk();
+    }
 
-    this.utterance.onerror = (e) => {
-      if (e.error !== 'interrupted') {
-        this.onError?.(e);
+    this.isLoading = true;
+
+    try {
+      // Check cache first
+      const cacheKey = `${text.substring(0, 100)}_${this.voice}`;
+      let audioUrl = this.audioCache.get(cacheKey);
+
+      if (!audioUrl) {
+        // Fetch audio from backend
+        this.abortController = new AbortController();
+        const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
+
+        const response = await fetch(`${API_BASE_URL}/api/tts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, voice: this.voice }),
+          signal: this.abortController.signal
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'TTS request failed');
+        }
+
+        const blob = await response.blob();
+        audioUrl = URL.createObjectURL(blob);
+        this.audioCache.set(cacheKey, audioUrl);
       }
-    };
 
-    this.synthesis.speak(this.utterance);
-    this.isPlaying = true;
-    this.isPaused = false;
+      this.audio.src = audioUrl;
+      this.audio.playbackRate = this.rate;
+      await this.audio.play();
+
+      this.isPlaying = true;
+      this.isPaused = false;
+      this.isLoading = false;
+
+      // Pre-fetch next chunk in background
+      this.prefetchNextChunk();
+
+    } catch (error) {
+      this.isLoading = false;
+      if (error.name === 'AbortError') {
+        return; // Cancelled, ignore
+      }
+      console.error('TTS error:', error);
+      this.onError?.(error);
+    }
+  }
+
+  prefetchNextChunk() {
+    const nextIndex = this.currentChunk + 1;
+    if (nextIndex >= this.chunks.length) return;
+
+    const text = this.chunks[nextIndex];
+    if (!text) return;
+
+    const cacheKey = `${text.substring(0, 100)}_${this.voice}`;
+    if (this.audioCache.has(cacheKey)) return;
+
+    // Fetch in background
+    const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
+    fetch(`${API_BASE_URL}/api/tts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, voice: this.voice })
+    })
+      .then(res => res.blob())
+      .then(blob => {
+        const audioUrl = URL.createObjectURL(blob);
+        this.audioCache.set(cacheKey, audioUrl);
+      })
+      .catch(() => {}); // Ignore prefetch errors
   }
 
   pause() {
-    this.synthesis.pause();
+    this.audio.pause();
     this.isPaused = true;
     this.isPlaying = false;
   }
 
   resume() {
-    this.synthesis.resume();
+    this.audio.play();
     this.isPaused = false;
     this.isPlaying = true;
   }
 
   cancel() {
-    this.synthesis.cancel();
+    this.abortController?.abort();
+    this.audio.pause();
+    this.audio.currentTime = 0;
     this.isPlaying = false;
     this.isPaused = false;
+    this.isLoading = false;
     this.currentChunk = 0;
   }
 
   setRate(rate) {
     this.rate = rate;
-    // If playing, restart current chunk with new rate
-    if (this.isPlaying || this.isPaused) {
-      const wasPlaying = this.isPlaying;
-      this.synthesis.cancel();
-      this.speakNextChunk();
-      if (!wasPlaying) this.pause();
-    }
+    this.audio.playbackRate = rate;
   }
 
   isSupported() {
-    return 'speechSynthesis' in window;
+    return true; // OpenAI TTS works everywhere
   }
 }
 
@@ -257,8 +351,13 @@ class ArticleReader {
   // TEXT-TO-SPEECH CONTROLS
   // ============================================================
 
-  toggleTTS() {
+  async toggleTTS() {
     if (!this.tts.isSupported()) {
+      return;
+    }
+
+    // Prevent double-clicks while loading
+    if (this.tts.isLoading) {
       return;
     }
 
@@ -270,8 +369,11 @@ class ArticleReader {
       this.updateTTSButton('playing');
     } else {
       if (this.ttsText) {
-        this.tts.speak(this.ttsText);
-        this.updateTTSButton('playing');
+        this.updateTTSButton('loading');
+        await this.tts.speak(this.ttsText);
+        if (this.tts.isPlaying) {
+          this.updateTTSButton('playing');
+        }
       }
     }
   }
@@ -283,9 +385,14 @@ class ArticleReader {
     const playIcon = btn.querySelector('.tts-icon-play');
     const pauseIcon = btn.querySelector('.tts-icon-pause');
 
-    btn.classList.remove('playing', 'paused');
+    btn.classList.remove('playing', 'paused', 'loading');
 
-    if (state === 'playing') {
+    if (state === 'loading') {
+      btn.classList.add('loading');
+      playIcon.style.display = 'none';
+      pauseIcon.style.display = 'none';
+      btn.title = 'Cargando audio...';
+    } else if (state === 'playing') {
       btn.classList.add('playing');
       playIcon.style.display = 'none';
       pauseIcon.style.display = 'block';
@@ -775,6 +882,9 @@ class ArticleReader {
     document.body.style.overflow = '';
     this.currentUrl = null;
     this.hideHighlightButton();
+
+    // Emit event for Tinder Mode to restore itself
+    this.modal.dispatchEvent(new CustomEvent('articleReaderClosed'));
   }
 
   // Toggle favorite status
