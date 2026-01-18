@@ -130,7 +130,7 @@ Listen to articles using OpenAI's TTS API for natural-sounding narration. Implem
 
 ### Technical Details
 - Uses OpenAI TTS API (`tts-1` model) via backend endpoint `POST /api/tts`
-- Default voice: `nova` (natural Spanish-friendly voice)
+- Default voice: `onyx` (deep, masculine voice)
 - Text split into chunks (max 3800 chars to stay under API limit)
 - Audio cached in memory (`Map`) to avoid re-fetching
 - Pre-fetches next chunk in background for seamless playback
@@ -142,20 +142,26 @@ POST /api/tts
 Body: { text: string, voice?: string }
 Response: audio/mpeg
 ```
-Available voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`
+Available voices: `alloy`, `echo`, `fable`, `onyx` (default), `nova`, `shimmer`
 
 ### Classes
 | Class | Purpose |
 |-------|---------|
-| `TextToSpeech` | Core TTS controller with OpenAI integration |
+| `TextToSpeech` | Core TTS controller with OpenAI integration, audio caching, chunk management |
 | `ArticleReader.toggleTTS()` | Toggle play/pause state |
-| `ArticleReader.setTTSRate()` | Change playback speed |
+| `ArticleReader.setTTSRate()` | Change playback speed (0.75x - 2x) |
+| `ArticleReader.updateTTSButton()` | Update button visual state (loading/playing/paused/stopped) |
 
 ### Button States
-- **Default**: Transparent with border, play icon
-- **Loading**: Spinning loader, fetching audio from API
-- **Playing**: Filled accent color, pause icon
+- **Default**: Transparent with border, play icon (`svg.tts-icon-play`)
+- **Loading**: Accent border, spinning loader (`span.tts-spinner`)
+- **Playing**: Filled accent background, pause icon (`svg.tts-icon-pause`)
 - **Paused**: Accent border, play icon
+
+### Implementation Notes
+- Spinner uses a real `<span class="tts-spinner">` element (not CSS `::after`) to avoid button deformation issues
+- Button visibility controlled via JS `style.display` for each icon/spinner element
+- AbortController used to cancel pending requests when user stops playback
 
 ## Tinder Mode (Mobile)
 
@@ -198,7 +204,8 @@ Visual indicator based on AI `recommendation_score`:
 - Swipe threshold: 100px to confirm action
 - Cards stack with current card on top, next card preview behind
 - Summaries cached in `localStorage` under `summaryCache`
-- **Pre-fetch**: Next article summary fetched in background via `prefetchNextSummary()` to reduce wait time
+- **Pre-fetch**: Next 2 article summaries fetched in background via `prefetchNextSummary()` to reduce wait time
+- **Reader integration**: When opening article, listens for `articleReaderClosed` custom event to restore Tinder Mode
 
 ### Files
 | File | Purpose |
