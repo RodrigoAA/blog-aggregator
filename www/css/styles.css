@@ -805,6 +805,7 @@ body > footer {
   justify-content: center;
   transition: background 0.2s, border-color 0.2s, color 0.2s;
   flex-shrink: 0;
+  position: relative;
 }
 
 .tts-btn:hover {
@@ -830,8 +831,12 @@ body > footer {
 }
 
 .tts-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
   width: 18px;
   height: 18px;
+  margin: -9px 0 0 -9px;
   border: 2px solid var(--accent);
   border-top-color: transparent;
   border-radius: 50%;
