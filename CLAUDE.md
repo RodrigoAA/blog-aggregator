@@ -200,6 +200,7 @@ Visual indicator based on AI `recommendation_score`:
 - Swipe threshold: 100px to confirm action
 - Cards stack with current card on top, next card preview behind
 - Summaries cached in `localStorage` under `summaryCache`
+- **Pre-fetch**: Next article summary fetched in background via `prefetchNextSummary()` to reduce wait time
 
 ### Files
 | File | Purpose |
