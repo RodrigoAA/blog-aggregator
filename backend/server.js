@@ -6,6 +6,27 @@ const { JSDOM } = require('jsdom');
 const OpenAI = require('openai');
 require('dotenv').config();
 
+// ============================================================
+// CONFIGURATION
+// ============================================================
+
+const CONFIG = {
+  HTTP: {
+    TIMEOUT_DEFAULT: 15000,
+    TIMEOUT_FAST: 5000,
+    TIMEOUT_DISCOVERY: 10000,
+    MAX_REDIRECTS: 5
+  },
+  TEXT: {
+    MAX_CHARS_SUMMARY: 12000,
+    MAX_CHARS_TTS: 4096
+  },
+  OPENAI: {
+    MAX_TOKENS: 500,
+    TEMPERATURE: 0.3
+  }
+};
+
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -13,6 +34,92 @@ const openai = new OpenAI({
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// ============================================================
+// IN-MEMORY CACHE
+// ============================================================
+
+// Feed cache (5 minute TTL)
+const feedCache = new Map();
+const FEED_CACHE_TTL = 5 * 60 * 1000;
+
+// Summary cache (7 day TTL - summaries rarely change)
+const summaryCache = new Map();
+const SUMMARY_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+
+// Max cache entries (to prevent memory leaks)
+const MAX_CACHE_ENTRIES = 100;
+
+function getCachedFeed(url) {
+    const cached = feedCache.get(url);
+    if (!cached) return null;
+
+    if (Date.now() - cached.timestamp > FEED_CACHE_TTL) {
+        feedCache.delete(url);
+        return null;
+    }
+    return cached.data;
+}
+
+function setCachedFeed(url, data) {
+    // Evict oldest entry if cache is full
+    if (feedCache.size >= MAX_CACHE_ENTRIES) {
+        const oldestKey = feedCache.keys().next().value;
+        feedCache.delete(oldestKey);
+    }
+    feedCache.set(url, { data, timestamp: Date.now() });
+}
+
+function getCachedSummary(url, interests) {
+    const cacheKey = `${url}|${interests || ''}`;
+    const cached = summaryCache.get(cacheKey);
+    if (!cached) return null;
+
+    if (Date.now() - cached.timestamp > SUMMARY_CACHE_TTL) {
+        summaryCache.delete(cacheKey);
+        return null;
+    }
+    return cached.data;
+}
+
+function setCachedSummary(url, interests, data) {
+    const cacheKey = `${url}|${interests || ''}`;
+    // Evict oldest entry if cache is full
+    if (summaryCache.size >= MAX_CACHE_ENTRIES) {
+        const oldestKey = summaryCache.keys().next().value;
+        summaryCache.delete(oldestKey);
+    }
+    summaryCache.set(cacheKey, { data, timestamp: Date.now() });
+}
+
+// ============================================================
+// VALIDATION MIDDLEWARE
+// ============================================================
+
+/**
+ * Middleware to validate URL query parameter
+ */
+function validateUrlParam(req, res, next) {
+  const { url } = req.query;
+
+  if (!url) {
+    return res.status(400).json({
+      error: 'Missing parameter',
+      message: 'URL parameter required'
+    });
+  }
+
+  try {
+    new URL(url);
+  } catch (e) {
+    return res.status(400).json({
+      error: 'Invalid URL',
+      message: 'The provided URL is not valid'
+    });
+  }
+
+  next();
+}
 
 // ============================================================
 // MIDDLEWARE
@@ -28,12 +135,6 @@ app.use(cors({
 // Parse JSON request bodies
 app.use(express.json());
 
-// Log all requests (helpful for debugging)
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
-});
-
 // ============================================================
 // ROUTES
 // ============================================================
@@ -47,47 +148,42 @@ app.get('/health', (req, res) => {
   });
 });
 
-// RSS feed proxy endpoint
-app.get('/api/feed', async (req, res) => {
+// RSS feed proxy endpoint (with in-memory cache)
+app.get('/api/feed', validateUrlParam, async (req, res) => {
   const { url } = req.query;
 
-  // Validation
-  if (!url) {
-    return res.status(400).json({
-      error: 'Missing required parameter',
-      message: 'URL parameter is required'
+  // Check cache first
+  const cached = getCachedFeed(url);
+  if (cached) {
+    res.set({
+      'Content-Type': 'application/xml',
+      'X-Cache': 'HIT'
     });
-  }
-
-  // Basic URL validation
-  try {
-    new URL(url); // Throws if invalid URL
-  } catch (e) {
-    return res.status(400).json({
-      error: 'Invalid URL',
-      message: 'The provided URL is not valid'
-    });
+    return res.send(cached);
   }
 
   // Fetch the RSS feed
   try {
-    console.log(`Fetching RSS feed: ${url}`);
-
     const response = await axios.get(url, {
       headers: {
         'Accept': 'application/rss+xml, application/xml, text/xml, application/atom+xml',
         'User-Agent': 'Particulas-elementales/1.0 (Blog Reader)'
       },
-      timeout: 15000, // 15 second timeout
-      maxRedirects: 5
+      timeout: CONFIG.HTTP.TIMEOUT_DEFAULT,
+      maxRedirects: CONFIG.HTTP.MAX_REDIRECTS
     });
 
+    // Store in cache
+    setCachedFeed(url, response.data);
+
     // Return the RSS XML content
-    res.set('Content-Type', 'application/xml');
+    res.set({
+      'Content-Type': 'application/xml',
+      'X-Cache': 'MISS'
+    });
     res.send(response.data);
 
   } catch (error) {
-    console.error(`Error fetching feed ${url}:`, error.message);
 
     // Handle different error types
     if (error.code === 'ECONNABORTED') {
@@ -114,29 +210,10 @@ app.get('/api/feed', async (req, res) => {
 });
 
 // Article content extraction endpoint
-app.get('/api/article', async (req, res) => {
+app.get('/api/article', validateUrlParam, async (req, res) => {
   const { url } = req.query;
 
-  if (!url) {
-    return res.status(400).json({
-      error: 'Missing parameter',
-      message: 'URL parameter required'
-    });
-  }
-
-  // Validate URL
   try {
-    new URL(url);
-  } catch (e) {
-    return res.status(400).json({
-      error: 'Invalid URL',
-      message: 'The provided URL is not valid'
-    });
-  }
-
-  try {
-    console.log(`Extracting article content from: ${url}`);
-
     // Fetch the article HTML
     const response = await axios.get(url, {
       headers: {
@@ -146,8 +223,8 @@ app.get('/api/article', async (req, res) => {
         'Accept-Encoding': 'gzip, deflate, br',
         'Connection': 'keep-alive'
       },
-      timeout: 15000,
-      maxRedirects: 5
+      timeout: CONFIG.HTTP.TIMEOUT_DEFAULT,
+      maxRedirects: CONFIG.HTTP.MAX_REDIRECTS
     });
 
     // Parse HTML with JSDOM
@@ -168,14 +245,11 @@ app.get('/api/article', async (req, res) => {
     const article = reader.parse();
 
     if (!article) {
-      console.log(`Could not extract article from ${url}`);
       return res.status(404).json({
         error: 'Extraction failed',
         message: 'Could not extract article content from this page'
       });
     }
-
-    console.log(`Successfully extracted article: ${article.title} (${article.length} words)`);
 
     // Return clean article data
     res.json({
@@ -191,8 +265,6 @@ app.get('/api/article', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Article extraction error:', error.message);
-
     // Handle specific errors
     if (error.code === 'ECONNABORTED') {
       return res.status(504).json({
@@ -234,38 +306,19 @@ app.get('/api/article', async (req, res) => {
 });
 
 // RSS feed discovery endpoint
-app.get('/api/discover-feed', async (req, res) => {
+app.get('/api/discover-feed', validateUrlParam, async (req, res) => {
   const { url } = req.query;
-
-  if (!url) {
-    return res.status(400).json({
-      error: 'Missing parameter',
-      message: 'URL parameter required'
-    });
-  }
-
-  // Validate URL
-  let parsedUrl;
-  try {
-    parsedUrl = new URL(url);
-  } catch (e) {
-    return res.status(400).json({
-      error: 'Invalid URL',
-      message: 'The provided URL is not valid'
-    });
-  }
+  const parsedUrl = new URL(url);
 
   try {
-    console.log(`Discovering RSS feed for: ${url}`);
-
     // Fetch the webpage
     const response = await axios.get(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'text/html,application/xhtml+xml'
       },
-      timeout: 10000,
-      maxRedirects: 5
+      timeout: CONFIG.HTTP.TIMEOUT_DISCOVERY,
+      maxRedirects: CONFIG.HTTP.MAX_REDIRECTS
     });
 
     const html = response.data;
@@ -298,7 +351,7 @@ app.get('/api/discover-feed', async (req, res) => {
         try {
           const testUrl = baseUrl + path;
           const testResponse = await axios.head(testUrl, {
-            timeout: 5000,
+            timeout: CONFIG.HTTP.TIMEOUT_FAST,
             validateStatus: status => status < 400
           });
 
@@ -320,11 +373,9 @@ app.get('/api/discover-feed', async (req, res) => {
       });
     }
 
-    console.log(`Found ${feeds.length} feed(s) for ${url}`);
     res.json({ feeds });
 
   } catch (error) {
-    console.error('Feed discovery error:', error.message);
 
     if (error.code === 'ECONNABORTED') {
       return res.status(504).json({
@@ -340,30 +391,17 @@ app.get('/api/discover-feed', async (req, res) => {
   }
 });
 
-// Article summary endpoint (AI-powered)
-app.get('/api/summary', async (req, res) => {
+// Article summary endpoint (AI-powered, with cache)
+app.get('/api/summary', validateUrlParam, async (req, res) => {
   const { url, interests } = req.query;
 
-  if (!url) {
-    return res.status(400).json({
-      error: 'Missing parameter',
-      message: 'URL parameter required'
-    });
-  }
-
-  // Validate URL
-  try {
-    new URL(url);
-  } catch (e) {
-    return res.status(400).json({
-      error: 'Invalid URL',
-      message: 'The provided URL is not valid'
-    });
+  // Check cache first (saves OpenAI API costs and time)
+  const cached = getCachedSummary(url, interests);
+  if (cached) {
+    return res.json({ ...cached, cached: true });
   }
 
   try {
-    console.log(`Generating summary for: ${url}`);
-
     // 1. Fetch the article HTML
     const response = await axios.get(url, {
       headers: {
@@ -371,8 +409,8 @@ app.get('/api/summary', async (req, res) => {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8'
       },
-      timeout: 15000,
-      maxRedirects: 5
+      timeout: CONFIG.HTTP.TIMEOUT_DEFAULT,
+      maxRedirects: CONFIG.HTTP.MAX_REDIRECTS
     });
 
     // 2. Parse and extract article content
@@ -388,8 +426,7 @@ app.get('/api/summary', async (req, res) => {
     }
 
     // 3. Truncate text if too long (keep under token limits)
-    const maxChars = 12000;
-    const text = article.textContent.slice(0, maxChars);
+    const text = article.textContent.slice(0, CONFIG.TEXT.MAX_CHARS_SUMMARY);
 
     // 4. Build prompt based on whether user has interests
     const hasInterests = interests && interests.trim().length > 0;
@@ -438,13 +475,11 @@ Provide 3-5 key points. Be concise and informative.`;
         }
       ],
       response_format: { type: 'json_object' },
-      max_tokens: 500,
-      temperature: 0.3
+      max_tokens: CONFIG.OPENAI.MAX_TOKENS,
+      temperature: CONFIG.OPENAI.TEMPERATURE
     });
 
     const summary = JSON.parse(completion.choices[0].message.content);
-
-    console.log(`Summary generated for: ${article.title}`);
 
     // Calculate reading time (average 200 words per minute)
     const wordCount = article.textContent.split(/\s+/).length;
@@ -464,11 +499,12 @@ Provide 3-5 key points. Be concise and informative.`;
       result.recommendation = summary.recommendation;
     }
 
+    // Store in cache for future requests
+    setCachedSummary(url, interests, result);
+
     res.json(result);
 
   } catch (error) {
-    console.error('Summary generation error:', error.message);
-
     if (error.code === 'ECONNABORTED') {
       return res.status(504).json({
         error: 'Timeout',
@@ -501,11 +537,11 @@ app.post('/api/tts', async (req, res) => {
     });
   }
 
-  // OpenAI TTS has a 4096 character limit
-  if (text.length > 4096) {
+  // OpenAI TTS has a character limit
+  if (text.length > CONFIG.TEXT.MAX_CHARS_TTS) {
     return res.status(400).json({
       error: 'Text too long',
-      message: 'Text must be under 4096 characters. Split into chunks on the client.'
+      message: `Text must be under ${CONFIG.TEXT.MAX_CHARS_TTS} characters. Split into chunks on the client.`
     });
   }
 
@@ -519,8 +555,6 @@ app.post('/api/tts', async (req, res) => {
   }
 
   try {
-    console.log(`Generating TTS audio (${text.length} chars, voice: ${voice})`);
-
     const mp3Response = await openai.audio.speech.create({
       model: 'tts-1',
       voice: voice,
@@ -531,8 +565,6 @@ app.post('/api/tts', async (req, res) => {
     // Get the audio as a buffer
     const buffer = Buffer.from(await mp3Response.arrayBuffer());
 
-    console.log(`TTS audio generated: ${buffer.length} bytes`);
-
     // Return as audio file
     res.set({
       'Content-Type': 'audio/mpeg',
@@ -542,8 +574,6 @@ app.post('/api/tts', async (req, res) => {
     res.send(buffer);
 
   } catch (error) {
-    console.error('TTS generation error:', error.message);
-
     if (error.response?.status === 401) {
       return res.status(500).json({
         error: 'API error',

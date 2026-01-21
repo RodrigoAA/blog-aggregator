@@ -10,6 +10,12 @@
 // Backend API URL (set this before deploying)
 window.API_BASE_URL = 'https://particulas-backend.onrender.com';
 
+// Wake-up backend immediately (non-blocking)
+// Starts cold boot while user authenticates
+(function wakeBackend() {
+    fetch(`${window.API_BASE_URL}/health`, { mode: 'cors' }).catch(() => {});
+})();
+
 // New posts indicator state
 let pendingNewPosts = [];
 let lastKnownPostLinks = new Set();
@@ -44,6 +50,32 @@ const DEFAULT_BLOGS = [
 ];
 
 // ============================================================
+// STORAGE HELPERS
+// ============================================================
+
+/**
+ * Safe localStorage.setItem with quota error handling
+ */
+function safeSetItem(key, value) {
+    try {
+        localStorage.setItem(key, value);
+        return true;
+    } catch (e) {
+        if (e.name === 'QuotaExceededError' || e.code === 22) {
+            // Try to free up space by removing old post caches
+            try {
+                localStorage.removeItem('blogAggregator_postsCache');
+                localStorage.setItem(key, value);
+                return true;
+            } catch (retryError) {
+                return false;
+            }
+        }
+        return false;
+    }
+}
+
+// ============================================================
 // BLOG MANAGEMENT
 // ============================================================
 
@@ -70,7 +102,7 @@ function getBlogs() {
 // Save blogs - saves to localStorage AND Supabase (if logged in)
 function saveBlogs(blogs) {
     blogsCache = blogs;
-    localStorage.setItem('blogAggregator_blogs', JSON.stringify(blogs));
+    safeSetItem('blogAggregator_blogs', JSON.stringify(blogs));
 
     // Sync to Supabase if logged in
     if (isAuthenticated()) {
@@ -93,7 +125,6 @@ async function loadBlogsFromCloud() {
     // Skip if we just saved locally (avoid race condition)
     if (skipNextCloudLoad) {
         skipNextCloudLoad = false;
-        console.log('Skipping cloud load (using local cache)');
         return;
     }
 
@@ -107,19 +138,16 @@ async function loadBlogsFromCloud() {
             .eq('user_id', user.id);
 
         if (error) {
-            console.error('Error loading blogs from cloud:', error);
             // Keep local data on error instead of clearing
             blogsCache = JSON.parse(localStorage.getItem('blogAggregator_blogs') || '[]');
             return;
         }
 
-        console.log('Loaded blogs from cloud:', data?.length || 0);
         blogsCache = data || [];
 
         // Also update localStorage as cache
         localStorage.setItem('blogAggregator_blogs', JSON.stringify(blogsCache));
     } catch (error) {
-        console.error('Failed to load blogs from cloud:', error);
         // Keep local data on error instead of clearing
         blogsCache = JSON.parse(localStorage.getItem('blogAggregator_blogs') || '[]');
     }
@@ -151,13 +179,11 @@ async function saveBlogsToCloud(blogs) {
                 })));
 
             if (error) {
-                console.error('Error saving blogs to cloud:', error);
-            } else {
-                console.log('Blogs saved to cloud:', blogs.length);
+                // Silent fail - cloud sync is best-effort
             }
         }
     } catch (error) {
-        console.error('Failed to save blogs to cloud:', error);
+        // Silent fail - cloud sync is best-effort
     }
 }
 
@@ -172,12 +198,13 @@ function generateSlug(name) {
 // ============================================================
 
 async function fetchFeed(blog) {
-    console.log(`Fetching ${blog.name} from ${blog.url}`);
-
     try {
-        // Use our backend API instead of CORS proxy
-        const response = await fetch(
-            `${window.API_BASE_URL}/api/feed?url=${encodeURIComponent(blog.url)}`
+        // Use our backend API with timeout (45s for cold start + fetch)
+        const response = await fetchWithTimeout(
+            `${window.API_BASE_URL}/api/feed?url=${encodeURIComponent(blog.url)}`,
+            {},
+            45000,  // 45s timeout
+            1       // 1 retry
         );
 
         if (!response.ok) {
@@ -185,11 +212,9 @@ async function fetchFeed(blog) {
         }
 
         const text = await response.text();
-        console.log(`Successfully fetched ${blog.name}, length: ${text.length}`);
         return { blog, xml: text, success: true };
     } catch (error) {
-        console.error(`Error fetching ${blog.name}:`, error);
-        updateStatus(`Failed to load ${blog.name}: ${error.message}`);
+        updateStatus(`Error cargando ${blog.name}: ${error.message}`);
         return { blog, error, success: false };
     }
 }
@@ -198,8 +223,8 @@ async function fetchFeed(blog) {
 // POSTS CACHE MANAGEMENT
 // ============================================================
 
-// Cache expires after 5 minutes (300000 ms)
-const POSTS_CACHE_TTL = 5 * 60 * 1000;
+// Cache expires after 30 minutes (extended for better UX, background refresh handles staleness)
+const POSTS_CACHE_TTL = 30 * 60 * 1000;
 
 function getPostsCache() {
     try {
@@ -210,7 +235,6 @@ function getPostsCache() {
 
         // Check if cache has expired (5 minutes)
         if (cache.timestamp && Date.now() - cache.timestamp > POSTS_CACHE_TTL) {
-            console.log('Posts cache expired, invalidating');
             return null;
         }
 
@@ -220,11 +244,8 @@ function getPostsCache() {
         const cachedBlogUrls = (cache.blogs || []).map(b => b.url).sort().join(',');
 
         if (currentBlogUrls !== cachedBlogUrls) {
-            console.log('Blogs configuration changed, invalidating cache');
             return null;
         }
-
-        console.log(`Loading ${cache.posts.length} posts from cache`);
 
         // Restore Date objects
         cache.posts.forEach(post => {
@@ -238,7 +259,6 @@ function getPostsCache() {
 
         return cache.posts;
     } catch (error) {
-        console.error('Error loading posts cache:', error);
         return null;
     }
 }
@@ -250,21 +270,89 @@ function savePostsCache(posts, blogs) {
             blogs: blogs,
             timestamp: Date.now()
         };
-        localStorage.setItem('blogAggregator_postsCache', JSON.stringify(cache));
+        safeSetItem('blogAggregator_postsCache', JSON.stringify(cache));
 
         // Update lastKnownPostLinks to match cached posts
         posts.forEach(post => lastKnownPostLinks.add(post.link));
-
-        console.log(`Cached ${posts.length} posts`);
     } catch (error) {
-        console.error('Error saving posts cache:', error);
+        // Silent fail - caching is best-effort
+    }
+}
+
+/**
+ * Get posts cache regardless of age (for immediate display)
+ * @returns {Object|null} Cache object with posts, blogs, timestamp or null
+ */
+function getPostsCacheRaw() {
+    try {
+        const cached = localStorage.getItem('blogAggregator_postsCache');
+        if (!cached) return null;
+
+        const cache = JSON.parse(cached);
+        if (!cache.posts || cache.posts.length === 0) return null;
+
+        // Check if blogs have changed
+        const currentBlogs = getBlogs();
+        const currentBlogUrls = currentBlogs.map(b => b.url).sort().join(',');
+        const cachedBlogUrls = (cache.blogs || []).map(b => b.url).sort().join(',');
+
+        if (currentBlogUrls !== cachedBlogUrls) {
+            return null;
+        }
+
+        // Restore Date objects
+        cache.posts.forEach(post => {
+            if (post.date) {
+                post.date = new Date(post.date);
+            }
+        });
+
+        return cache;
+    } catch (error) {
+        return null;
+    }
+}
+
+/**
+ * Refresh posts in background without blocking UI
+ */
+async function refreshPostsInBackground(blogs, manualArticles) {
+    try {
+        // Fetch all feeds in parallel
+        const feedPromises = blogs.map(blog => fetchFeed(blog));
+        const feedResults = await Promise.all(feedPromises);
+
+        // Parse all feeds and combine posts
+        const rssPost = feedResults.flatMap(result => parseFeed(result));
+
+        // Check for new posts before saving
+        const newPosts = rssPost.filter(post => !lastKnownPostLinks.has(post.link));
+
+        // Save to cache
+        savePostsCache(rssPost, blogs);
+
+        // Combine with manual articles
+        allPosts = [...rssPost, ...manualArticles];
+
+        // If there are new posts, show indicator (don't interrupt user)
+        if (newPosts.length > 0) {
+            pendingNewPosts = newPosts;
+            showNewPostsIndicator(newPosts.length);
+        }
+
+        // Hide loading status
+        const loading = document.getElementById('loading');
+        if (loading) {
+            loading.style.display = 'none';
+        }
+    } catch (error) {
+        // Silent fail - background refresh is best-effort
     }
 }
 
 function clearPostsCache() {
     localStorage.removeItem('blogAggregator_postsCache');
     lastKnownPostLinks.clear();
-    console.log('Posts cache cleared');
 }
 
 /**
@@ -285,8 +373,6 @@ function clearUserData() {
     postStatusesCache = {};
     allPosts = [];
     lastKnownPostLinks.clear();
-
-    console.log('User data cleared');
 }
 
 // ============================================================
@@ -371,8 +457,6 @@ function loadNewPosts() {
         const uniqueCachedPosts = cachedPosts.filter(p => !newPostLinks.has(p.link));
         const mergedPosts = [...pendingNewPosts, ...uniqueCachedPosts];
 
-        console.log(`Merging ${pendingNewPosts.length} new + ${uniqueCachedPosts.length} cached = ${mergedPosts.length} total`);
-
         // Save merged cache (this also updates lastKnownPostLinks)
         const blogs = getBlogs();
         savePostsCache(mergedPosts, blogs);
@@ -406,8 +490,6 @@ async function checkForNewPosts() {
     const blogs = getBlogs();
     if (blogs.length === 0) return;
 
-    console.log('Checking for new posts in background...');
-
     try {
         // Fetch all feeds in parallel
         const feedPromises = blogs.map(blog => fetchFeed(blog));
@@ -420,15 +502,13 @@ async function checkForNewPosts() {
         const newPosts = freshPosts.filter(post => !lastKnownPostLinks.has(post.link));
 
         if (newPosts.length > 0) {
-            console.log(`Found ${newPosts.length} new posts`);
             pendingNewPosts = newPosts;
             showNewPostsBanner(newPosts.length);
         } else {
-            console.log('No new posts found');
             showNoNewPostsMessage();
         }
     } catch (error) {
-        console.error('Error checking for new posts:', error);
+        // Silent fail - background check is best-effort
     }
 }
 
@@ -452,7 +532,7 @@ function getManualArticles() {
 
 function saveManualArticles(articles) {
     manualArticlesCache = articles;
-    localStorage.setItem('blogAggregator_manualArticles', JSON.stringify(articles));
+    safeSetItem('blogAggregator_manualArticles', JSON.stringify(articles));
 }
 
 async function addManualArticleToList(article) {
@@ -460,7 +540,6 @@ async function addManualArticleToList(article) {
 
     // Check for duplicates
     if (articles.some(a => a.link === article.link)) {
-        console.log('Article already exists:', article.link);
         return false;
     }
 
@@ -500,7 +579,6 @@ async function loadManualArticlesFromCloud() {
     // Skip if we just saved locally (avoid race condition)
     if (skipNextManualArticlesCloudLoad) {
         skipNextManualArticlesCloudLoad = false;
-        console.log('Skipping manual articles cloud load (using local cache)');
         manualArticlesCache = getManualArticles();
         return;
     }
@@ -516,7 +594,6 @@ async function loadManualArticlesFromCloud() {
             .order('created_at', { ascending: false });
 
         if (error) {
-            console.error('Error loading manual articles from cloud:', error);
             // Keep local data on error instead of clearing
             manualArticlesCache = getManualArticles();
             return;
@@ -554,11 +631,9 @@ async function loadManualArticlesFromCloud() {
             };
         });
 
-        console.log('Loaded manual articles from cloud:', articles.length);
         manualArticlesCache = articles;
-        localStorage.setItem('blogAggregator_manualArticles', JSON.stringify(articles));
+        safeSetItem('blogAggregator_manualArticles', JSON.stringify(articles));
     } catch (error) {
-        console.error('Failed to load manual articles from cloud:', error);
         // Keep local data on error instead of clearing
         manualArticlesCache = getManualArticles();
     }
@@ -587,12 +662,10 @@ async function saveManualArticleToCloud(article) {
             });
 
         if (error) {
-            console.error('Error saving manual article to cloud:', error);
-        } else {
-            console.log('Manual article saved to cloud');
+            // Silent fail - cloud sync is best-effort
         }
     } catch (error) {
-        console.error('Failed to save manual article to cloud:', error);
+        // Silent fail - cloud sync is best-effort
     }
 }
 
@@ -611,10 +684,10 @@ async function deleteManualArticleFromCloud(url) {
             .eq('url', url);
 
         if (error) {
-            console.error('Error deleting manual article from cloud:', error);
+            // Silent fail - cloud sync is best-effort
         }
     } catch (error) {
-        console.error('Failed to delete manual article from cloud:', error);
+        // Silent fail - cloud sync is best-effort
     }
 }
 
@@ -645,7 +718,6 @@ async function fetchArticleMetadata(url) {
 
         return post;
     } catch (error) {
-        console.error('Error fetching article metadata:', error);
         throw error;
     }
 }
@@ -703,7 +775,6 @@ async function addManualArticle() {
         init();
 
     } catch (error) {
-        console.error('Error adding manual article:', error);
         alert(`Failed to add article: ${error.message}`);
         addBtn.textContent = 'Add Article';
         addBtn.disabled = false;
@@ -828,8 +899,7 @@ function getPostStatuses() {
 
     // Save migrated data
     if (migrated) {
-        console.log('Migrated legacy post statuses to new format');
-        localStorage.setItem('blogAggregator_postStatuses', JSON.stringify(statuses));
+        safeSetItem('blogAggregator_postStatuses', JSON.stringify(statuses));
     }
 
     return statuses;
@@ -837,7 +907,7 @@ function getPostStatuses() {
 
 function savePostStatuses(statuses) {
     postStatusesCache = statuses;
-    localStorage.setItem('blogAggregator_postStatuses', JSON.stringify(statuses));
+    safeSetItem('blogAggregator_postStatuses', JSON.stringify(statuses));
 }
 
 function getPostStatus(postLink) {
@@ -889,7 +959,6 @@ async function loadPostStatusesFromCloud() {
             .eq('user_id', user.id);
 
         if (error) {
-            console.error('Error loading post statuses from cloud:', error);
             // Keep local data on error instead of clearing
             postStatusesCache = JSON.parse(localStorage.getItem('blogAggregator_postStatuses') || '{}');
             return;
@@ -911,14 +980,9 @@ async function loadPostStatusesFromCloud() {
             statuses[item.post_url] = status;
         });
 
-        console.log('Loaded post statuses from cloud:', Object.keys(statuses).length);
-        if (needsMigration) {
-            console.log('Note: Some statuses need migration in Supabase. Run migration SQL.');
-        }
         postStatusesCache = statuses;
-        localStorage.setItem('blogAggregator_postStatuses', JSON.stringify(statuses));
+        safeSetItem('blogAggregator_postStatuses', JSON.stringify(statuses));
     } catch (error) {
-        console.error('Failed to load post statuses from cloud:', error);
         // Keep local data on error instead of clearing
         postStatusesCache = JSON.parse(localStorage.getItem('blogAggregator_postStatuses') || '{}');
     }
@@ -944,10 +1008,10 @@ async function savePostStatusToCloud(postUrl, status) {
             });
 
         if (error) {
-            console.error('Error saving post status to cloud:', error);
+            // Silent fail - cloud sync is best-effort
         }
     } catch (error) {
-        console.error('Failed to save post status to cloud:', error);
+        // Silent fail - cloud sync is best-effort
     }
 }
 
@@ -1497,7 +1561,6 @@ function attachPostClickHandlers() {
                 window.articleReader.open(postUrl, postTitle, blogName);
             } else {
                 // Fallback: open in new tab
-                console.warn('ArticleReader not ready, opening in new tab');
                 window.open(postUrl, '_blank', 'noopener,noreferrer');
             }
         };
@@ -1605,21 +1668,82 @@ async function init(forceRefresh = false) {
             return;
         }
 
-        // Show skeleton loading (only if authenticated)
+        // ============================================================
+        // CACHE-FIRST DISPLAY STRATEGY
+        // Show cached content immediately, refresh in background if stale
+        // ============================================================
+
+        // Check for cached posts BEFORE cloud sync (for instant display)
+        const rawCache = getPostsCacheRaw();
+        const hasCachedPosts = rawCache && rawCache.posts && rawCache.posts.length > 0;
+        const cacheAge = rawCache ? Date.now() - rawCache.timestamp : Infinity;
+        const isCacheStale = cacheAge > POSTS_CACHE_TTL;
+
+        if (hasCachedPosts && !forceRefresh) {
+            // Show cached content immediately
+            const manualArticlesQuick = getManualArticles().filter(a => a.source !== 'twitter');
+            manualArticlesQuick.forEach(article => {
+                if (article.date && typeof article.date === 'string') {
+                    article.date = new Date(article.date);
+                }
+                article.isManual = true;
+            });
+
+            allPosts = [...rawCache.posts, ...manualArticlesQuick];
+
+            // Display immediately (no loading state)
+            loading.style.display = 'none';
+            if (currentFilter === 'twitter') {
+                displayTwitterPosts();
+            } else if (currentFilter === 'highlights') {
+                displayHighlights();
+            } else {
+                displayPosts(allPosts);
+            }
+
+            // Sync cloud data in background
+            Promise.all([
+                loadBlogsFromCloud(),
+                loadPostStatusesFromCloud(),
+                loadManualArticlesFromCloud(),
+                loadInterestsFromCloud(),
+                window.articleReader?.loadHighlightsFromCloud?.() || Promise.resolve()
+            ]).then(() => {
+                // If cache is stale, refresh posts in background
+                if (isCacheStale) {
+                    const blogs = getBlogs();
+                    const manualArticles = getManualArticles().filter(a => a.source !== 'twitter');
+                    manualArticles.forEach(article => {
+                        if (article.date && typeof article.date === 'string') {
+                            article.date = new Date(article.date);
+                        }
+                        article.isManual = true;
+                    });
+
+                    if (blogs.length > 0) {
+                        updateStatus('Actualizando feeds...');
+                        refreshPostsInBackground(blogs, manualArticles);
+                    }
+                }
+            });
+
+            return;
+        }
+
+        // No cache or force refresh - show loading and fetch
         showSkeletonPosts(5);
-        loading.textContent = 'Loading posts';
+        loading.textContent = 'Cargando...';
         loading.style.display = 'block';
 
-        // Load data from cloud
-        updateStatus('Actualizando...');
-        await loadBlogsFromCloud();
-        await loadPostStatusesFromCloud();
-        await loadManualArticlesFromCloud();
-        await loadInterestsFromCloud();
-        // Load highlights if article reader is ready
-        if (window.articleReader && window.articleReader.loadHighlightsFromCloud) {
-            await window.articleReader.loadHighlightsFromCloud();
-        }
+        // Load data from cloud (parallelized for performance)
+        updateStatus('Conectando con el servidor...');
+        await Promise.all([
+            loadBlogsFromCloud(),
+            loadPostStatusesFromCloud(),
+            loadManualArticlesFromCloud(),
+            loadInterestsFromCloud(),
+            window.articleReader?.loadHighlightsFromCloud?.() || Promise.resolve()
+        ]);
 
         // Get blogs (from cache/localStorage)
         const blogs = getBlogs();
@@ -1639,8 +1763,8 @@ async function init(forceRefresh = false) {
             loading.style.display = 'none';
             postsContainer.innerHTML = `
                 <div class="empty-state">
-                    <h2>No content configured</h2>
-                    <p>Click the settings icon to add RSS feeds or individual articles.</p>
+                    <h2>No tienes contenido configurado</h2>
+                    <p>Abre el menu de configuracion para agregar feeds RSS o articulos.</p>
                 </div>
             `;
             return;
@@ -1654,24 +1778,19 @@ async function init(forceRefresh = false) {
             if (!forceRefresh) {
                 const cachedPosts = getPostsCache();
                 if (cachedPosts && cachedPosts.length > 0) {
-                    console.log('Using cached RSS posts');
                     rssPost = cachedPosts;
                 }
             }
 
             // Cache miss or force refresh - fetch from network
             if (rssPost.length === 0) {
+                updateStatus('Obteniendo feeds...');
                 // Fetch all feeds in parallel
                 const feedPromises = blogs.map(blog => fetchFeed(blog));
                 const feedResults = await Promise.all(feedPromises);
 
                 // Parse all feeds and combine posts
                 rssPost = feedResults.flatMap(result => parseFeed(result));
-
-                console.log(`Total RSS posts found: ${rssPost.length}`);
-
-                const successCount = feedResults.filter(r => r.success).length;
-                console.log(`Successfully loaded ${successCount} out of ${blogs.length} blogs`);
 
                 // Save to cache
                 savePostsCache(rssPost, blogs);
@@ -1680,7 +1799,6 @@ async function init(forceRefresh = false) {
 
         // Combine RSS posts and manual articles
         allPosts = [...rssPost, ...manualArticles];
-        console.log(`Total posts (RSS + Manual): ${allPosts.length} (${rssPost.length} + ${manualArticles.length})`);
 
         // Display posts based on current filter
         if (currentFilter === 'twitter') {
@@ -1692,7 +1810,6 @@ async function init(forceRefresh = false) {
         }
 
     } catch (error) {
-        console.error('Error initializing app:', error);
         document.getElementById('loading').innerHTML = `
             <div class="error">
                 <h2>Failed to load posts</h2>
@@ -1750,7 +1867,6 @@ async function loadInterestsFromCloud() {
             .single();
 
         if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-            console.error('Error loading interests:', error);
             return;
         }
 
@@ -1764,7 +1880,7 @@ async function loadInterestsFromCloud() {
             }
         }
     } catch (e) {
-        console.error('Failed to load interests from cloud:', e);
+        // Silent fail - cloud sync is best-effort
     }
 }
 
@@ -1826,10 +1942,10 @@ async function clearSummaryCaches() {
                 .eq('user_id', user.id);
 
             if (error) {
-                console.error('Error clearing cloud summaries:', error);
+                // Silent fail - cloud sync is best-effort
             }
         } catch (e) {
-            console.error('Failed to clear cloud summaries:', e);
+            // Silent fail - cloud sync is best-effort
         }
     }
 }
@@ -1852,12 +1968,10 @@ async function saveInterestsToCloud(interests) {
             });
 
         if (error) {
-            console.error('Error saving interests to cloud:', error);
-        } else {
-            console.log('Interests saved to cloud');
+            // Silent fail - cloud sync is best-effort
         }
     } catch (e) {
-        console.error('Failed to save interests to cloud:', e);
+        // Silent fail - cloud sync is best-effort
     }
 }
 
@@ -1938,7 +2052,6 @@ async function addNewBlog() {
                 const data = await response.json();
                 if (data.feeds && data.feeds.length > 0) {
                     url = data.feeds[0].url;
-                    console.log('Discovered feed URL:', url);
                 }
             } else {
                 const error = await response.json();
@@ -1948,7 +2061,6 @@ async function addNewBlog() {
                 return;
             }
         } catch (e) {
-            console.error('Feed discovery error:', e);
             alert('Could not discover RSS feed. Try entering the direct RSS feed URL instead.');
             addBtn.textContent = 'Add Blog';
             addBtn.disabled = false;
@@ -2012,9 +2124,8 @@ function deleteBlog(index) {
 
 // Refresh posts - checks for new posts without losing current view
 function refreshPosts() {
-    console.log('Checking for new posts...');
-    checkForNewPosts().catch((error) => {
-        console.error('Error checking for new posts:', error);
+    checkForNewPosts().catch(() => {
+        // Silent fail - refresh is best-effort
     });
 }
 
@@ -2376,10 +2487,8 @@ async function clearAllHighlightsFromCloud() {
             .from('highlights')
             .delete()
             .eq('user_id', user.id);
-
-        console.log('All highlights cleared from cloud');
     } catch (e) {
-        console.error('Failed to clear highlights from cloud:', e);
+        // Silent fail - cloud sync is best-effort
     }
 }
 
