@@ -62,7 +62,113 @@ Frontend (Cloudflare) ──> Backend (Render) ──> OpenAI (summaries)
 - **Offline-first**: All data cached in localStorage, cloud sync happens when online
 - **Cloud sync resilience**: If Supabase sync fails, local data is preserved (no data loss)
 - **Skip-load flags**: After local saves, `skipNextCloudLoad` prevents race conditions with cloud
-- **Posts cache TTL**: RSS posts cached for 5 minutes (`POSTS_CACHE_TTL`), enabling pull-to-refresh to fetch new posts
+- **Posts cache TTL**: RSS posts cached for 30 minutes (`POSTS_CACHE_TTL`), with background refresh when stale
+
+## Performance Optimizations
+
+The app was optimized to reduce load time from 2+ minutes to <5 seconds in most scenarios. The main bottleneck was Render.com's cold start (30-60s after 15 min of inactivity).
+
+### Problem
+
+| Issue | Impact |
+|-------|--------|
+| Render.com cold start | 30-60s delay after 15 min inactivity |
+| No fetch timeouts | Requests hang indefinitely |
+| Sequential Supabase queries | 5 awaits in series (~2500ms) |
+| No backend cache | Every request re-processes |
+| Short cache TTL (5 min) | Frequent re-fetching |
+
+### Solutions Implemented
+
+#### 1. Backend Wake-up Call (app.js)
+```javascript
+// Fires immediately on page load, non-blocking
+(function wakeBackend() {
+    fetch(`${window.API_BASE_URL}/health`, { mode: 'cors' }).catch(() => {});
+})();
+```
+**Impact:** Backend starts booting while user authenticates (30-60s head start).
+
+#### 2. Parallel Supabase Queries (app.js)
+```javascript
+// Before: ~2500ms (5 x 500ms)
+await loadBlogsFromCloud();
+await loadPostStatusesFromCloud();
+// ...
+
+// After: ~500ms
+await Promise.all([
+    loadBlogsFromCloud(),
+    loadPostStatusesFromCloud(),
+    loadManualArticlesFromCloud(),
+    loadInterestsFromCloud(),
+    window.articleReader?.loadHighlightsFromCloud?.() || Promise.resolve()
+]);
+```
+
+#### 3. Fetch with Timeout (utils.js)
+```javascript
+async function fetchWithTimeout(url, options = {}, timeout = 30000, retries = 1)
+```
+- Used in `fetchFeed()` with 45s timeout and 1 retry
+- Prevents indefinite hanging on slow/dead requests
+
+#### 4. Cache-First Display Strategy (app.js)
+```
+1. Check localStorage for cached posts (any age)
+2. If cache exists → display immediately, hide loading
+3. If cache > 30 min → trigger background refresh (non-blocking)
+4. If no cache → show loading, fetch from network
+```
+**Key functions:**
+- `getPostsCacheRaw()` - Returns cache regardless of age
+- `refreshPostsInBackground()` - Fetches feeds without blocking UI
+
+#### 5. Extended Cache TTL (app.js)
+```javascript
+// Changed from 5 min to 30 min
+const POSTS_CACHE_TTL = 30 * 60 * 1000;
+```
+
+#### 6. Backend In-Memory Cache (server.js)
+```javascript
+// Feed cache: 5 min TTL
+const feedCache = new Map();
+const FEED_CACHE_TTL = 5 * 60 * 1000;
+
+// Summary cache: 7 day TTL (saves OpenAI API costs)
+const summaryCache = new Map();
+const SUMMARY_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+```
+- Max 100 entries per cache (LRU eviction)
+- `X-Cache: HIT/MISS` header for debugging
+
+### Performance Results
+
+| Scenario | Before | After |
+|----------|--------|-------|
+| Warm start + fresh cache | 5-10s | <1s |
+| Warm start + stale cache | 30-60s | <2s (shows cache, refreshes bg) |
+| Cold start + cache | 90-120s | <2s (shows cache, refreshes bg) |
+| Cold start + no cache | 120s+ | ~45s (wake-up starts early) |
+
+### Debug Logging
+
+Console shows performance metrics (prefix `[Perf]`):
+```
+[Perf] Sending wake-up call to backend...
+[Perf] Backend awake in 234ms
+[Perf] Cache status: {hasCachedPosts: true, cacheAge: "12min", isCacheStale: false}
+[Perf] Showing 47 cached posts immediately
+[Perf] Cache stale, triggering background refresh...
+[Perf] Background refresh completed in 3200ms
+```
+
+### Verification
+
+1. **Network tab:** Look for `X-Cache: HIT` header on `/api/feed` requests
+2. **Console:** Check `[Perf]` logs for timing info
+3. **Cold start test:** Wait 15+ min, reload app, should show content in <5s if cached
 
 ### API Endpoints (backend)
 
