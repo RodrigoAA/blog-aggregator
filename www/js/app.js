@@ -13,7 +13,11 @@ window.API_BASE_URL = 'https://particulas-backend.onrender.com';
 // Wake-up backend immediately (non-blocking)
 // Starts cold boot while user authenticates
 (function wakeBackend() {
-    fetch(`${window.API_BASE_URL}/health`, { mode: 'cors' }).catch(() => {});
+    console.log('[Perf] Sending wake-up call to backend...');
+    const start = performance.now();
+    fetch(`${window.API_BASE_URL}/health`, { mode: 'cors' })
+        .then(res => console.log(`[Perf] Backend awake in ${Math.round(performance.now() - start)}ms`))
+        .catch(() => console.log('[Perf] Wake-up call failed (backend may be cold)'));
 })();
 
 // New posts indicator state
@@ -318,9 +322,11 @@ function getPostsCacheRaw() {
  */
 async function refreshPostsInBackground(blogs, manualArticles) {
     try {
+        const start = performance.now();
         // Fetch all feeds in parallel
         const feedPromises = blogs.map(blog => fetchFeed(blog));
         const feedResults = await Promise.all(feedPromises);
+        console.log(`[Perf] Background refresh completed in ${Math.round(performance.now() - start)}ms`);
 
         // Parse all feeds and combine posts
         const rssPost = feedResults.flatMap(result => parseFeed(result));
@@ -1679,8 +1685,16 @@ async function init(forceRefresh = false) {
         const cacheAge = rawCache ? Date.now() - rawCache.timestamp : Infinity;
         const isCacheStale = cacheAge > POSTS_CACHE_TTL;
 
+        console.log('[Perf] Cache status:', {
+            hasCachedPosts,
+            cacheAge: hasCachedPosts ? `${Math.round(cacheAge / 1000 / 60)}min` : 'N/A',
+            isCacheStale,
+            forceRefresh
+        });
+
         if (hasCachedPosts && !forceRefresh) {
             // Show cached content immediately
+            console.log(`[Perf] Showing ${rawCache.posts.length} cached posts immediately`);
             const manualArticlesQuick = getManualArticles().filter(a => a.source !== 'twitter');
             manualArticlesQuick.forEach(article => {
                 if (article.date && typeof article.date === 'string') {
@@ -1721,6 +1735,7 @@ async function init(forceRefresh = false) {
                     });
 
                     if (blogs.length > 0) {
+                        console.log('[Perf] Cache stale, triggering background refresh...');
                         updateStatus('Actualizando feeds...');
                         refreshPostsInBackground(blogs, manualArticles);
                     }
