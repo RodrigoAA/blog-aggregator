@@ -47,6 +47,12 @@
                 <h1 onclick="setFilter('inbox')" style="cursor: pointer;">Partículas elementales</h1>
             </div>
             <div class="header-right">
+                <button id="twitter-btn" class="header-icon-btn" onclick="setFilter('twitter')" title="Twitter Bookmarks">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                    <span class="twitter-count-badge">0</span>
+                </button>
                 <button id="highlights-btn" class="header-icon-btn" onclick="openHighlightsPage()" title="Highlights">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 20h9"></path>
@@ -82,13 +88,6 @@
                 </button>
                 <button class="filter-btn" data-filter="cleared" onclick="setFilter('cleared')">
                     Cleared
-                    <span class="count-badge">0</span>
-                </button>
-                <div class="filter-separator"></div>
-                <button class="filter-btn" data-filter="twitter" onclick="setFilter('twitter')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                    </svg>
                     <span class="count-badge">0</span>
                 </button>
             </div>

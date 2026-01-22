@@ -1336,6 +1336,12 @@ function setFilter(filter) {
     });
     document.querySelector(`[data-filter="${filter}"]`)?.classList.add('active');
 
+    // Update Twitter header button active state
+    const twitterBtn = document.getElementById('twitter-btn');
+    if (twitterBtn) {
+        twitterBtn.classList.toggle('active', filter === 'twitter');
+    }
+
     // Re-display posts with new filter
     if (filter === 'twitter') {
         displayTwitterPosts();
@@ -1551,12 +1557,13 @@ function updateFilterCounts(posts) {
         const badge = clearedBtn.querySelector('.count-badge');
         if (badge) badge.textContent = counts.cleared;
     }
-    if (twitterBtn) {
-        const badge = twitterBtn.querySelector('.count-badge');
+    // Update Twitter header button badge
+    const twitterHeaderBtn = document.getElementById('twitter-btn');
+    if (twitterHeaderBtn) {
+        const badge = twitterHeaderBtn.querySelector('.twitter-count-badge');
         if (badge) {
-            // Count Twitter bookmarks from manual articles
             const twitterCount = getManualArticles().filter(a => a.source === 'twitter').length;
-            badge.textContent = twitterCount;
+            badge.textContent = twitterCount > 0 ? twitterCount : '';
         }
     }
 
