@@ -731,14 +731,14 @@ body > footer {
 .swipe-action-left {
   right: 0;
   padding-right: 24px;
-  background: linear-gradient(90deg, transparent 0%, var(--success) 20%);
+  background: linear-gradient(90deg, transparent 0%, var(--danger) 20%);
   border-radius: var(--radius-lg);
 }
 
 .swipe-action-right {
   left: 0;
   padding-left: 24px;
-  background: linear-gradient(-90deg, transparent 0%, var(--accent) 20%);
+  background: linear-gradient(-90deg, transparent 0%, var(--success) 20%);
   border-radius: var(--radius-lg);
 }
 
