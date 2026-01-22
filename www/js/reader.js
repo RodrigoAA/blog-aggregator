@@ -488,10 +488,11 @@ class ArticleReader {
     // Clear previous article data from header
     this.modal.querySelector('.article-meta').innerHTML = '';
 
-    // Hide error, show loading
+    // Hide error and action bar, show loading
     this.modal.querySelector('.article-error').style.display = 'none';
     this.modal.querySelector('.article-loading').style.display = 'flex';
     this.modal.querySelector('.article-body').style.display = 'none';
+    this.modal.querySelector('.reader-action-bar').style.display = 'none';
 
     // Start fetching summary in parallel
     const summaryPromise = this.fetchSummaryData(postUrl);
@@ -536,8 +537,9 @@ class ArticleReader {
   }
 
   displayArticle(article, postTitle, blogName, summaryData) {
-    // Hide loading
+    // Hide loading, show action bar
     this.modal.querySelector('.article-loading').style.display = 'none';
+    this.modal.querySelector('.reader-action-bar').style.display = 'flex';
 
     // Show meta information
     const metaEl = this.modal.querySelector('.article-meta');
