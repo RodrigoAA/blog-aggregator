@@ -225,12 +225,42 @@ Main content filters: Inbox, Pending, Favorites, Cleared, Twitter (X icon)
 - **Highlights Page** - Dedicated view for all saved highlights
 - **Article Reader** - Full article with AI summary and highlighting
 
+## Reader Action Bar
+
+Sticky bottom bar in the article reader with all post actions consolidated. Implemented in `www/js/reader.js`.
+
+### Actions
+| Button | Icon | Action | Behavior |
+|--------|------|--------|----------|
+| Archivar | Checkmark | Mark as `cleared` | Closes reader |
+| Despues | Clock | Mark as `pending` | Closes reader |
+| Favorito | Star | Toggle `favorite` | Stays in reader |
+| Escuchar | Play/Pause | Text-to-speech | Stays in reader |
+
+### Behavior
+- **Archive/Pending**: Mark post and close reader immediately (quick triage)
+- **Favorite**: Toggle state without closing (continue reading)
+- **TTS**: Right-click for speed menu (0.75x - 2x)
+
+### Styles
+- `position: sticky` at bottom with gradient fade
+- Active state: terracotta background (`var(--accent)`)
+- Hover: subtle elevation (`translateY(-2px)`)
+- Mobile: smaller buttons, tighter spacing
+
+### Methods
+| Method | Purpose |
+|--------|---------|
+| `markAndClose(status)` | Mark post and close reader |
+| `toggleFavorite()` | Toggle favorite without closing |
+| `updateActionButtons()` | Sync button states with post status |
+
 ## Text-to-Speech (Article Reader)
 
 Listen to articles using OpenAI's TTS API for natural-sounding narration. Implemented in `www/js/reader.js` (frontend) and `backend/server.js` (API).
 
 ### Controls
-- **Play button** (header, next to Favorite) - Start/pause narration
+- **Play button** (action bar) - Start/pause narration
 - **Right-click** on button - Open speed menu
 - **Speed options**: 0.75x, 1x, 1.25x, 1.5x, 2x
 
