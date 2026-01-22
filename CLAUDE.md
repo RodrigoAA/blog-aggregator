@@ -300,6 +300,68 @@ Available voices: `alloy`, `echo`, `fable`, `onyx` (default), `nova`, `shimmer`
 - Button visibility controlled via JS `style.display` for each icon/spinner element
 - AbortController used to cancel pending requests when user stops playback
 
+## Enriched Cards
+
+Post cards in the main list display additional metadata for quick scanning.
+
+### Header Elements
+| Element | Description |
+|---------|-------------|
+| Blog source | Source name (left side) |
+| Manual badge | Orange badge for manually added articles |
+| Read time | Estimated reading time in minutes (right side) |
+| Flames | Recommendation indicator (1-3 flames, greyed if no data) |
+
+### Reading Time Calculation
+- Estimated from post description word count
+- Multiplied by 3 to approximate full article length
+- Minimum 1 minute, displayed as "X min"
+
+### Flames (Lazy Loading)
+- Uses `IntersectionObserver` to load flames when cards become visible
+- Checks `summaryCache` in localStorage for cached recommendation scores
+- Flames stay greyed out if article hasn't been opened (no API calls for list view)
+- Score mapping: `high` = 3 flames, `medium` = 2, `low` = 1, none = greyed
+
+### Files
+| File | Purpose |
+|------|---------|
+| `www/js/app.js` | `initFlamesObserver()`, `loadFlamesForCard()`, `updatePostFlames()` |
+| `www/css/styles.css` | `.post-meta-right`, `.read-time`, `.post-flames` styles |
+
+## Swipe-to-Reveal (Mobile)
+
+iOS Mail style swipe gestures for quick actions on mobile (<768px). Implemented in `www/js/app.js`.
+
+### Gestures
+- **Swipe left** → Archive (marked as `cleared`) - green background
+- **Swipe right** → Read later (marked as `pending`) - terracotta background
+- **Threshold**: 80px to trigger action, max 120px swipe distance
+
+### Technical Details
+- Uses Pointer Events API for cross-platform support
+- Detects horizontal vs vertical swipe to avoid blocking scroll
+- Card content slides to reveal action behind
+- Cards animate out on successful swipe action
+- Only active on mobile (hidden on desktop via CSS media query)
+
+### CSS Classes
+| Class | Purpose |
+|-------|---------|
+| `.post-card-content` | Slideable content wrapper |
+| `.swipe-action-left` | Archive action (right side, revealed on left swipe) |
+| `.swipe-action-right` | Read later action (left side, revealed on right swipe) |
+| `.post-card.swiping` | Active swipe state (disables transitions) |
+
+### Functions
+| Function | Purpose |
+|----------|---------|
+| `initSwipeActions()` | Attach pointer event handlers to cards |
+| `handleSwipeStart()` | Initialize swipe state on pointerdown |
+| `handleSwipeMove()` | Track swipe direction and translate content |
+| `handleSwipeEnd()` | Execute action or snap back |
+| `animateCardOut()` | Slide card off-screen and refresh list |
+
 ## Tinder Mode (Mobile)
 
 Swipe-based interface for triaging Inbox posts on mobile devices (<768px). Implemented in `www/js/tinder-mode.js`.

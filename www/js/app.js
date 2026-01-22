@@ -1156,22 +1156,53 @@ function displayPosts(posts) {
         const statusClass = status === POST_STATUS.CLEARED ? 'cleared' :
                            status === POST_STATUS.FAVORITE ? 'favorite' : '';
 
+        // Calculate reading time from description (estimate ~200 words/min)
+        const wordCount = (post.description || '').split(/\s+/).filter(w => w.length > 0).length;
+        const readingTime = Math.max(1, Math.ceil(wordCount / 200) * 3); // Estimate x3 for full article
+
         return `
             <article class="post-card ${statusClass}"
                      data-url="${escapeHtml(post.link)}"
                      data-title="${escapeHtml(post.title)}"
                      data-blog="${escapeHtml(post.blogName)}"
                      data-is-manual="${post.isManual || false}">
-                <div class="post-header">
-                    <span class="blog-source">${escapeHtml(post.blogName)}</span>
-                    ${post.isManual ? '<span class="manual-badge">Manual</span>' : ''}
+                <div class="swipe-action-left">
+                    <div class="swipe-action-btn swipe-clear">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        <span>Archivar</span>
+                    </div>
                 </div>
-                <h2 class="post-title">${escapeHtml(post.title)}</h2>
-                <div class="post-meta">
-                    <span class="post-date">${formatDate(post.date)}</span>
+                <div class="swipe-action-right">
+                    <div class="swipe-action-btn swipe-pending">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        <span>Despues</span>
+                    </div>
                 </div>
-                <p class="post-description">${escapeHtml(post.description)}</p>
-                <div class="post-actions">
+                <div class="post-card-content">
+                    <div class="post-header">
+                        <span class="blog-source">${escapeHtml(post.blogName)}</span>
+                        ${post.isManual ? '<span class="manual-badge">Manual</span>' : ''}
+                        <div class="post-meta-right">
+                            <span class="read-time">${readingTime} min</span>
+                            <div class="post-flames" data-url="${escapeHtml(post.link)}">
+                                <span class="post-flame">🔥</span>
+                                <span class="post-flame">🔥</span>
+                                <span class="post-flame">🔥</span>
+                            </div>
+                        </div>
+                    </div>
+                    <h2 class="post-title">${escapeHtml(post.title)}</h2>
+                    <div class="post-meta">
+                        <span class="post-date">${formatDate(post.date)}</span>
+                    </div>
+                    <p class="post-description">${escapeHtml(post.description)}</p>
+                    <div class="post-actions">
                     ${status === POST_STATUS.INBOX ? `
                         <button class="action-icon-btn favorite-btn" data-url="${escapeHtml(post.link)}" title="Add to Favorites">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1270,6 +1301,7 @@ function displayPosts(posts) {
                             </button>
                         ` : ''}
                     ` : ''}
+                    </div>
                 </div>
             </article>
         `;
@@ -1278,6 +1310,12 @@ function displayPosts(posts) {
     // Attach click handlers
     attachPostClickHandlers();
     attachActionButtonHandlers();
+
+    // Initialize swipe actions for mobile
+    initSwipeActions();
+
+    // Initialize flames observer for lazy loading
+    initFlamesObserver();
 
     // Update Tinder mode trigger visibility
     updateTinderTriggerVisibility();
@@ -1631,6 +1669,171 @@ function attachActionButtonHandlers() {
                 init();
             }
         });
+    });
+}
+
+// ============================================================
+// SWIPE-TO-REVEAL ACTIONS (Mobile)
+// ============================================================
+
+let swipeState = null;
+
+function initSwipeActions() {
+    // Only enable on mobile
+    if (window.innerWidth > 768) return;
+
+    document.querySelectorAll('.post-card').forEach(card => {
+        const content = card.querySelector('.post-card-content');
+        if (!content) return;
+
+        content.addEventListener('pointerdown', handleSwipeStart);
+        content.addEventListener('pointermove', handleSwipeMove);
+        content.addEventListener('pointerup', handleSwipeEnd);
+        content.addEventListener('pointercancel', handleSwipeEnd);
+    });
+}
+
+function handleSwipeStart(e) {
+    // Only handle primary pointer (finger/mouse)
+    if (!e.isPrimary) return;
+
+    const card = e.currentTarget.closest('.post-card');
+    if (!card) return;
+
+    swipeState = {
+        card,
+        content: e.currentTarget,
+        startX: e.clientX,
+        startY: e.clientY,
+        currentX: 0,
+        isHorizontalSwipe: null,
+        postUrl: card.dataset.url
+    };
+
+    e.currentTarget.setPointerCapture(e.pointerId);
+}
+
+function handleSwipeMove(e) {
+    if (!swipeState) return;
+
+    const deltaX = e.clientX - swipeState.startX;
+    const deltaY = e.clientY - swipeState.startY;
+
+    // Determine swipe direction on first significant movement
+    if (swipeState.isHorizontalSwipe === null) {
+        if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+            swipeState.isHorizontalSwipe = Math.abs(deltaX) > Math.abs(deltaY);
+        }
+        return;
+    }
+
+    // If vertical swipe, don't handle (allow scroll)
+    if (!swipeState.isHorizontalSwipe) {
+        return;
+    }
+
+    e.preventDefault();
+    swipeState.card.classList.add('swiping');
+    swipeState.currentX = deltaX;
+
+    // Limit swipe distance
+    const maxSwipe = 120;
+    const clampedX = Math.max(-maxSwipe, Math.min(maxSwipe, deltaX));
+
+    swipeState.content.style.transform = `translateX(${clampedX}px)`;
+}
+
+function handleSwipeEnd(e) {
+    if (!swipeState) return;
+
+    const { card, content, currentX, postUrl, isHorizontalSwipe } = swipeState;
+    const threshold = 80;
+
+    card.classList.remove('swiping');
+    content.style.transform = '';
+
+    // Only process if it was a horizontal swipe
+    if (isHorizontalSwipe && Math.abs(currentX) > threshold) {
+        if (currentX < 0) {
+            // Swipe left -> Archive (cleared)
+            markAsCleared(postUrl);
+            animateCardOut(card, 'left');
+        } else {
+            // Swipe right -> Read later (pending)
+            markAsPending(postUrl);
+            animateCardOut(card, 'right');
+        }
+    }
+
+    swipeState = null;
+}
+
+function animateCardOut(card, direction) {
+    const translateX = direction === 'left' ? '-100%' : '100%';
+    card.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+    card.style.transform = `translateX(${translateX})`;
+    card.style.opacity = '0';
+
+    setTimeout(() => {
+        displayPosts(allPosts);
+    }, 300);
+}
+
+// ============================================================
+// FLAMES LAZY LOADING
+// ============================================================
+
+let flamesObserver = null;
+
+function initFlamesObserver() {
+    // Clean up previous observer
+    if (flamesObserver) {
+        flamesObserver.disconnect();
+    }
+
+    flamesObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                loadFlamesForCard(entry.target);
+                flamesObserver.unobserve(entry.target);
+            }
+        });
+    }, {
+        rootMargin: '100px',
+        threshold: 0
+    });
+
+    document.querySelectorAll('.post-flames').forEach(el => {
+        flamesObserver.observe(el);
+    });
+}
+
+function loadFlamesForCard(flamesElement) {
+    const url = flamesElement.dataset.url;
+    if (!url) return;
+
+    // Check local cache (uses global function from utils.js)
+    const cached = getCachedSummary(url);
+    if (cached?.recommendation?.score) {
+        updatePostFlames(flamesElement, cached.recommendation.score);
+    }
+    // If not cached, flames stay greyed out (no API call - lazy)
+}
+
+function updatePostFlames(flamesElement, score) {
+    if (!flamesElement) return;
+
+    // Map score to number of flames: high=3, medium=2, low=1, null=0
+    const flameCount = score === 'high' ? 3 : score === 'medium' ? 2 : score === 'low' ? 1 : 0;
+    flamesElement.setAttribute('data-score', score || 'none');
+
+    const flames = flamesElement.querySelectorAll('.post-flame');
+    flames.forEach((flame, index) => {
+        if (index < flameCount) {
+            flame.classList.add('active');
+        } else {
+            flame.classList.remove('active');
+        }
     });
 }
 

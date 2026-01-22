@@ -647,6 +647,148 @@ body > footer {
 }
 
 /* ============================================================
+   ENRICHED CARDS - Reading Time & Flames
+   ============================================================ */
+
+/* Flex the header to push meta-right to the end */
+.post-header {
+  justify-content: flex-start;
+}
+
+.post-meta-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.read-time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Post flames (similar to tinder-flames) */
+.post-flames {
+  display: flex;
+  gap: 1px;
+}
+
+.post-flame {
+  font-size: 12px;
+  opacity: 0.15;
+  filter: grayscale(100%);
+  transition: all 0.3s ease;
+}
+
+.post-flame.active {
+  opacity: 1;
+  filter: grayscale(0%);
+}
+
+.post-flames[data-score="high"] .post-flame.active {
+  filter: grayscale(0%) brightness(1.1);
+}
+
+.post-flames[data-score="none"],
+.post-flames[data-score=""] {
+  opacity: 0.3;
+}
+
+/* ============================================================
+   SWIPE-TO-REVEAL ACTIONS
+   ============================================================ */
+
+/* Card content wrapper - translateable for swipe */
+.post-card-content {
+  position: relative;
+  z-index: 2;
+  background: var(--bg-secondary);
+  transition: transform 0.2s var(--ease-out);
+  border-radius: var(--radius-lg);
+}
+
+.post-card.swiping .post-card-content {
+  transition: none;
+}
+
+/* Swipe action containers - hidden behind content */
+.swipe-action-left,
+.swipe-action-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.swipe-action-left {
+  right: 0;
+  padding-right: 24px;
+  background: linear-gradient(90deg, transparent 0%, var(--success) 20%);
+  border-radius: var(--radius-lg);
+}
+
+.swipe-action-right {
+  left: 0;
+  padding-left: 24px;
+  background: linear-gradient(-90deg, transparent 0%, var(--accent) 20%);
+  border-radius: var(--radius-lg);
+}
+
+.post-card.swiping .swipe-action-left,
+.post-card.swiping .swipe-action-right {
+  opacity: 1;
+}
+
+/* Swipe action button styling */
+.swipe-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: white;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.swipe-action-btn svg {
+  stroke-width: 2.5;
+}
+
+/* Desktop: Hide swipe actions, show hover buttons */
+@media (min-width: 769px) {
+  .swipe-action-left,
+  .swipe-action-right {
+    display: none;
+  }
+}
+
+/* Mobile: Swipe gestures active */
+@media (max-width: 768px) {
+  .post-card {
+    overflow: visible;
+  }
+
+  .post-card-content {
+    background: var(--bg-secondary);
+  }
+
+  /* Hide hover actions on mobile - swipe replaces them */
+  .post-actions {
+    display: none;
+  }
+}
+
+/* ============================================================
    ARTICLE READER MODAL
    ============================================================ */
 .article-modal {
@@ -1771,11 +1913,23 @@ body > footer {
   }
 
   .post-card {
+    padding: 0;
+    background: transparent;
+    border: none;
+  }
+
+  .post-card-content {
     padding: 22px 20px;
+    border: 1px solid var(--border);
   }
 
   .post-card:hover {
-    transform: translateX(4px);
+    transform: none;
+    box-shadow: none;
+  }
+
+  .post-card::before {
+    display: none;
   }
 
   .post-title {
