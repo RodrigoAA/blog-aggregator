@@ -708,6 +708,7 @@ body > footer {
   background: var(--bg-secondary);
   transition: transform 0.2s var(--ease-out);
   border-radius: var(--radius-lg);
+  touch-action: pan-y; /* Allow vertical scroll, JS handles horizontal */
 }
 
 .post-card.swiping .post-card-content {

@@ -1574,6 +1574,9 @@ function updateFilterCounts(posts) {
 // ARTICLE READER INTEGRATION
 // ============================================================
 
+// Track if swipe just happened to prevent click
+let swipeJustHappened = false;
+
 function attachPostClickHandlers() {
     const postCards = document.querySelectorAll('.post-card');
 
@@ -1582,6 +1585,12 @@ function attachPostClickHandlers() {
         const openArticle = (e) => {
             // Don't trigger if clicking a button or action area
             if (e.target.tagName === 'BUTTON' || e.target.closest('.post-actions')) {
+                return;
+            }
+
+            // Don't trigger if swipe just happened
+            if (swipeJustHappened) {
+                swipeJustHappened = false;
                 return;
             }
 
@@ -1678,16 +1687,28 @@ function attachActionButtonHandlers() {
 
 let swipeState = null;
 
+function isMobileViewport() {
+    // Use matchMedia for reliable mobile detection
+    return window.matchMedia('(max-width: 768px)').matches;
+}
+
 function initSwipeActions() {
     // Only enable on mobile
-    if (window.innerWidth > 768) return;
+    if (!isMobileViewport()) return;
 
     document.querySelectorAll('.post-card').forEach(card => {
         const content = card.querySelector('.post-card-content');
         if (!content) return;
 
-        content.addEventListener('pointerdown', handleSwipeStart);
-        content.addEventListener('pointermove', handleSwipeMove);
+        // Remove existing listeners to avoid duplicates
+        content.removeEventListener('pointerdown', handleSwipeStart);
+        content.removeEventListener('pointermove', handleSwipeMove);
+        content.removeEventListener('pointerup', handleSwipeEnd);
+        content.removeEventListener('pointercancel', handleSwipeEnd);
+
+        // Add swipe listeners
+        content.addEventListener('pointerdown', handleSwipeStart, { passive: false });
+        content.addEventListener('pointermove', handleSwipeMove, { passive: false });
         content.addEventListener('pointerup', handleSwipeEnd);
         content.addEventListener('pointercancel', handleSwipeEnd);
     });
@@ -1752,7 +1773,13 @@ function handleSwipeEnd(e) {
     card.classList.remove('swiping');
     content.style.transform = '';
 
-    // Only process if it was a horizontal swipe
+    // Prevent click from firing after any horizontal swipe attempt
+    if (isHorizontalSwipe) {
+        swipeJustHappened = true;
+        setTimeout(() => { swipeJustHappened = false; }, 100);
+    }
+
+    // Only process if it was a horizontal swipe past threshold
     if (isHorizontalSwipe && Math.abs(currentX) > threshold) {
         if (currentX < 0) {
             // Swipe left -> Archive (cleared)
