@@ -238,6 +238,7 @@ Sticky bottom bar in the article reader with all post actions consolidated. Impl
 | Escuchar | Play/Pause | Text-to-speech | Stays in reader |
 
 ### Behavior
+- **Hidden during loading**: Bar only appears after article loads successfully
 - **Archive/Pending**: Mark post and close reader immediately (quick triage)
 - **Favorite**: Toggle state without closing (continue reading)
 - **TTS**: Right-click for speed menu (0.75x - 2x)
