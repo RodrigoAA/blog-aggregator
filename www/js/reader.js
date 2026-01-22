@@ -29,7 +29,6 @@ class TextToSpeech {
     };
 
     this.audio.onerror = (e) => {
-      console.error('Audio playback error:', e);
       this.isPlaying = false;
       this.isLoading = false;
       this.onError?.(e);
@@ -81,6 +80,15 @@ class TextToSpeech {
   }
 
   async playNextChunk() {
+    // Skip empty chunks using while loop to avoid stack overflow
+    while (this.currentChunk < this.chunks.length) {
+      const text = this.chunks[this.currentChunk];
+      if (text && text.trim().length > 0) {
+        break;
+      }
+      this.currentChunk++;
+    }
+
     if (this.currentChunk >= this.chunks.length) {
       this.isPlaying = false;
       this.isPaused = false;
@@ -90,10 +98,6 @@ class TextToSpeech {
     }
 
     const text = this.chunks[this.currentChunk];
-    if (!text || text.trim().length === 0) {
-      this.currentChunk++;
-      return this.playNextChunk();
-    }
 
     this.isLoading = true;
 
@@ -126,7 +130,16 @@ class TextToSpeech {
 
       this.audio.src = audioUrl;
       this.audio.playbackRate = this.rate;
-      await this.audio.play();
+
+      try {
+        await this.audio.play();
+      } catch (playError) {
+        // Handle autoplay blocked by browser
+        if (playError.name === 'NotAllowedError') {
+          throw new Error('El navegador bloqueó la reproducción automática. Toca de nuevo para escuchar.');
+        }
+        throw playError;
+      }
 
       this.isPlaying = true;
       this.isPaused = false;
@@ -141,7 +154,6 @@ class TextToSpeech {
       if (error.name === 'AbortError') {
         return; // Cancelled, ignore
       }
-      console.error('TTS error:', error);
       this.onError?.(error);
       throw error; // Re-throw so caller can handle it
     }
@@ -179,7 +191,11 @@ class TextToSpeech {
   }
 
   resume() {
-    this.audio.play();
+    this.audio.play().catch(() => {
+      // Autoplay blocked, user needs to interact again
+      this.isPaused = true;
+      this.isPlaying = false;
+    });
     this.isPaused = false;
     this.isPlaying = true;
   }
@@ -240,26 +256,6 @@ class ArticleReader {
         <div class="article-header">
           <button class="close-btn" aria-label="Close article" title="Close (ESC)">×</button>
           <div class="article-meta"></div>
-          <button class="save-article-btn" aria-label="Save article" title="Favorito">★ Favorite</button>
-        </div>
-        <div class="tts-fab">
-          <button class="tts-btn" aria-label="Escuchar articulo" title="Escuchar articulo">
-            <svg class="tts-icon-play" width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>
-            </svg>
-            <svg class="tts-icon-pause" width="20" height="20" viewBox="0 0 24 24" fill="none" style="display:none">
-              <rect x="6" y="4" width="4" height="16" fill="currentColor"/>
-              <rect x="14" y="4" width="4" height="16" fill="currentColor"/>
-            </svg>
-            <span class="tts-spinner" style="display:none"></span>
-          </button>
-          <div class="tts-speed-menu">
-            <button data-rate="0.75">0.75x</button>
-            <button data-rate="1" class="active">1x</button>
-            <button data-rate="1.25">1.25x</button>
-            <button data-rate="1.5">1.5x</button>
-            <button data-rate="2">2x</button>
-          </div>
         </div>
         <div class="article-body"></div>
         <div class="article-loading">
@@ -280,6 +276,45 @@ class ArticleReader {
             <button class="open-original-btn">Abrir Original</button>
           </div>
         </div>
+        <div class="reader-action-bar">
+          <button class="action-btn action-clear" aria-label="Archivar" title="Archivar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>Archivar</span>
+          </button>
+          <button class="action-btn action-pending" aria-label="Leer despues" title="Leer despues">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span>Despues</span>
+          </button>
+          <button class="action-btn action-favorite" aria-label="Favorito" title="Favorito">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+            <span>Favorito</span>
+          </button>
+          <button class="action-btn action-tts" aria-label="Escuchar" title="Escuchar articulo">
+            <svg class="tts-icon-play" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3" fill="none"></polygon>
+            </svg>
+            <svg class="tts-icon-pause" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
+              <rect x="6" y="4" width="4" height="16" fill="currentColor" stroke="none"></rect>
+              <rect x="14" y="4" width="4" height="16" fill="currentColor" stroke="none"></rect>
+            </svg>
+            <span class="tts-spinner" style="display:none"></span>
+            <span class="tts-label">Escuchar</span>
+          </button>
+          <div class="tts-speed-menu">
+            <button data-rate="0.75">0.75x</button>
+            <button data-rate="1" class="active">1x</button>
+            <button data-rate="1.25">1.25x</button>
+            <button data-rate="1.5">1.5x</button>
+            <button data-rate="2">2x</button>
+          </div>
+        </div>
       </div>
     `;
 
@@ -288,15 +323,17 @@ class ArticleReader {
     modal.querySelector('.article-modal-overlay').addEventListener('click', () => this.close());
     modal.querySelector('.close-error-btn')?.addEventListener('click', () => this.close());
 
-    // Save button handler
-    modal.querySelector('.save-article-btn').addEventListener('click', () => this.toggleSave());
+    // Action bar handlers
+    modal.querySelector('.action-clear').addEventListener('click', () => this.markAndClose('cleared'));
+    modal.querySelector('.action-pending').addEventListener('click', () => this.markAndClose('pending'));
+    modal.querySelector('.action-favorite').addEventListener('click', () => this.toggleFavorite());
 
     // TTS button handler
-    const ttsBtn = modal.querySelector('.tts-btn');
+    const ttsBtn = modal.querySelector('.action-tts');
     ttsBtn.addEventListener('click', () => this.toggleTTS());
 
-    // TTS speed menu toggle (long press or second click while playing)
-    const ttsFab = modal.querySelector('.tts-fab');
+    // TTS speed menu toggle (long press or right click)
+    const actionBar = modal.querySelector('.reader-action-bar');
     const speedMenu = modal.querySelector('.tts-speed-menu');
 
     ttsBtn.addEventListener('contextmenu', (e) => {
@@ -316,7 +353,7 @@ class ArticleReader {
 
     // Close speed menu when clicking outside
     document.addEventListener('click', (e) => {
-      if (!ttsFab.contains(e.target)) {
+      if (!actionBar.contains(e.target)) {
         speedMenu.classList.remove('show');
       }
     });
@@ -382,7 +419,6 @@ class ArticleReader {
             this.updateTTSButton('stopped');
           }
         } catch (error) {
-          console.error('TTS failed:', error);
           this.updateTTSButton('stopped');
         }
       }
@@ -390,12 +426,13 @@ class ArticleReader {
   }
 
   updateTTSButton(state) {
-    const btn = this.modal.querySelector('.tts-btn');
+    const btn = this.modal.querySelector('.action-tts');
     if (!btn) return;
 
     const playIcon = btn.querySelector('.tts-icon-play');
     const pauseIcon = btn.querySelector('.tts-icon-pause');
     const spinner = btn.querySelector('.tts-spinner');
+    const label = btn.querySelector('.tts-label');
 
     btn.classList.remove('playing', 'paused', 'loading');
 
@@ -408,17 +445,21 @@ class ArticleReader {
       btn.classList.add('loading');
       spinner.style.display = 'block';
       btn.title = 'Cargando audio...';
+      if (label) label.textContent = 'Cargando...';
     } else if (state === 'playing') {
       btn.classList.add('playing');
       pauseIcon.style.display = 'block';
       btn.title = 'Pausar';
+      if (label) label.textContent = 'Pausar';
     } else {
       playIcon.style.display = 'block';
       if (state === 'paused') {
         btn.classList.add('paused');
         btn.title = 'Continuar';
+        if (label) label.textContent = 'Continuar';
       } else {
         btn.title = 'Escuchar articulo';
+        if (label) label.textContent = 'Escuchar';
       }
     }
   }
@@ -477,7 +518,6 @@ class ArticleReader {
         this.cacheArticle(postUrl, article);
 
       } catch (error) {
-        console.error('Error loading article:', error);
         this.showError(error.message || 'Could not load article. Please try the original link.');
         return;
       }
@@ -488,7 +528,6 @@ class ArticleReader {
     try {
       summaryData = await summaryPromise;
     } catch (error) {
-      console.error('Summary generation failed:', error);
       // Continue without summary - article is still shown
     }
 
@@ -549,8 +588,8 @@ class ArticleReader {
       this.ttsText = titleEl.innerText + '\n\n' + contentEl.innerText;
     }
 
-    // Update save button state
-    this.updateSaveButton();
+    // Update action buttons state
+    this.updateActionButtons();
   }
 
   // ============================================================
@@ -598,7 +637,6 @@ class ArticleReader {
       return data;
 
     } catch (error) {
-      console.error('Failed to fetch summary:', error);
       return null;
     }
   }
@@ -620,7 +658,6 @@ class ArticleReader {
 
       return cached.data;
     } catch (e) {
-      console.error('Error reading summary cache:', e);
       return null;
     }
   }
@@ -643,7 +680,7 @@ class ArticleReader {
 
       localStorage.setItem('summaryCache', JSON.stringify(cache));
     } catch (e) {
-      console.error('Error saving summary cache:', e);
+      // Silent fail - caching is best-effort
     }
   }
 
@@ -687,7 +724,6 @@ class ArticleReader {
       };
 
     } catch (e) {
-      console.error('Error reading summary from cloud:', e);
       return null;
     }
   }
@@ -716,10 +752,10 @@ class ArticleReader {
         });
 
       if (error) {
-        console.error('Error saving summary to cloud:', error);
+        // Silent fail - cloud sync is best-effort
       }
     } catch (e) {
-      console.error('Failed to save summary to cloud:', e);
+      // Silent fail - cloud sync is best-effort
     }
   }
 
@@ -893,8 +929,26 @@ class ArticleReader {
     this.modal.dispatchEvent(new CustomEvent('articleReaderClosed'));
   }
 
-  // Toggle favorite status
-  toggleSave() {
+  // Mark post with status and close reader
+  markAndClose(status) {
+    if (!this.currentUrl) return;
+
+    if (status === 'cleared' && typeof markAsCleared === 'function') {
+      markAsCleared(this.currentUrl);
+    } else if (status === 'pending' && typeof markAsPending === 'function') {
+      markAsPending(this.currentUrl);
+    }
+
+    // Refresh the post list
+    if (typeof displayPosts === 'function' && typeof allPosts !== 'undefined') {
+      displayPosts(allPosts);
+    }
+
+    this.close();
+  }
+
+  // Toggle favorite status (stays in reader)
+  toggleFavorite() {
     if (!this.currentUrl) return;
 
     const currentStatus = typeof getPostStatus === 'function' ? getPostStatus(this.currentUrl) : 'inbox';
@@ -913,7 +967,7 @@ class ArticleReader {
     }
 
     // Update button state
-    this.updateSaveButton();
+    this.updateActionButtons();
 
     // Refresh the post list if visible
     if (typeof displayPosts === 'function' && typeof allPosts !== 'undefined') {
@@ -921,19 +975,31 @@ class ArticleReader {
     }
   }
 
-  updateSaveButton() {
-    const saveBtn = this.modal.querySelector('.save-article-btn');
-    if (!saveBtn || !this.currentUrl) return;
+  updateActionButtons() {
+    if (!this.currentUrl) return;
 
     const currentStatus = typeof getPostStatus === 'function' ? getPostStatus(this.currentUrl) : 'inbox';
-    const isFavorite = currentStatus === 'favorite';
 
-    if (isFavorite) {
-      saveBtn.textContent = '★ Favorite';
-      saveBtn.classList.add('saved');
-    } else {
-      saveBtn.textContent = '☆ Favorite';
-      saveBtn.classList.remove('saved');
+    // Update favorite button
+    const favBtn = this.modal.querySelector('.action-favorite');
+    if (favBtn) {
+      const isFavorite = currentStatus === 'favorite';
+      favBtn.classList.toggle('active', isFavorite);
+      favBtn.querySelector('span').textContent = isFavorite ? 'Guardado' : 'Favorito';
+    }
+
+    // Update pending button
+    const pendingBtn = this.modal.querySelector('.action-pending');
+    if (pendingBtn) {
+      const isPending = currentStatus === 'pending';
+      pendingBtn.classList.toggle('active', isPending);
+    }
+
+    // Update cleared button
+    const clearBtn = this.modal.querySelector('.action-clear');
+    if (clearBtn) {
+      const isCleared = currentStatus === 'cleared';
+      clearBtn.classList.toggle('active', isCleared);
     }
   }
 
@@ -942,7 +1008,6 @@ class ArticleReader {
     try {
       return JSON.parse(localStorage.getItem('articleCache') || '{}');
     } catch (e) {
-      console.error('Error loading article cache:', e);
       return {};
     }
   }
@@ -982,7 +1047,6 @@ class ArticleReader {
     try {
       localStorage.setItem('articleCache', JSON.stringify(this.cache));
     } catch (e) {
-      console.error('Error saving article cache:', e);
       // If storage is full, clear old cache
       if (e.name === 'QuotaExceededError') {
         this.cache = {};
@@ -1123,7 +1187,7 @@ class ArticleReader {
       selection.removeAllRanges();
       this.hideHighlightButton();
     } catch (error) {
-      console.error('Error applying highlight:', error);
+      // Silent fail - highlighting is best-effort
     }
   }
 
@@ -1180,7 +1244,6 @@ class ArticleReader {
     try {
       return JSON.parse(localStorage.getItem('articleHighlights') || '{}');
     } catch (e) {
-      console.error('Error loading highlights:', e);
       return {};
     }
   }
@@ -1199,7 +1262,6 @@ class ArticleReader {
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('Error loading highlights from cloud:', error);
         return;
       }
 
@@ -1220,7 +1282,7 @@ class ArticleReader {
       this.highlights = { ...this.highlights, ...cloudHighlights };
       localStorage.setItem('articleHighlights', JSON.stringify(this.highlights));
     } catch (e) {
-      console.error('Failed to load highlights from cloud:', e);
+      // Silent fail - cloud sync is best-effort
     }
   }
 
@@ -1260,7 +1322,7 @@ class ArticleReader {
     try {
       localStorage.setItem('articleHighlights', JSON.stringify(this.highlights));
     } catch (e) {
-      console.error('Error saving highlights:', e);
+      // Silent fail - saving highlights is best-effort
     }
   }
 
@@ -1282,10 +1344,10 @@ class ArticleReader {
         });
 
       if (error) {
-        console.error('Error saving highlight to cloud:', error);
+        // Silent fail - cloud sync is best-effort
       }
     } catch (e) {
-      console.error('Failed to save highlight to cloud:', e);
+      // Silent fail - cloud sync is best-effort
     }
   }
 
@@ -1300,7 +1362,6 @@ class ArticleReader {
       // Use provided articleUrl or fall back to currentUrl
       const url = articleUrl || this.currentUrl;
       if (!url) {
-        console.error('No article URL for highlight deletion');
         return;
       }
 
@@ -1312,10 +1373,10 @@ class ArticleReader {
         .eq('text', text);
 
       if (error) {
-        console.error('Error deleting highlight from cloud:', error);
+        // Silent fail - cloud sync is best-effort
       }
     } catch (e) {
-      console.error('Failed to delete highlight from cloud:', e);
+      // Silent fail - cloud sync is best-effort
     }
   }
 }
@@ -1328,7 +1389,7 @@ function initArticleReader() {
   try {
     window.articleReader = new ArticleReader();
   } catch (error) {
-    console.error('Failed to initialize ArticleReader:', error);
+    // Silent fail - reader will be unavailable
   }
 }
 
