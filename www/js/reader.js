@@ -279,16 +279,17 @@ class ArticleReader {
         <div class="reader-action-bar">
           <button class="action-btn action-clear" aria-label="Archivar" title="Archivar">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20 6 9 17 4 12"></polyline>
+              <polyline points="21 8 21 21 3 21 3 8"></polyline>
+              <rect x="1" y="3" width="22" height="5"></rect>
+              <line x1="10" y1="12" x2="14" y2="12"></line>
             </svg>
             <span>Archivar</span>
           </button>
-          <button class="action-btn action-pending" aria-label="Leer despues" title="Leer despues">
+          <button class="action-btn action-pending" aria-label="Guardar" title="Guardar">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
             </svg>
-            <span>Despues</span>
+            <span>Guardar</span>
           </button>
           <button class="action-btn action-favorite" aria-label="Favorito" title="Favorito">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

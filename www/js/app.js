@@ -1113,12 +1113,11 @@ function displayPosts(posts) {
             },
             pending: {
                 icon: `<svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <circle cx="60" cy="60" r="40"/>
-                    <path d="M60 35 L60 60 L80 70"/>
-                    <circle cx="60" cy="60" r="5" fill="currentColor"/>
+                    <path d="M85 95l-25-18-25 18V30a6 6 0 0 1 6-6h38a6 6 0 0 1 6 6z"/>
+                    <circle cx="60" cy="50" r="4" fill="currentColor" opacity="0.3"/>
                 </svg>`,
-                title: 'Nada pendiente',
-                message: 'Los articulos que guardes para leer despues apareceran aqui.'
+                title: 'Sin guardados',
+                message: 'Los articulos que guardes apareceran aqui.'
             },
             favorite: {
                 icon: `<svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -1130,13 +1129,12 @@ function displayPosts(posts) {
             },
             cleared: {
                 icon: `<svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <rect x="30" y="25" width="60" height="70" rx="4"/>
-                    <path d="M45 50 L55 60 L75 40" stroke-width="2"/>
-                    <line x1="45" y1="75" x2="75" y2="75"/>
-                    <line x1="45" y1="85" x2="65" y2="85"/>
+                    <polyline points="90 40 90 95 30 95 30 40"/>
+                    <rect x="25" y="25" width="70" height="15" rx="2"/>
+                    <line x1="50" y1="55" x2="70" y2="55"/>
                 </svg>`,
-                title: 'Nada archivado',
-                message: 'Los articulos que leas o descartes apareceran aqui.'
+                title: 'Archivo vacio',
+                message: 'Los articulos archivados apareceran aqui.'
             }
         };
         const state = emptyStates[currentFilter] || emptyStates.inbox;
@@ -1167,21 +1165,21 @@ function displayPosts(posts) {
                      data-blog="${escapeHtml(post.blogName)}"
                      data-is-manual="${post.isManual || false}">
                 <div class="swipe-action-left">
-                    <div class="swipe-action-btn swipe-clear">
+                    <div class="swipe-action-btn swipe-archive">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                            <rect x="1" y="3" width="22" height="5"></rect>
+                            <line x1="10" y1="12" x2="14" y2="12"></line>
                         </svg>
                         <span>Archivar</span>
                     </div>
                 </div>
                 <div class="swipe-action-right">
-                    <div class="swipe-action-btn swipe-pending">
+                    <div class="swipe-action-btn swipe-save">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 14"></polyline>
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                         </svg>
-                        <span>Despues</span>
+                        <span>Guardar</span>
                     </div>
                 </div>
                 <div class="post-card-content">
@@ -1209,16 +1207,16 @@ function displayPosts(posts) {
                                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                             </svg>
                         </button>
-                        <button class="action-icon-btn pending-btn" data-url="${escapeHtml(post.link)}" title="Read later">
+                        <button class="action-icon-btn pending-btn" data-url="${escapeHtml(post.link)}" title="Save">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
+                                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                             </svg>
                         </button>
-                        <button class="action-icon-btn clear-btn" data-url="${escapeHtml(post.link)}" title="Clear">
+                        <button class="action-icon-btn clear-btn" data-url="${escapeHtml(post.link)}" title="Archive">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                                <rect x="1" y="3" width="22" height="5"></rect>
+                                <line x1="10" y1="12" x2="14" y2="12"></line>
                             </svg>
                         </button>
                         ${post.isManual ? `
