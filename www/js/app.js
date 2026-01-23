@@ -1902,16 +1902,24 @@ function animateCardOut(card, content, direction) {
 }
 
 // ============================================================
-// FLAMES LAZY LOADING
+// FLAMES & SUMMARY LOADING
 // ============================================================
 
 let flamesObserver = null;
+let summaryFetchQueue = [];
+let isFetchingSummary = false;
+const MAX_CONCURRENT_FETCHES = 2;
+let activeFetches = 0;
 
 function initFlamesObserver() {
     // Clean up previous observer
     if (flamesObserver) {
         flamesObserver.disconnect();
     }
+
+    // Reset fetch queue
+    summaryFetchQueue = [];
+    activeFetches = 0;
 
     flamesObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
@@ -1921,7 +1929,7 @@ function initFlamesObserver() {
             }
         });
     }, {
-        rootMargin: '100px',
+        rootMargin: '200px', // Start loading earlier
         threshold: 0
     });
 
@@ -1930,16 +1938,76 @@ function initFlamesObserver() {
     });
 }
 
-function loadFlamesForCard(flamesElement) {
+async function loadFlamesForCard(flamesElement) {
     const url = flamesElement.dataset.url;
     if (!url) return;
 
-    // Check local cache (uses global function from utils.js)
+    const card = flamesElement.closest('.post-card');
+
+    // Check local cache first
     const cached = getCachedSummary(url);
     if (cached?.recommendation?.score) {
         updatePostFlames(flamesElement, cached.recommendation.score);
+        if (cached.readingTime) {
+            updateReadingTime(card, cached.readingTime);
+        }
+        return;
     }
-    // If not cached, flames stay greyed out (no API call - lazy)
+
+    // Add loading state
+    flamesElement.classList.add('loading');
+
+    // Queue the fetch
+    queueSummaryFetch(url, flamesElement, card);
+}
+
+function queueSummaryFetch(url, flamesElement, card) {
+    summaryFetchQueue.push({ url, flamesElement, card });
+    processNextSummaryFetch();
+}
+
+async function processNextSummaryFetch() {
+    if (activeFetches >= MAX_CONCURRENT_FETCHES || summaryFetchQueue.length === 0) {
+        return;
+    }
+
+    const { url, flamesElement, card } = summaryFetchQueue.shift();
+    activeFetches++;
+
+    try {
+        const interests = typeof getUserInterests === 'function' ? getUserInterests() : '';
+        const data = await fetchSummary(url, interests);
+
+        if (data) {
+            // Cache the result
+            cacheSummaryLocally(url, data);
+
+            // Update flames
+            if (data.recommendation?.score) {
+                updatePostFlames(flamesElement, data.recommendation.score);
+            }
+
+            // Update reading time
+            if (data.readingTime) {
+                updateReadingTime(card, data.readingTime);
+            }
+        }
+    } catch (error) {
+        console.error('[Flames] Error fetching summary:', error);
+    } finally {
+        flamesElement.classList.remove('loading');
+        activeFetches--;
+        // Process next in queue
+        processNextSummaryFetch();
+    }
+}
+
+function updateReadingTime(card, minutes) {
+    if (!card) return;
+    const readTimeEl = card.querySelector('.read-time');
+    if (readTimeEl && minutes) {
+        readTimeEl.textContent = `${minutes} min`;
+    }
 }
 
 function updatePostFlames(flamesElement, score) {
