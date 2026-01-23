@@ -1062,6 +1062,60 @@ function showSkeletonPosts(count = 5) {
 // Store all posts globally for filtering
 let allPosts = [];
 
+// Swipe action icons
+const SWIPE_ICONS = {
+    archive: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="21 8 21 21 3 21 3 8"></polyline>
+        <rect x="1" y="3" width="22" height="5"></rect>
+        <line x1="10" y1="12" x2="14" y2="12"></line>
+    </svg>`,
+    save: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+    </svg>`,
+    inbox: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+        <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+    </svg>`
+};
+
+// Get swipe actions based on current filter
+function getSwipeActionsForFilter(filter) {
+    // Default: Inbox view
+    // Left = Archive, Right = Save
+    if (filter === 'inbox') {
+        return {
+            left: { action: 'archive', icon: SWIPE_ICONS.archive, label: 'Archivar' },
+            right: { action: 'save', icon: SWIPE_ICONS.save, label: 'Guardar' }
+        };
+    }
+    // Saved view: Left = Archive, Right = Back to Inbox
+    if (filter === 'pending') {
+        return {
+            left: { action: 'archive', icon: SWIPE_ICONS.archive, label: 'Archivar' },
+            right: { action: 'inbox', icon: SWIPE_ICONS.inbox, label: 'Inbox' }
+        };
+    }
+    // Archive view: Left = Back to Inbox, Right = Save
+    if (filter === 'cleared') {
+        return {
+            left: { action: 'inbox', icon: SWIPE_ICONS.inbox, label: 'Inbox' },
+            right: { action: 'save', icon: SWIPE_ICONS.save, label: 'Guardar' }
+        };
+    }
+    // Favorites view: Left = Archive, Right = Back to Inbox
+    if (filter === 'favorite') {
+        return {
+            left: { action: 'archive', icon: SWIPE_ICONS.archive, label: 'Archivar' },
+            right: { action: 'inbox', icon: SWIPE_ICONS.inbox, label: 'Inbox' }
+        };
+    }
+    // Default fallback
+    return {
+        left: { action: 'archive', icon: SWIPE_ICONS.archive, label: 'Archivar' },
+        right: { action: 'save', icon: SWIPE_ICONS.save, label: 'Guardar' }
+    };
+}
+
 function displayPosts(posts) {
     const postsContainer = document.getElementById('posts');
     const loadingIndicator = document.getElementById('loading');
@@ -1158,28 +1212,27 @@ function displayPosts(posts) {
         const wordCount = (post.description || '').split(/\s+/).filter(w => w.length > 0).length;
         const readingTime = Math.max(1, Math.ceil(wordCount / 200) * 3); // Estimate x3 for full article
 
+        // Determine swipe actions based on current filter
+        const swipeActions = getSwipeActionsForFilter(currentFilter);
+
         return `
             <article class="post-card ${statusClass}"
                      data-url="${escapeHtml(post.link)}"
                      data-title="${escapeHtml(post.title)}"
                      data-blog="${escapeHtml(post.blogName)}"
-                     data-is-manual="${post.isManual || false}">
-                <div class="swipe-action-left">
-                    <div class="swipe-action-btn swipe-archive">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="21 8 21 21 3 21 3 8"></polyline>
-                            <rect x="1" y="3" width="22" height="5"></rect>
-                            <line x1="10" y1="12" x2="14" y2="12"></line>
-                        </svg>
-                        <span>Archivar</span>
+                     data-is-manual="${post.isManual || false}"
+                     data-swipe-left="${swipeActions.left.action}"
+                     data-swipe-right="${swipeActions.right.action}">
+                <div class="swipe-action-left" data-action="${swipeActions.left.action}">
+                    <div class="swipe-action-btn">
+                        ${swipeActions.left.icon}
+                        <span>${swipeActions.left.label}</span>
                     </div>
                 </div>
-                <div class="swipe-action-right">
-                    <div class="swipe-action-btn swipe-save">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-                        </svg>
-                        <span>Guardar</span>
+                <div class="swipe-action-right" data-action="${swipeActions.right.action}">
+                    <div class="swipe-action-btn">
+                        ${swipeActions.right.icon}
+                        <span>${swipeActions.right.label}</span>
                     </div>
                 </div>
                 <div class="post-card-content">
@@ -1793,18 +1846,31 @@ function handleSwipeEnd(e) {
 
     // Only process if it was a horizontal swipe past threshold
     if (isHorizontalSwipe && Math.abs(currentX) > threshold) {
-        if (currentX < 0) {
-            // Swipe left -> Archive (cleared)
-            markAsCleared(postUrl);
-            animateCardOut(card, 'left');
-        } else {
-            // Swipe right -> Read later (pending)
-            markAsPending(postUrl);
-            animateCardOut(card, 'right');
-        }
+        // Get action from card data attributes
+        const action = currentX < 0
+            ? card.dataset.swipeLeft
+            : card.dataset.swipeRight;
+
+        // Execute the appropriate action
+        executeSwipeAction(action, postUrl);
+        animateCardOut(card, currentX < 0 ? 'left' : 'right');
     }
 
     swipeState = null;
+}
+
+function executeSwipeAction(action, postUrl) {
+    switch (action) {
+        case 'archive':
+            markAsCleared(postUrl);
+            break;
+        case 'save':
+            markAsPending(postUrl);
+            break;
+        case 'inbox':
+            markAsInbox(postUrl);
+            break;
+    }
 }
 
 function animateCardOut(card, direction) {

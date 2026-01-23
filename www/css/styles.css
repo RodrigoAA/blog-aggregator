@@ -735,12 +735,11 @@ body > footer {
    SWIPE-TO-REVEAL ACTIONS
    ============================================================ */
 
-/* Editorial Noir color for archive action */
+/* Editorial Noir colors for swipe actions */
 :root {
   --swipe-archive: #6b2d3c;
-  --swipe-archive-light: #8b3d4c;
   --swipe-save: var(--accent);
-  --swipe-save-light: var(--accent-light);
+  --swipe-inbox: #4a5568;
 }
 
 /* Card content wrapper - translateable for swipe */
@@ -772,7 +771,7 @@ body > footer {
   transition: opacity 0.2s ease;
 }
 
-/* Archive action (swipe left) - burgundy, reveals on right */
+/* Left swipe action - reveals on right */
 .swipe-action-left {
   justify-content: flex-end;
   padding-right: 28px;
@@ -780,12 +779,28 @@ body > footer {
   border-radius: var(--radius-lg);
 }
 
-/* Save action (swipe right) - terracotta, reveals on left */
+/* Right swipe action - reveals on left */
 .swipe-action-right {
   justify-content: flex-start;
   padding-left: 28px;
   background: var(--swipe-save);
   border-radius: var(--radius-lg);
+}
+
+/* Dynamic colors based on action type */
+.swipe-action-left[data-action="archive"],
+.swipe-action-right[data-action="archive"] {
+  background: var(--swipe-archive);
+}
+
+.swipe-action-left[data-action="save"],
+.swipe-action-right[data-action="save"] {
+  background: var(--swipe-save);
+}
+
+.swipe-action-left[data-action="inbox"],
+.swipe-action-right[data-action="inbox"] {
+  background: var(--swipe-inbox);
 }
 
 /* Only show relevant action based on swipe direction */
