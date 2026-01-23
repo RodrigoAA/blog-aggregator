@@ -735,17 +735,26 @@ body > footer {
    SWIPE-TO-REVEAL ACTIONS
    ============================================================ */
 
+/* Editorial Noir color for archive action */
+:root {
+  --swipe-archive: #6b2d3c;
+  --swipe-archive-light: #8b3d4c;
+  --swipe-save: var(--accent);
+  --swipe-save-light: var(--accent-light);
+}
+
 /* Card content wrapper - translateable for swipe */
 .post-card-content {
   position: relative;
   z-index: 2;
   background: var(--bg-secondary);
-  transition: transform 0.2s var(--ease-out);
+  transition: transform 0.25s var(--ease-out);
   border-radius: var(--radius-lg);
   touch-action: pan-y; /* Allow vertical scroll, JS handles horizontal */
 }
 
-.post-card.swiping .post-card-content {
+.post-card.swiping-left .post-card-content,
+.post-card.swiping-right .post-card-content {
   transition: none;
 }
 
@@ -755,24 +764,27 @@ body > footer {
   position: absolute;
   top: 0;
   bottom: 0;
+  width: 100%;
   display: flex;
   align-items: center;
   z-index: 1;
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.2s ease;
 }
 
+/* Archive action (swipe left) - burgundy, reveals on right */
 .swipe-action-left {
-  right: 0;
-  padding-right: 24px;
-  background: linear-gradient(90deg, transparent 0%, var(--danger) 20%);
+  justify-content: flex-end;
+  padding-right: 28px;
+  background: var(--swipe-archive);
   border-radius: var(--radius-lg);
 }
 
+/* Save action (swipe right) - terracotta, reveals on left */
 .swipe-action-right {
-  left: 0;
-  padding-left: 24px;
-  background: linear-gradient(-90deg, transparent 0%, var(--success) 20%);
+  justify-content: flex-start;
+  padding-left: 28px;
+  background: var(--swipe-save);
   border-radius: var(--radius-lg);
 }
 
@@ -785,22 +797,38 @@ body > footer {
   opacity: 1;
 }
 
-/* Swipe action button styling */
+/* Swipe action button styling - Editorial typography */
 .swipe-action-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   color: white;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 600;
+  transform: scale(0.85);
+  opacity: 0.7;
+  transition: transform 0.2s var(--ease-out), opacity 0.2s ease;
+}
+
+.post-card.swiping-left .swipe-action-btn,
+.post-card.swiping-right .swipe-action-btn {
+  transform: scale(1);
+  opacity: 1;
 }
 
 .swipe-action-btn svg {
-  stroke-width: 2.5;
+  width: 28px;
+  height: 28px;
+  stroke-width: 2;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.swipe-action-btn span {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
 /* Desktop: Hide swipe actions, show hover buttons */
