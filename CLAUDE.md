@@ -362,58 +362,6 @@ iOS Mail style swipe gestures for quick actions on mobile (<768px). Implemented 
 | `handleSwipeEnd()` | Execute action or snap back |
 | `animateCardOut()` | Slide card off-screen and refresh list |
 
-## Tinder Mode (Mobile)
-
-Swipe-based interface for triaging Inbox posts on mobile devices (<768px). Implemented in `www/js/tinder-mode.js`.
-
-### Activation
-- FAB (Floating Action Button) appears in bottom-right corner
-- Only visible on mobile (<768px) + Inbox filter + posts available
-- Controlled by `updateTinderTriggerVisibility()` in `app.js`
-
-### Gestures
-- **Swipe left** → Discard post (marked as `cleared`)
-- **Swipe right** → Save for later (marked as `pending`)
-- **Tap on card** → Open article in reader (hides Tinder Mode, shows reader modal)
-- **Tap X/clock buttons** → Alternative to swipe gestures
-
-### Card Content
-Each card displays:
-- Blog source name
-- Article title
-- **Reading time estimate** (calculated from word count)
-- **AI TL;DR summary** (fetched on-demand if not cached)
-- **Flame indicator** (1-3 flames based on recommendation score)
-- Publication date
-
-### Loading State
-- Full-card loading state with centered **orbiting atom animation**
-- Atom animation: nucleus with three orbiting electrons
-- Displayed while fetching AI summary from backend
-
-### Recommendation Flames
-Visual indicator based on AI `recommendation_score`:
-- 🔥🔥🔥 = `high` (highly relevant to user interests)
-- 🔥🔥 = `medium` (somewhat relevant)
-- 🔥 = `low` (low relevance)
-- (grayed out) = no recommendation data
-
-### Technical Details
-- Uses Pointer Events API for cross-platform gesture handling
-- Swipe threshold: 100px to confirm action
-- Cards stack with current card on top, next card preview behind
-- Summaries cached in `localStorage` under `summaryCache`
-- **Pre-fetch**: Next 2 article summaries fetched in background via `prefetchNextSummary()` to reduce wait time
-- **Reader integration**: When opening article, listens for `articleReaderClosed` custom event to restore Tinder Mode
-
-### Files
-| File | Purpose |
-|------|---------|
-| `www/js/tinder-mode.js` | `TinderMode` class (~500 lines) |
-| `www/css/styles.css` | Styles (search for "TINDER MODE") |
-| `www/index.html` | FAB trigger button |
-| `www/js/app.js` | `updateTinderTriggerVisibility()` |
-
 ## UX Features
 
 ### Offline Detection
@@ -503,6 +451,68 @@ git cherry-pick 674a7bb    # Recuperar en main
 ```
 
 **Posible futuro:** Resolver generando resumenes en background, criterio hibrido, o usar tags/categorias del RSS.
+
+---
+
+### Tinder Mode (Mobile Swipe Interface)
+
+**Fecha:** Enero 2026
+**Branch:** `feature/flames-tinder-mode`
+
+**Descripcion:** Interfaz fullscreen de swipe cards para triaje rapido del Inbox en movil. FAB (Floating Action Button) en esquina inferior derecha activaba overlay con cards apiladas.
+
+**Caracteristicas:**
+- Gestos de swipe: izquierda=archivar, derecha=guardar, tap=abrir en reader
+- Cards con titulo, fuente, fecha, TL;DR del articulo, llamas de recomendacion
+- Animacion de carga: atomo orbital con 3 electrones
+- Pre-fetch de siguientes 2 resumenes para UX fluida
+- Stack visual: card actual + preview de siguiente
+- Botones de accion alternativos a los gestos
+
+**Motivo del descarte:** Redundante con swipe-to-reveal en lista de posts. La nueva funcionalidad ofrece triaje rapido sin salir del contexto de la lista, haciendo innecesario un modo separado.
+
+**Archivos eliminados:**
+- `www/js/tinder-mode.js` - TinderMode class (~500 lineas)
+- `www/css/styles.css` - Seccion TINDER MODE (~655 lineas)
+- `www/index.html` - FAB trigger button
+
+**Como recuperar:**
+```bash
+git checkout feature/flames-tinder-mode -- www/js/tinder-mode.js
+git diff main..feature/flames-tinder-mode -- www/css/styles.css  # Ver CSS
+git diff main..feature/flames-tinder-mode -- www/js/app.js       # Ver JS
+```
+
+---
+
+### Recommendation Flames (AI Scoring)
+
+**Fecha:** Enero 2026
+**Branch:** `feature/flames-tinder-mode`
+
+**Descripcion:** Indicador visual de relevancia basado en `recommendation_score` de la IA. Mostraba 1-3 llamas segun el score (high/medium/low).
+
+**Caracteristicas:**
+- 3 llamas emoji en cada card de la lista
+- IntersectionObserver para carga lazy al entrar en viewport
+- Queue de fetches con throttling (max 2 simultaneos)
+- Animacion "pop" al activar llamas
+- Spinner mientras carga
+- Score almacenado en cache de summaries
+
+**Motivo del descarte:** Cada card visible sin cache = 1 llamada API a OpenAI. El costo era prohibitivo para scroll largo por la lista. La funcionalidad generaba demasiadas llamadas API solo para mostrar el indicador.
+
+**Archivos modificados:**
+- `www/js/app.js` - Funciones: `initFlamesObserver()`, `loadFlamesForCard()`, `queueSummaryFetch()`, `processNextSummaryFetch()`, `updatePostFlames()`
+- `www/css/styles.css` - Estilos: `.post-flames`, `.post-flame`, animacion `flame-pop`
+
+**Como recuperar:**
+```bash
+git diff main..feature/flames-tinder-mode -- www/js/app.js       # Ver JS
+git diff main..feature/flames-tinder-mode -- www/css/styles.css  # Ver CSS
+```
+
+**Posible futuro:** Implementar scoring local sin llamadas API, o mostrar flames solo para articulos ya abiertos (que ya tienen summary cacheado).
 
 ## Styling Guidelines
 

@@ -1241,11 +1241,6 @@ function displayPosts(posts) {
                         ${post.isManual ? '<span class="manual-badge">Manual</span>' : ''}
                         <div class="post-meta-right">
                             <span class="read-time">${readingTime} min</span>
-                            <div class="post-flames" data-url="${escapeHtml(post.link)}">
-                                <span class="post-flame">🔥</span>
-                                <span class="post-flame">🔥</span>
-                                <span class="post-flame">🔥</span>
-                            </div>
                         </div>
                     </div>
                     <h2 class="post-title">${escapeHtml(post.title)}</h2>
@@ -1364,12 +1359,6 @@ function displayPosts(posts) {
 
     // Initialize swipe actions for mobile
     initSwipeActions();
-
-    // Initialize flames observer for lazy loading
-    initFlamesObserver();
-
-    // Update Tinder mode trigger visibility
-    updateTinderTriggerVisibility();
 }
 
 // escapeHtml() moved to utils.js
@@ -1400,25 +1389,6 @@ function setFilter(filter) {
         displayHighlights();
     } else {
         displayPosts(allPosts);
-    }
-
-    // Update Tinder mode trigger visibility
-    updateTinderTriggerVisibility();
-}
-
-// Update Tinder mode FAB visibility (mobile only, Inbox with posts)
-function updateTinderTriggerVisibility() {
-    const trigger = document.getElementById('tinder-mode-trigger');
-    if (!trigger) return;
-
-    const isMobile = window.matchMedia('(max-width: 768px)').matches;
-    const isInbox = currentFilter === POST_STATUS.INBOX;
-    const hasInboxPosts = filterPostsByStatus(allPosts, POST_STATUS.INBOX).length > 0;
-
-    if (isMobile && isInbox && hasInboxPosts) {
-        trigger.classList.add('visible');
-    } else {
-        trigger.classList.remove('visible');
     }
 }
 
@@ -1901,131 +1871,6 @@ function animateCardOut(card, content, direction) {
     }, 320);
 }
 
-// ============================================================
-// FLAMES & SUMMARY LOADING
-// ============================================================
-
-let flamesObserver = null;
-let summaryFetchQueue = [];
-let isFetchingSummary = false;
-const MAX_CONCURRENT_FETCHES = 2;
-let activeFetches = 0;
-
-function initFlamesObserver() {
-    // Clean up previous observer
-    if (flamesObserver) {
-        flamesObserver.disconnect();
-    }
-
-    // Reset fetch queue
-    summaryFetchQueue = [];
-    activeFetches = 0;
-
-    flamesObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                loadFlamesForCard(entry.target);
-                flamesObserver.unobserve(entry.target);
-            }
-        });
-    }, {
-        rootMargin: '200px', // Start loading earlier
-        threshold: 0
-    });
-
-    document.querySelectorAll('.post-flames').forEach(el => {
-        flamesObserver.observe(el);
-    });
-}
-
-async function loadFlamesForCard(flamesElement) {
-    const url = flamesElement.dataset.url;
-    if (!url) return;
-
-    const card = flamesElement.closest('.post-card');
-
-    // Check local cache first
-    const cached = getCachedSummary(url);
-    if (cached?.recommendation?.score) {
-        updatePostFlames(flamesElement, cached.recommendation.score);
-        if (cached.readingTime) {
-            updateReadingTime(card, cached.readingTime);
-        }
-        return;
-    }
-
-    // Add loading state
-    flamesElement.classList.add('loading');
-
-    // Queue the fetch
-    queueSummaryFetch(url, flamesElement, card);
-}
-
-function queueSummaryFetch(url, flamesElement, card) {
-    summaryFetchQueue.push({ url, flamesElement, card });
-    processNextSummaryFetch();
-}
-
-async function processNextSummaryFetch() {
-    if (activeFetches >= MAX_CONCURRENT_FETCHES || summaryFetchQueue.length === 0) {
-        return;
-    }
-
-    const { url, flamesElement, card } = summaryFetchQueue.shift();
-    activeFetches++;
-
-    try {
-        const interests = typeof getUserInterests === 'function' ? getUserInterests() : '';
-        const data = await fetchSummary(url, interests);
-
-        if (data) {
-            // Cache the result
-            cacheSummaryLocally(url, data);
-
-            // Update flames
-            if (data.recommendation?.score) {
-                updatePostFlames(flamesElement, data.recommendation.score);
-            }
-
-            // Update reading time
-            if (data.readingTime) {
-                updateReadingTime(card, data.readingTime);
-            }
-        }
-    } catch (error) {
-        console.error('[Flames] Error fetching summary:', error);
-    } finally {
-        flamesElement.classList.remove('loading');
-        activeFetches--;
-        // Process next in queue
-        processNextSummaryFetch();
-    }
-}
-
-function updateReadingTime(card, minutes) {
-    if (!card) return;
-    const readTimeEl = card.querySelector('.read-time');
-    if (readTimeEl && minutes) {
-        readTimeEl.textContent = `${minutes} min`;
-    }
-}
-
-function updatePostFlames(flamesElement, score) {
-    if (!flamesElement) return;
-
-    // Map score to number of flames: high=3, medium=2, low=1, null=0
-    const flameCount = score === 'high' ? 3 : score === 'medium' ? 2 : score === 'low' ? 1 : 0;
-    flamesElement.setAttribute('data-score', score || 'none');
-
-    const flames = flamesElement.querySelectorAll('.post-flame');
-    flames.forEach((flame, index) => {
-        if (index < flameCount) {
-            flame.classList.add('active');
-        } else {
-            flame.classList.remove('active');
-        }
-    });
-}
 
 // ============================================================
 // INITIALIZATION

@@ -32,7 +32,7 @@ async function initAuth() {
         const { data: { session }, error } = await supabaseClient.auth.getSession();
 
         if (error) {
-            console.error('Error getting session:', error);
+            // Session error - user will see sign-in prompt
         }
 
         if (session) {
@@ -58,7 +58,6 @@ async function initAuth() {
             }
         });
     } catch (error) {
-        console.error('Auth initialization error:', error);
         // Still try to update UI even on error
         updateAuthUI();
     }
@@ -86,7 +85,6 @@ async function signInWithGoogle() {
     });
 
     if (error) {
-        console.error('Sign in error:', error);
         alert('Sign in failed: ' + error.message);
     }
 }
@@ -95,7 +93,7 @@ async function signOut() {
     try {
         await supabaseClient.auth.signOut();
     } catch (error) {
-        console.error('Sign out error:', error);
+        // Continue with local cleanup regardless of error
     }
 
     // Always clear local state and reload, regardless of errors
@@ -126,7 +124,6 @@ function updateAuthUI() {
     const profileSection = document.getElementById('user-menu-profile');
 
     if (!menuBtn) {
-        console.warn('Auth UI elements not found');
         return;
     }
 

@@ -243,7 +243,6 @@ async function addTwitterBookmark(article) {
 
     // Check for duplicates
     if (articles.some(a => a.link === article.link)) {
-        console.log('Twitter bookmark already exists:', article.link);
         return false;
     }
 
@@ -291,12 +290,10 @@ async function saveTwitterBookmarkToCloud(article) {
             .upsert(articleData, { onConflict: 'user_id,url' });
 
         if (error) {
-            console.error('Error saving Twitter bookmark to cloud:', error);
-        } else {
-            console.log('Twitter bookmark saved to cloud');
+            // Silent fail - cloud sync is best-effort
         }
     } catch (error) {
-        console.error('Failed to save Twitter bookmark to cloud:', error);
+        // Silent fail - cloud sync is best-effort
     }
 }
 
@@ -386,9 +383,11 @@ function handleTwitterFileSelect(event) {
             showTwitterImportStep(2);
 
         } catch (error) {
-            console.error('Error parsing file:', error);
             alert('Failed to parse file: ' + error.message);
         }
+    };
+    reader.onerror = () => {
+        alert('Error al leer el archivo. Intenta de nuevo.');
     };
     reader.readAsText(file);
 }
@@ -443,7 +442,6 @@ async function startTwitterImport() {
         updateTwitterFilterCount();
 
     } catch (error) {
-        console.error('Import error:', error);
         alert('Import failed: ' + error.message);
         resetTwitterImport();
     }
@@ -531,9 +529,9 @@ async function saveTwitterFoldersToCloud(folders) {
                 updated_at: new Date().toISOString()
             }, { onConflict: 'user_id' });
 
-        if (error) console.error('Error saving folders:', error);
+        // Silent fail - cloud sync is best-effort
     } catch (e) {
-        console.error('Failed to save folders:', e);
+        // Silent fail - cloud sync is best-effort
     }
 }
 
@@ -551,7 +549,6 @@ async function loadTwitterFoldersFromCloud() {
             .single();
 
         if (error && error.code !== 'PGRST116') {
-            console.error('Error loading folders:', error);
             return;
         }
 
@@ -559,7 +556,7 @@ async function loadTwitterFoldersFromCloud() {
             localStorage.setItem(TWITTER_FOLDERS_KEY, JSON.stringify(data.twitter_folders));
         }
     } catch (e) {
-        console.error('Failed to load folders:', e);
+        // Silent fail - loading from cloud is best-effort
     }
 }
 
@@ -591,9 +588,9 @@ async function updateTweetFolderInCloud(url, folderSlug) {
             .eq('user_id', user.id)
             .eq('url', url);
 
-        if (error) console.error('Error updating folder:', error);
+        // Silent fail - cloud sync is best-effort
     } catch (e) {
-        console.error('Failed to update folder:', e);
+        // Silent fail - cloud sync is best-effort
     }
 }
 
@@ -639,13 +636,9 @@ async function deleteAllTwitterBookmarks() {
                 .eq('user_id', user.id)
                 .eq('source', 'twitter');
 
-            if (error) {
-                console.error('Error deleting Twitter bookmarks from cloud:', error);
-            } else {
-                console.log('Twitter bookmarks deleted from cloud');
-            }
+            // Silent fail - cloud sync is best-effort
         } catch (error) {
-            console.error('Failed to delete Twitter bookmarks from cloud:', error);
+            // Silent fail - cloud sync is best-effort
         }
     }
 
