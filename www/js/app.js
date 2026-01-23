@@ -1835,25 +1835,34 @@ function handleSwipeEnd(e) {
     const { card, content, currentX, postUrl, isHorizontalSwipe } = swipeState;
     const threshold = 80;
 
-    card.classList.remove('swiping-left', 'swiping-right');
-    content.style.transform = '';
-
     // Prevent click from firing after any horizontal swipe attempt
     if (isHorizontalSwipe) {
         swipeJustHappened = true;
         setTimeout(() => { swipeJustHappened = false; }, 100);
     }
 
-    // Only process if it was a horizontal swipe past threshold
+    // Check if swipe passed threshold
     if (isHorizontalSwipe && Math.abs(currentX) > threshold) {
         // Get action from card data attributes
         const action = currentX < 0
             ? card.dataset.swipeLeft
             : card.dataset.swipeRight;
 
-        // Execute the appropriate action
+        // Execute the action
         executeSwipeAction(action, postUrl);
-        animateCardOut(card, currentX < 0 ? 'left' : 'right');
+
+        // Animate out - keep swipe state visible during animation
+        animateCardOut(card, content, currentX < 0 ? 'left' : 'right');
+    } else {
+        // Snap back - swipe didn't complete
+        card.classList.remove('swiping-left', 'swiping-right');
+        content.style.transition = 'transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        content.style.transform = '';
+
+        // Clean up transition after animation
+        setTimeout(() => {
+            content.style.transition = '';
+        }, 250);
     }
 
     swipeState = null;
@@ -1873,15 +1882,23 @@ function executeSwipeAction(action, postUrl) {
     }
 }
 
-function animateCardOut(card, direction) {
-    const translateX = direction === 'left' ? '-100%' : '100%';
-    card.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
-    card.style.transform = `translateX(${translateX})`;
-    card.style.opacity = '0';
+function animateCardOut(card, content, direction) {
+    // Continue content slide in swipe direction
+    const contentX = direction === 'left' ? '-100%' : '100%';
+    content.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+    content.style.transform = `translateX(${contentX})`;
 
+    // Card: fade + slight scale down for "dismissal" feel
+    card.style.transition = 'opacity 0.25s ease 0.1s, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+    card.style.opacity = '0';
+    card.style.transform = 'scale(0.95)';
+
+    // Refresh list after animation completes
     setTimeout(() => {
+        // Clean up classes and styles before refresh
+        card.classList.remove('swiping-left', 'swiping-right');
         displayPosts(allPosts);
-    }, 300);
+    }, 320);
 }
 
 // ============================================================

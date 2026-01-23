@@ -735,11 +735,13 @@ body > footer {
    SWIPE-TO-REVEAL ACTIONS
    ============================================================ */
 
-/* Editorial Noir colors for swipe actions */
+/* Editorial Noir colors and motion for swipe actions */
 :root {
   --swipe-archive: #6b2d3c;
   --swipe-save: var(--accent);
   --swipe-inbox: #4a5568;
+  --ease-swipe: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Card content wrapper - translateable for swipe */
