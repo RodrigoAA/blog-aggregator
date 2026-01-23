@@ -841,15 +841,6 @@ body > footer {
 
 /* Mobile: Swipe gestures active */
 @media (max-width: 768px) {
-  .post-card {
-    overflow: hidden;
-    border-radius: var(--radius-lg);
-  }
-
-  .post-card-content {
-    background: var(--bg-secondary);
-  }
-
   /* Hide hover actions on mobile - swipe replaces them */
   .post-actions {
     display: none;
@@ -1980,15 +1971,20 @@ body > footer {
     padding: 32px 16px;
   }
 
+  /* Mobile cards: unified structure for swipe */
   .post-card {
     padding: 0;
-    background: transparent;
-    border: none;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
   }
 
   .post-card-content {
     padding: 22px 20px;
-    border: 1px solid var(--border);
+    border: none;
+    border-radius: 0;
+    background: var(--bg-secondary);
   }
 
   .post-card:hover {
@@ -1998,6 +1994,12 @@ body > footer {
 
   .post-card::before {
     display: none;
+  }
+
+  /* Swipe actions fill the card exactly */
+  .swipe-action-left,
+  .swipe-action-right {
+    border-radius: 0;
   }
 
   .post-title {
