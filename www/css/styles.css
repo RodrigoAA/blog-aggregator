@@ -776,8 +776,12 @@ body > footer {
   border-radius: var(--radius-lg);
 }
 
-.post-card.swiping .swipe-action-left,
-.post-card.swiping .swipe-action-right {
+/* Only show relevant action based on swipe direction */
+.post-card.swiping-left .swipe-action-left {
+  opacity: 1;
+}
+
+.post-card.swiping-right .swipe-action-right {
   opacity: 1;
 }
 
@@ -810,7 +814,8 @@ body > footer {
 /* Mobile: Swipe gestures active */
 @media (max-width: 768px) {
   .post-card {
-    overflow: visible;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
   }
 
   .post-card-content {

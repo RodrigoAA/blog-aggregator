@@ -1761,8 +1761,15 @@ function handleSwipeMove(e) {
     }
 
     e.preventDefault();
-    swipeState.card.classList.add('swiping');
     swipeState.currentX = deltaX;
+
+    // Add direction-specific class
+    swipeState.card.classList.remove('swiping-left', 'swiping-right');
+    if (deltaX < 0) {
+        swipeState.card.classList.add('swiping-left');
+    } else {
+        swipeState.card.classList.add('swiping-right');
+    }
 
     // Limit swipe distance
     const maxSwipe = 120;
@@ -1777,7 +1784,7 @@ function handleSwipeEnd(e) {
     const { card, content, currentX, postUrl, isHorizontalSwipe } = swipeState;
     const threshold = 80;
 
-    card.classList.remove('swiping');
+    card.classList.remove('swiping-left', 'swiping-right');
     content.style.transform = '';
 
     // Prevent click from firing after any horizontal swipe attempt
